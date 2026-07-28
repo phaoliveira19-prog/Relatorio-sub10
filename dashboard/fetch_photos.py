@@ -4,7 +4,7 @@
 Por que existe: as fotos hoje estao linkadas em i.ibb.co (host gratuito de
 terceiros), o que e um ponto unico de falha - se o link cair, a foto some em
 todos os graficos/cards ao mesmo tempo. Este script baixa cada foto, redimensiona
-para um thumbnail leve e salva em dashboard/photos/<apelido>.jpg, para servir
+para um thumbnail leve e salva em dashboard/photos/<apelido>.png, para servir
 localmente via GitHub Pages junto com o resto do site.
 
 Nao roda dentro do ambiente do Claude (o proxy da sandbox bloqueia i.ibb.co).
@@ -14,7 +14,7 @@ Rode isso na sua maquina, com internet normal:
     python3 fetch_photos.py <caminho-para-o-xlsx>
 
 Depois rode build_data.py de novo - ele vai preferir o arquivo local se existir
-em dashboard/photos/<apelido>.jpg.
+em dashboard/photos/<apelido>.png.
 """
 import re
 import sys
@@ -56,15 +56,18 @@ def main():
             print(f"  [skip] {nickname}: sem link direto de imagem ({photo_url})")
             skipped += 1
             continue
-        dest = OUT_DIR / f"{slug(nickname)}.jpg"
+        dest = OUT_DIR / f"{slug(nickname)}.png"
         try:
             r = requests.get(photo_url, timeout=20)
             r.raise_for_status()
             tmp = dest.with_suffix('.tmp')
             tmp.write_bytes(r.content)
-            img = Image.open(tmp).convert('RGB')
+            img = Image.open(tmp)
             img.thumbnail((MAX_SIZE, MAX_SIZE))
-            img.save(dest, 'JPEG', quality=85)
+            # Keep alpha as-is (PNG) instead of flattening to RGB/JPEG - these
+            # headshot cutouts are transparent around the subject, and
+            # converting straight to RGB paints that transparency black.
+            img.save(dest, 'PNG')
             tmp.unlink()
             print(f"  [ok] {nickname} -> {dest.relative_to(Path(__file__).parent)}")
             ok += 1

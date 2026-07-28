@@ -46,7 +46,7 @@ Isso baixa, redimensiona e salva cada foto em `dashboard/photos/`, e
 link externo. Dois atletas hoje não têm link de foto válido na planilha
 (Caio Gabriel, Heitor Nery) e um tem um link do Google Drive que não é uma
 imagem direta (Henrique Lemes) — esses precisam de foto manual em
-`dashboard/photos/<apelido-sem-acento>.jpg`.
+`dashboard/photos/<apelido-sem-acento>.png`.
 
 ## Pendências conhecidas (decididas na conversa, ainda não implementadas)
 
