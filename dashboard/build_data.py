@@ -31,7 +31,7 @@ def slug(name):
 
 MONTH_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 QUARTILE_ORDER = ['Q1', 'Q2', 'Q3', 'Q4']
-TENURE_ORDER = ['0-3 meses', '4-6 meses', '7-12 meses', '13-24 meses', '+24 meses']
+TENURE_ORDER = ['0–3 meses', '4–6 meses', '7–12 meses', '13–24 meses', '+24 meses']
 TASK_ORDER = ['Analítico', 'Situacional', 'Conceitual', 'Conceitual em ambiente específico', 'Jogo formal']
 COMPLEX_ORDER = ['Baixa', 'Média', 'Alta']
 PART_ORDER = ['Preparatória', 'Conceitual', 'Conexão']
@@ -59,13 +59,13 @@ def tenure_band(months):
     if months is None:
         return None
     if months <= 3:
-        return '0-3 meses'
+        return '0–3 meses'
     if months <= 6:
-        return '4-6 meses'
+        return '4–6 meses'
     if months <= 12:
-        return '7-12 meses'
+        return '7–12 meses'
     if months <= 24:
-        return '13-24 meses'
+        return '13–24 meses'
     return '+24 meses'
 
 
@@ -206,6 +206,7 @@ def main():
                 'position': a['position'] if a else None,
                 'quartile': a['quartile'] if a else None,
                 'foot': a['foot'] if a else None,
+                'tenureBand': a['tenureBand'] if a else None,
                 'photo': a['photo'] if a else None,
             })
 
