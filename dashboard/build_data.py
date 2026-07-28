@@ -105,9 +105,10 @@ def main():
         )
         characteristic, improvement = row[10], row[11]
         tenure_months = months_between(joined, date.today()) if joined else None
-        local_photo = PHOTOS_DIR / f"{slug(nickname)}.jpg"
-        if local_photo.exists():
-            photo = f"./photos/{slug(nickname)}.jpg"
+        local_photo = next((PHOTOS_DIR / f"{slug(nickname)}{ext}" for ext in ('.jpg', '.jpeg', '.png')
+                             if (PHOTOS_DIR / f"{slug(nickname)}{ext}").exists()), None)
+        if local_photo:
+            photo = f"./photos/{local_photo.name}"
         elif photo_link and str(photo_link).startswith('http') and 'drive.google.com' not in str(photo_link):
             photo = photo_link
         else:
