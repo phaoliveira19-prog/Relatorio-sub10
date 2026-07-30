@@ -29,6 +29,35 @@ def slug(name):
     s = re.sub(r'[^a-zA-Z0-9]+', '-', s).strip('-').lower()
     return s
 
+
+def norm_header(s):
+    return ' '.join(str(s).split())
+
+
+def header_map(ws, header_row_idx):
+    """Maps normalized header text -> column index, reading a specific row.
+
+    Looks up columns by name instead of position so that inserting, removing,
+    or reordering a column in the spreadsheet doesn't silently break parsing
+    (this bit us once already: a stray blank column got deleted upstream and
+    every field after it shifted by one).
+    """
+    row = [c.value for c in ws[header_row_idx]]
+    m = {}
+    for idx, name in enumerate(row):
+        if name:
+            key = norm_header(name)
+            if key not in m:
+                m[key] = idx
+    return m
+
+
+def g(row, colmap, name, default=None):
+    idx = colmap.get(name)
+    if idx is None or idx >= len(row):
+        return default
+    return row[idx]
+
 MONTH_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 QUARTILE_ORDER = ['Q1', 'Q2', 'Q3', 'Q4']
 TENURE_ORDER = ['0–3 meses', '4–6 meses', '7–12 meses', '13–24 meses', '+24 meses']
@@ -95,15 +124,23 @@ def main():
 
     # ---------- Banco de atletas ----------
     ws = wb['Banco de atletas']
+    col_a = header_map(ws, 1)
     athletes = []
     athlete_by_nick = {}
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=True):
-        if not row[0]:
+        name = g(row, col_a, 'Nome')
+        if not name:
             continue
-        name, nickname, aid, dob, quartile, position, foot, joined, photo_link = (
-            row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[9]
-        )
-        characteristic, improvement = row[10], row[11]
+        nickname = g(row, col_a, 'Apelido')
+        aid = g(row, col_a, 'ID atleta')
+        dob = g(row, col_a, 'Data de Nascimento')
+        quartile = g(row, col_a, 'Quartil')
+        position = g(row, col_a, 'Posição')
+        foot = g(row, col_a, 'Pé dominante')
+        joined = g(row, col_a, 'Chegada ao clube')
+        photo_link = g(row, col_a, 'Link foto')
+        characteristic = g(row, col_a, 'Característica')
+        improvement = g(row, col_a, 'Pontos a melhorar')
         tenure_months = months_between(joined, date.today()) if joined else None
         local_photo = next((PHOTOS_DIR / f"{slug(nickname)}{ext}" for ext in ('.jpg', '.jpeg', '.png')
                              if (PHOTOS_DIR / f"{slug(nickname)}{ext}").exists()), None)
@@ -125,7 +162,7 @@ def main():
             'joined': d(joined),
             'tenureMonths': tenure_months,
             'tenureBand': tenure_band(tenure_months),
-            'category': row[8],
+            'category': g(row, col_a, 'Categoria'),
             'photo': photo,
             'characteristic': characteristic,
             'improvement': improvement,
@@ -136,19 +173,49 @@ def main():
 
     # ---------- Banco de treinos ----------
     ws = wb['Banco de treinos']
+    col_t = header_map(ws, 3)
     trainings = []
     blocks = []
     contents = []  # long format, role-tagged: principal / secundario / concorrente
     for row in ws.iter_rows(min_row=4, max_row=ws.max_row, values_only=True):
-        (dt, session_id, category,
-         c_prin_prep, c_sec_prep, c_conc_prep, tipo_prep, tarefa_prep, complex_prep,
-         c_prin_conc, c_sec_conc, c_conc_conc, tipo_conc, tarefa_conc, complex_conc,
-         relacao_conexao, tarefa_conexao, complex_conexao, _blank,
-         nota_geral, num_atletas, atletas_avaliacao,
-         min_prep, jog_ativos_prep, taa_prep, desemp_prep,
-         min_conc, jog_ativos_conc, taa_conc, desemp_conc,
-         min_conexao, jog_ativos_conexao, taa_conexao, desemp_conexao,
-         observacoes, minutagem_efetiva, total_taa, pct_minutagem, pct_taa) = row
+        dt = g(row, col_t, 'Data')
+        session_id = g(row, col_t, 'ID da sessão')
+        category = g(row, col_t, 'Categoria')
+        c_prin_prep = g(row, col_t, 'Conteúdo principal - preparatória')
+        c_sec_prep = g(row, col_t, 'Conteúdo secundário - preparatória')
+        c_conc_prep = g(row, col_t, 'Conteúdo concorrente - preparatória')
+        tipo_prep = g(row, col_t, 'Tipo de conteúdo - preparatória')
+        tarefa_prep = g(row, col_t, 'Tipo de tarefa - preparatória')
+        complex_prep = g(row, col_t, 'Complexidade - preparatória')
+        c_prin_conc = g(row, col_t, 'Conteúdo principal - conceitual')
+        c_sec_conc = g(row, col_t, 'Conteúdo secundário - conceitual')
+        c_conc_conc = g(row, col_t, 'Conteúdo concorrente - conceitual')
+        tipo_conc = g(row, col_t, 'Tipo de conteúdo - conceitual')
+        tarefa_conc = g(row, col_t, 'Tipo de tarefa - conceitual')
+        complex_conc = g(row, col_t, 'Complexidade - conceitual')
+        relacao_conexao = g(row, col_t, 'Relação númerica - conexão')
+        tarefa_conexao = g(row, col_t, 'Tipo de tarefa - conexão')
+        complex_conexao = g(row, col_t, 'Complexidade - conexão')
+        nota_geral = g(row, col_t, 'Nota geral da sessão (0 a 10)')
+        num_atletas = g(row, col_t, 'Nº de atletas')
+        atletas_avaliacao = g(row, col_t, 'Atletas em avaliação')
+        min_prep = g(row, col_t, 'Minutagem - preparatória')
+        jog_ativos_prep = g(row, col_t, 'Jogadores ativos - preparatória')
+        taa_prep = g(row, col_t, 'TAA - preparatória')
+        desemp_prep = g(row, col_t, 'Desempenho - preparatória (0 a 10)')
+        min_conc = g(row, col_t, 'Minutagem - conceitual')
+        jog_ativos_conc = g(row, col_t, 'Jogadores ativos - conceitual')
+        taa_conc = g(row, col_t, 'TAA - conceitual')
+        desemp_conc = g(row, col_t, 'Desempenho - conceitual (0 a 10)')
+        min_conexao = g(row, col_t, 'Minutagem - conexão')
+        jog_ativos_conexao = g(row, col_t, 'Jogadores ativos - conexão')
+        taa_conexao = g(row, col_t, 'TAA - conexão')
+        desemp_conexao = g(row, col_t, 'Desempenho - conexão (0 a 10)')
+        observacoes = g(row, col_t, 'Observações')
+        minutagem_efetiva = g(row, col_t, 'Minutagem efetiva')
+        total_taa = g(row, col_t, 'Total TAA')
+        pct_minutagem = g(row, col_t, '% de minutagem')
+        pct_taa = g(row, col_t, '% de TAA')
         if dt is None:
             continue  # sessoes sem data (pos-treino parcial, ainda nao detalhadas)
         month = month_label(dt)
@@ -215,40 +282,58 @@ def main():
     games = []
     if 'Pós-jogo' in wb.sheetnames:
         ws = wb['Pós-jogo']
+        col_g = header_map(ws, 2)
         for row in ws.iter_rows(min_row=3, max_row=ws.max_row, values_only=True):
-            if row[0] is None:
+            game_no = g(row, col_g, 'Nº Jogo')
+            if game_no is None:
                 continue
-            (game_no, dt, category, opponent, rank, opp_category, competition, local, city, period,
-             fmt, platform, coach, captain, minutes, gf, ga, saldo, result, yellow, red, performance,
-             comments, positives, negatives, gap_days) = row
+            dt = g(row, col_g, 'Data')
+            gf = g(row, col_g, 'Gols feitos')
+            ga = g(row, col_g, 'Gols sofridos')
+            result = g(row, col_g, 'Resultado')
             games.append({
-                'gameNo': game_no, 'date': d(dt), 'month': month_label(dt), 'category': category,
-                'opponent': opponent, 'rank': rank, 'oppCategory': opp_category, 'competition': competition,
-                'local': local, 'city': city, 'period': period, 'format': fmt, 'platform': platform,
-                'coach': coach, 'captain': captain, 'minutes': minutes, 'goalsFor': gf, 'goalsAgainst': ga,
-                'saldo': saldo,
+                'gameNo': game_no, 'date': d(dt), 'month': month_label(dt), 'category': g(row, col_g, 'Categoria'),
+                'opponent': g(row, col_g, 'Adversário'), 'rank': g(row, col_g, 'Ranking'),
+                'oppCategory': g(row, col_g, 'Categoria adversário'), 'competition': g(row, col_g, 'Competição'),
+                'local': g(row, col_g, 'Local'), 'city': g(row, col_g, 'Cidade'), 'period': g(row, col_g, 'Período'),
+                'format': g(row, col_g, 'Formato'), 'platform': g(row, col_g, 'Plataforma de jogo'),
+                'coach': g(row, col_g, 'Treinador'), 'captain': g(row, col_g, 'Capitão'),
+                'minutes': g(row, col_g, 'Minutagem'), 'goalsFor': gf, 'goalsAgainst': ga,
+                'saldo': g(row, col_g, 'Saldo'),
                 'result': result if (gf is not None and ga is not None) else None,
-                'yellow': yellow, 'red': red, 'performance': performance, 'comments': comments,
-                'positives': positives, 'negatives': negatives, 'daysSinceLastGame': gap_days,
+                'yellow': g(row, col_g, 'Cartão amarelo'), 'red': g(row, col_g, 'Cartão vermelho'),
+                'performance': g(row, col_g, 'Desempenho'), 'comments': g(row, col_g, 'Comentários gerais'),
+                'positives': g(row, col_g, 'Pontos positivos'), 'negatives': g(row, col_g, 'Pontos negativos'),
+                'daysSinceLastGame': g(row, col_g, 'Data entre jogos'),
             })
 
     # ---------- Pos-jogo individual ----------
     game_ind = []
     if 'Pós-jogo individual' in wb.sheetnames:
         ws = wb['Pós-jogo individual']
+        col_gi = header_map(ws, 2)
         for row in ws.iter_rows(min_row=3, max_row=ws.max_row, values_only=True):
-            if row[3] is None:
+            name = g(row, col_gi, 'Nome')
+            if name is None:
                 continue
-            (game_no, dt, category, name, position, titularity, minutes, performance,
-             goals, goals_against, assists, yellow, red, comments) = row
+            dt = g(row, col_gi, 'Data')
+            position = g(row, col_gi, 'Posição')
+            minutes = g(row, col_gi, 'Minutagem')
+            goals = g(row, col_gi, 'Gols feitos')
+            goals_against = g(row, col_gi, 'Gols sofridos')
+            assists = g(row, col_gi, 'Assistências')
+            yellow = g(row, col_gi, 'Cartão amarelo')
+            red = g(row, col_gi, 'Cartão vermelho')
             a = athlete_by_nick.get(norm(name).lower())
             game_ind.append({
-                'gameNo': game_no, 'date': d(dt), 'month': month_label(dt), 'category': category,
+                'gameNo': g(row, col_gi, 'Nº Jogo'), 'date': d(dt), 'month': month_label(dt),
+                'category': g(row, col_gi, 'Categoria'),
                 'athlete': name, 'position': position or (a['position'] if a else None),
                 'quartile': a['quartile'] if a else None, 'foot': a['foot'] if a else None,
-                'titularity': titularity, 'minutes': minutes or 0, 'performance': performance,
+                'titularity': g(row, col_gi, 'Titularidade'), 'minutes': minutes or 0,
+                'performance': g(row, col_gi, 'Desempenho'),
                 'goals': goals or 0, 'goalsAgainst': goals_against or 0, 'assists': assists or 0,
-                'yellow': yellow or 0, 'red': red or 0, 'comments': comments,
+                'yellow': yellow or 0, 'red': red or 0, 'comments': g(row, col_gi, 'Comentários individuais'),
             })
 
     all_dates = [t['date'] for t in trainings] + [g['date'] for g in games]
