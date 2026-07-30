@@ -144,10 +144,12 @@ def main():
         tenure_months = months_between(joined, date.today()) if joined else None
         local_photo = next((PHOTOS_DIR / f"{slug(nickname)}{ext}" for ext in ('.jpg', '.jpeg', '.png')
                              if (PHOTOS_DIR / f"{slug(nickname)}{ext}").exists()), None)
+        photo_external = (photo_link if photo_link and str(photo_link).startswith('http')
+                           and 'drive.google.com' not in str(photo_link) else None)
         if local_photo:
             photo = f"./photos/{local_photo.name}"
-        elif photo_link and str(photo_link).startswith('http') and 'drive.google.com' not in str(photo_link):
-            photo = photo_link
+        elif photo_external:
+            photo = photo_external
         else:
             photo = None
         a = {
@@ -164,6 +166,7 @@ def main():
             'tenureBand': tenure_band(tenure_months),
             'category': g(row, col_a, 'Categoria'),
             'photo': photo,
+            'photoExternal': photo_external,
             'characteristic': characteristic,
             'improvement': improvement,
             'status': 'ativo',

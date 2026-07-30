@@ -255,9 +255,316 @@ body.light .theme-toggle{background:rgba(255,255,255,.92)}
 
 <button class="theme-toggle floating-theme" id="themeToggle" title="Alternar modo claro/escuro">☀️ Modo claro</button>
 <script>
+// ---------- Fonte de dados ao vivo: Google Sheets ----------
+// Le as 5 abas da planilha publicada e monta o mesmo objeto DATA que build_data.py
+// gera em data.json. Se a planilha nao carregar (offline, sem permissao, aba
+// renomeada etc.) o boot() cai automaticamente para o data.json local.
+const SHEET_ID = '1XBswfpypHskEIG75ZrVm5_Gu7A8FaVbs';
+const REFERENCE_MINUTES = 80;
+const TREND_THRESHOLD = 0.5;
+
+function parseCSV(text){
+  const rows=[]; let row=[], field='', inQuotes=false, i=0; const n=text.length;
+  while(i<n){
+    const c=text[i];
+    if(inQuotes){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i+=2;continue;} inQuotes=false;i++;continue; }
+      field+=c;i++;continue;
+    } else {
+      if(c==='"'){inQuotes=true;i++;continue;}
+      if(c===','){row.push(field);field='';i++;continue;}
+      if(c==='\r'){i++;continue;}
+      if(c==='\n'){row.push(field);rows.push(row);row=[];field='';i++;continue;}
+      field+=c;i++;continue;
+    }
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function normHeaderText(s){return String(s).split(/\s+/).filter(Boolean).join(' ');}
+function headerMap(rows,headerRowIdx){
+  const row=rows[headerRowIdx]||[]; const m={};
+  row.forEach((name,idx)=>{ if(name){ const key=normHeaderText(name); if(!(key in m)) m[key]=idx; } });
+  return m;
+}
+function g(row,colmap,name){
+  const idx=colmap[name];
+  if(idx===undefined||idx>=row.length) return null;
+  const v=row[idx];
+  return (v===''||v===undefined)?null:v;
+}
+function csvNum(v){
+  if(v===null||v===undefined||v==='') return null;
+  const n=Number(v); return isNaN(n)?null:n;
+}
+// Celulas de data reais exportam "2/6/2026" (M/D/AAAA, sem zero a esquerda)
+function parseSheetsDate(v){
+  if(!v) return null;
+  const m=String(v).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  const [,mo,da,yr]=m;
+  return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`;
+}
+// Cabecalhos de data em "Avaliacao individual" sao texto literal "02/02/2026" (DD/MM/AAAA)
+function parseHeaderDateDDMMYYYY(v){
+  if(!v) return null;
+  const m=String(v).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  const [,da,mo,yr]=m;
+  return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`;
+}
+const SHEETS_MONTH_PT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+function sheetsMonthLabel(isoDate){
+  if(!isoDate) return null;
+  const [y,mo]=isoDate.split('-');
+  return `${SHEETS_MONTH_PT[Number(mo)-1]}/${y.slice(2)}`;
+}
+const SHEETS_TENURE_ORDER=['0\u20133 meses','4\u20136 meses','7\u201312 meses','13\u201324 meses','+24 meses'];
+function sheetsTenureBand(months){
+  if(months===null||months===undefined) return null;
+  if(months<=3) return SHEETS_TENURE_ORDER[0];
+  if(months<=6) return SHEETS_TENURE_ORDER[1];
+  if(months<=12) return SHEETS_TENURE_ORDER[2];
+  if(months<=24) return SHEETS_TENURE_ORDER[3];
+  return SHEETS_TENURE_ORDER[4];
+}
+function monthsBetweenIso(startIso,endIso){
+  if(!startIso) return null;
+  const [sy,sm,sd]=startIso.split('-').map(Number);
+  const [ey,em,ed]=endIso.split('-').map(Number);
+  return (ey-sy)*12+(em-sm)-(ed<sd?1:0);
+}
+function slugName(name){
+  return String(name).normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase();
+}
+function normLowerText(s){ return (s===null||s===undefined)?'':String(s).trim().toLowerCase(); }
+
+function extractAthletesFromCSV(csvText){
+  const rows=parseCSV(csvText); const col=headerMap(rows,0);
+  const athletes=[]; const athleteByNick={};
+  const todayIso=new Date().toISOString().slice(0,10);
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r]; const name=g(row,col,'Nome'); if(!name) continue;
+    const nickname=g(row,col,'Apelido');
+    const dob=parseSheetsDate(g(row,col,'Data de Nascimento'));
+    const joined=parseSheetsDate(g(row,col,'Chegada ao clube'));
+    const photoLink=g(row,col,'Link foto');
+    const tenureMonths=joined?monthsBetweenIso(joined,todayIso):null;
+    const photoExternal=(photoLink && String(photoLink).startsWith('http') && !String(photoLink).includes('drive.google.com')) ? photoLink : null;
+    const a={
+      id:g(row,col,'ID atleta'), name, nickname, dob,
+      birthMonth: dob?sheetsMonthLabel(dob):null,
+      quartile:g(row,col,'Quartil'), position:g(row,col,'Posi\u00e7\u00e3o'), foot:g(row,col,'P\u00e9 dominante'),
+      joined, tenureMonths, tenureBand:sheetsTenureBand(tenureMonths),
+      category:g(row,col,'Categoria'),
+      photo:`./photos/${slugName(nickname)}.png`, photoExternal,
+      characteristic:g(row,col,'Caracter\u00edstica'), improvement:g(row,col,'Pontos a melhorar'),
+      status:'ativo',
+    };
+    athletes.push(a); athleteByNick[normLowerText(nickname)]=a;
+  }
+  return {athletes, athleteByNick};
+}
+
+function extractTrainingsFromCSV(csvText){
+  const rows=parseCSV(csvText); const col=headerMap(rows,2);
+  const trainings=[], blocks=[], contents=[];
+  for(let r=3;r<rows.length;r++){
+    const row=rows[r];
+    const dt=parseSheetsDate(g(row,col,'Data'));
+    if(!dt) continue;
+    const month=sheetsMonthLabel(dt);
+    const sessionId=g(row,col,'ID da sess\u00e3o');
+    const category=g(row,col,'Categoria');
+    const notaGeral=csvNum(g(row,col,'Nota geral da sess\u00e3o (0 a 10)'));
+    const numAtletas=csvNum(g(row,col,'N\u00ba de atletas'));
+    const atletasAvaliacao=csvNum(g(row,col,'Atletas em avalia\u00e7\u00e3o'));
+    const observacoes=g(row,col,'Observa\u00e7\u00f5es');
+    const partsDef=[['Preparat\u00f3ria','preparat\u00f3ria'],['Conceitual','conceitual'],['Conex\u00e3o','conex\u00e3o']];
+    let minutagemEfetiva=0, totalTAA=0; const partsOut=[];
+    for(const [partLabel,suffix] of partsDef){
+      const minutes=csvNum(g(row,col,`Minutagem - ${suffix}`));
+      const jogAtivos=csvNum(g(row,col,`Jogadores ativos - ${suffix}`));
+      const desemp=csvNum(g(row,col,`Desempenho - ${suffix} (0 a 10)`));
+      const taskType=g(row,col,`Tipo de tarefa - ${suffix}`);
+      const complexity=g(row,col,`Complexidade - ${suffix}`);
+      let contentType, content, cPrin, cSec, cConc;
+      if(suffix==='conex\u00e3o'){
+        contentType='Conex\u00e3o com jogo'; content=g(row,col,'Rela\u00e7\u00e3o n\u00famerica - conex\u00e3o');
+        cPrin=null; cSec=null; cConc=null;
+      } else {
+        contentType=g(row,col,`Tipo de conte\u00fado - ${suffix}`);
+        cPrin=g(row,col,`Conte\u00fado principal - ${suffix}`);
+        cSec=g(row,col,`Conte\u00fado secund\u00e1rio - ${suffix}`);
+        cConc=g(row,col,`Conte\u00fado concorrente - ${suffix}`);
+        content=cPrin;
+      }
+      const taa=(jogAtivos!=null && numAtletas)?(jogAtivos/numAtletas)*(minutes||0):null;
+      if(minutes==null && cPrin==null && (suffix!=='conex\u00e3o'||content==null)) continue;
+      minutagemEfetiva+=minutes||0; totalTAA+=taa||0;
+      partsOut.push({part:partLabel, content, contentType, taskType, complexity, minutes, numAthletesActive:jogAtivos, taa, performance:desemp});
+      if(suffix!=='conex\u00e3o'){
+        for(const [role,c] of [['principal',cPrin],['secundario',cSec],['concorrente',cConc]]){
+          if(c) contents.push({date:dt, month, part:partLabel, role, content:c, contentType});
+        }
+      }
+    }
+    blocks.push(...partsOut.map(p=>({date:dt, month, sessionId, sessionNote:notaGeral, ...p})));
+    trainings.push({
+      date:dt, month, sessionId, category, note:notaGeral, numAthletes:numAtletas,
+      athletesEval:atletasAvaliacao, effectiveMinutes:minutagemEfetiva, totalTAA,
+      pctMinutagem: minutagemEfetiva?minutagemEfetiva/REFERENCE_MINUTES:0,
+      pctTAA: minutagemEfetiva?totalTAA/minutagemEfetiva:null,
+      observations:observacoes,
+    });
+  }
+  return {trainings, blocks, contents};
+}
+
+function extractNotesFromCSV(csvText, athleteByNick){
+  const rows=parseCSV(csvText); const header=rows[0]||[]; const dateCols=header.slice(2);
+  const notes=[];
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r]; const nickname=row[0]; if(!nickname) continue;
+    const a=athleteByNick[normLowerText(nickname)];
+    dateCols.forEach((rawDate,i)=>{
+      const colIdx=i+2; const note=row[colIdx];
+      if(note===undefined||note===null||note==='') return;
+      const dt=parseHeaderDateDDMMYYYY(rawDate); if(!dt) return;
+      notes.push({
+        athlete:nickname, date:dt, month:sheetsMonthLabel(dt), note:csvNum(note),
+        position:a?a.position:null, quartile:a?a.quartile:null, foot:a?a.foot:null,
+        tenureBand:a?a.tenureBand:null, photo:a?a.photo:null,
+      });
+    });
+  }
+  return notes;
+}
+
+function extractGamesFromCSV(csvText){
+  const rows=parseCSV(csvText); const col=headerMap(rows,1); const games=[];
+  for(let r=2;r<rows.length;r++){
+    const row=rows[r]; const gameNo=g(row,col,'N\u00ba Jogo'); if(gameNo===null) continue;
+    const dt=parseSheetsDate(g(row,col,'Data'));
+    const gf=csvNum(g(row,col,'Gols feitos')), ga=csvNum(g(row,col,'Gols sofridos'));
+    const result=g(row,col,'Resultado');
+    games.push({
+      gameNo:csvNum(gameNo), date:dt, month:sheetsMonthLabel(dt), category:g(row,col,'Categoria'),
+      opponent:g(row,col,'Advers\u00e1rio'), rank:g(row,col,'Ranking'),
+      oppCategory:g(row,col,'Categoria advers\u00e1rio'), competition:g(row,col,'Competi\u00e7\u00e3o'),
+      local:g(row,col,'Local'), city:g(row,col,'Cidade'), period:g(row,col,'Per\u00edodo'),
+      format:g(row,col,'Formato'), platform:g(row,col,'Plataforma de jogo'),
+      coach:g(row,col,'Treinador'), captain:g(row,col,'Capit\u00e3o'),
+      minutes:csvNum(g(row,col,'Minutagem')), goalsFor:gf, goalsAgainst:ga,
+      saldo:csvNum(g(row,col,'Saldo')),
+      result:(gf!==null&&ga!==null)?result:null,
+      yellow:csvNum(g(row,col,'Cart\u00e3o amarelo')), red:csvNum(g(row,col,'Cart\u00e3o vermelho')),
+      performance:csvNum(g(row,col,'Desempenho')), comments:g(row,col,'Coment\u00e1rios gerais'),
+      positives:g(row,col,'Pontos positivos'), negatives:g(row,col,'Pontos negativos'),
+      daysSinceLastGame:csvNum(g(row,col,'Data entre jogos')),
+    });
+  }
+  return games;
+}
+
+function extractGameIndFromCSV(csvText, athleteByNick){
+  const rows=parseCSV(csvText); const col=headerMap(rows,1); const gameInd=[];
+  for(let r=2;r<rows.length;r++){
+    const row=rows[r]; const name=g(row,col,'Nome'); if(name===null) continue;
+    const dt=parseSheetsDate(g(row,col,'Data'));
+    const position=g(row,col,'Posi\u00e7\u00e3o');
+    const minutes=csvNum(g(row,col,'Minutagem'));
+    const goals=csvNum(g(row,col,'Gols feitos')), goalsAgainst=csvNum(g(row,col,'Gols sofridos'));
+    const assists=csvNum(g(row,col,'Assist\u00eancias'));
+    const yellow=csvNum(g(row,col,'Cart\u00e3o amarelo')), red=csvNum(g(row,col,'Cart\u00e3o vermelho'));
+    const a=athleteByNick[normLowerText(name)];
+    gameInd.push({
+      gameNo:csvNum(g(row,col,'N\u00ba Jogo')), date:dt, month:sheetsMonthLabel(dt),
+      category:g(row,col,'Categoria'),
+      athlete:name, position: position||(a?a.position:null),
+      quartile:a?a.quartile:null, foot:a?a.foot:null,
+      titularity:g(row,col,'Titularidade'), minutes:minutes||0,
+      performance:csvNum(g(row,col,'Desempenho')),
+      goals:goals||0, goalsAgainst:goalsAgainst||0, assists:assists||0,
+      yellow:yellow||0, red:red||0, comments:g(row,col,'Coment\u00e1rios individuais'),
+    });
+  }
+  return gameInd;
+}
+
+function buildSheetsMeta({athletes,trainings,blocks,contents,games}){
+  const allDated=[...trainings,...games];
+  const monthsSeen=[...new Set(allDated.map(x=>x.month).filter(Boolean))]
+    .sort((m1,m2)=>{
+      const d1=Math.min(...allDated.filter(x=>x.month===m1).map(x=>x.date));
+      const d2=Math.min(...allDated.filter(x=>x.month===m2).map(x=>x.date));
+      return d1<d2?-1:d1>d2?1:0;
+    });
+  const allDates=[...trainings.map(t=>t.date),...games.map(gm=>gm.date)];
+  const uniq=arr=>[...new Set(arr.filter(Boolean))].sort();
+  return {
+    generatedAt:new Date().toISOString(), asOf:new Date().toISOString().slice(0,10),
+    minDate: allDates.length?allDates.reduce((a,b)=>a<b?a:b):null,
+    maxDate: allDates.length?allDates.reduce((a,b)=>a>b?a:b):null,
+    referenceMinutes:REFERENCE_MINUTES, trendThreshold:TREND_THRESHOLD,
+    months:monthsSeen, athletes:athletes.map(a=>a.nickname),
+    positions:uniq(athletes.map(a=>a.position)),
+    quartiles:['Q1','Q2','Q3','Q4'],
+    competitions:uniq(games.map(gm=>gm.competition)), ranks:uniq(games.map(gm=>gm.rank)),
+    formats:uniq(games.map(gm=>gm.format)), results:uniq(games.map(gm=>gm.result)),
+    taskTypes:uniq(blocks.map(b=>b.taskType)), complexities:uniq(blocks.map(b=>b.complexity)),
+    parts:['Preparat\u00f3ria','Conceitual','Conex\u00e3o'],
+    contents:uniq(contents.map(c=>c.content)),
+    quartileOrder:['Q1','Q2','Q3','Q4'], tenureOrder:SHEETS_TENURE_ORDER,
+    taskOrder:['Anal\u00edtico','Situacional','Conceitual','Conceitual em ambiente espec\u00edfico','Jogo formal'],
+    complexityOrder:['Baixa','M\u00e9dia','Alta'], partOrder:['Preparat\u00f3ria','Conceitual','Conex\u00e3o'],
+  };
+}
+
+async function fetchSheetCSV(sheetId, sheetName){
+  const url=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(), 12000);
+  try{
+    const res=await fetch(url,{signal:controller.signal, cache:'no-store'});
+    if(!res.ok) throw new Error(`HTTP ${res.status} na aba "${sheetName}"`);
+    const text=await res.text();
+    if(text.trim().startsWith('<')) throw new Error(`Resposta inesperada (HTML) na aba "${sheetName}" \u2014 verifique compartilhamento`);
+    return text;
+  } finally { clearTimeout(timer); }
+}
+
+async function loadFromGoogleSheets(sheetId){
+  const [atletasCsv, treinosCsv, avaliacaoCsv, posjogoCsv, posjogoIndCsv] = await Promise.all([
+    fetchSheetCSV(sheetId,'Banco de atletas'),
+    fetchSheetCSV(sheetId,'Banco de treinos'),
+    fetchSheetCSV(sheetId,'Avalia\u00e7\u00e3o individual do treino'),
+    fetchSheetCSV(sheetId,'P\u00f3s-jogo'),
+    fetchSheetCSV(sheetId,'P\u00f3s-jogo individual'),
+  ]);
+  const {athletes, athleteByNick}=extractAthletesFromCSV(atletasCsv);
+  const {trainings, blocks, contents}=extractTrainingsFromCSV(treinosCsv);
+  const notes=extractNotesFromCSV(avaliacaoCsv, athleteByNick);
+  const games=extractGamesFromCSV(posjogoCsv);
+  const gameInd=extractGameIndFromCSV(posjogoIndCsv, athleteByNick);
+  return {meta:buildSheetsMeta({athletes,trainings,blocks,contents,games}), athletes, trainings, blocks, contents, notes, games, gameInd};
+}
+
+// Globais: precisam existir fora de boot() porque atributos onerror inline
+// no HTML rodam no escopo global, não no closure de boot().
+function fallbackPhoto(){return 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" rx="24" fill="#111b2e"/><circle cx="60" cy="48" r="22" fill="#253047"/><rect x="26" y="76" width="68" height="28" rx="14" fill="#253047"/></svg>')}
+function photoErr(img,ext){if(ext&&img.dataset.step!=='2'){img.dataset.step='2';img.src=ext;return;}img.src=fallbackPhoto();}
+
 let DATA=null;
 async function boot(){
-try{DATA = await (await fetch('./data.json',{cache:'no-store'})).json();}catch(e){document.body.innerHTML='<div style="padding:40px;color:#eef4ff;font-family:sans-serif">N\u00e3o foi poss\u00edvel carregar data.json. Rode build_data.py e mantenha o arquivo na mesma pasta do dashboard.</div>';return;}
+try{
+  DATA = await loadFromGoogleSheets(SHEET_ID);
+  console.info('[dashboard] dados carregados ao vivo do Google Sheets.');
+}catch(sheetsErr){
+  console.warn('[dashboard] Google Sheets indispon\u00edvel, usando data.json local.', sheetsErr);
+  try{DATA = await (await fetch('./data.json',{cache:'no-store'})).json();}catch(e){document.body.innerHTML='<div style="padding:40px;color:#eef4ff;font-family:sans-serif">N\u00e3o foi poss\u00edvel carregar dados do Google Sheets nem do data.json local. Verifique a conex\u00e3o e o compartilhamento da planilha.</div>';return;}
+}
 const COLORS = ['#22d3ee','#60a5fa','#a78bfa','#32d583','#fdb022','#f97066','#f472b6','#38bdf8','#c4b5fd','#86efac'];
 const DISTINCT_COLORS = [COLORS[0],COLORS[4],COLORS[2],COLORS[3],COLORS[5],COLORS[6]];
 const RESULT_COLORS = {'Vitória':'#32d583','Empate':'#fdb022','Derrota':'#f97066'};
@@ -328,10 +635,9 @@ function normalizeContentType(type){return String(type||'Sem tipo').replace('Té
 function contentTypeMatches(rowType,filterType){return !filterType || normalizeContentType(rowType)===normalizeContentType(filterType)}
 function contentLevel(type){type=String(normalizeContentType(type)||'').toLowerCase(); if(type.includes('individual')) return 'Individual'; if(type.includes('grupo')||type.includes('grupal')) return 'Grupo'; if(type.includes('coletiv')) return 'Coletivo'; return 'Outro'}
 function safePhoto(a){return (a&&a.photo)?a.photo:''}
-function fallbackPhoto(){return 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" rx="24" fill="#111b2e"/><circle cx="60" cy="48" r="22" fill="#253047"/><rect x="26" y="76" width="68" height="28" rx="14" fill="#253047"/></svg>')}
 function contrastText(hex){hex=String(hex||'#22d3ee').replace('#',''); if(hex.length===3)hex=hex.split('').map(c=>c+c).join(''); const r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16); const f=c=>{c/=255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}; const lum=0.2126*f(r)+0.7152*f(g)+0.0722*f(b); const cw=(1.05)/(lum+0.05), cb=(lum+0.05)/0.05; return cw>=cb?'#ffffff':'#0b1220';}
-function athleteHTML(name){const a=athleteObj(name)||{}; const car=a.characteristic?`<div class="muted"><b>Características:</b> ${truncate(a.characteristic,105)}</div>`:''; const imp=a.improvement?`<div class="muted"><b>Pontos a melhorar:</b> ${truncate(a.improvement,90)}</div>`:''; return `<div class="tip-ath"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="this.src='${fallbackPhoto()}'"><div><b>${a.nickname||name}</b><div class="muted">${a.position||'Sem posição'} · ${a.quartile||'Sem quartil'} · ${a.foot||'Sem pé'}</div><div class="muted">Tempo de clube: ${a.tenureBand||'Sem data'}</div>${car}${imp}</div></div>`}
-function athleteCell(name){const a=athleteObj(name)||{}; return `<span class="ath-cell"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="this.src='${fallbackPhoto()}'"><span><b>${a.nickname||name}</b><br><span class="mini">${a.position||'—'} · ${a.quartile||'—'}</span></span></span>`}
+function athleteHTML(name){const a=athleteObj(name)||{}; const car=a.characteristic?`<div class="muted"><b>Características:</b> ${truncate(a.characteristic,105)}</div>`:''; const imp=a.improvement?`<div class="muted"><b>Pontos a melhorar:</b> ${truncate(a.improvement,90)}</div>`:''; return `<div class="tip-ath"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="photoErr(this,'${(a.photoExternal||'').replace(/'/g,"&#39;")}')"><div><b>${a.nickname||name}</b><div class="muted">${a.position||'Sem posição'} · ${a.quartile||'Sem quartil'} · ${a.foot||'Sem pé'}</div><div class="muted">Tempo de clube: ${a.tenureBand||'Sem data'}</div>${car}${imp}</div></div>`}
+function athleteCell(name){const a=athleteObj(name)||{}; return `<span class="ath-cell"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="photoErr(this,'${(a.photoExternal||'').replace(/'/g,"&#39;")}')"><span><b>${a.nickname||name}</b><br><span class="mini">${a.position||'—'} · ${a.quartile||'—'}</span></span></span>`}
 function tip(html,e){tooltip.innerHTML=html; tooltip.style.opacity=1; tooltip.style.left=e.clientX+'px'; tooltip.style.top=e.clientY+'px'}
 function hideTip(){tooltip.style.opacity=0}
 function svgEl(type,attrs){const e=document.createElementNS('http://www.w3.org/2000/svg',type); Object.entries(attrs||{}).forEach(([k,v])=>e.setAttribute(k,v)); return e;}
@@ -414,7 +720,7 @@ function rosterForDonut(exclude){return DATA.athletes.filter(a=>(exclude==='tenu
 function donutData(dim, order){const arr=rosterForDonut(dim).filter(a=>dim!=='tenureBand'||(a.tenureBand&&a.tenureBand!=='Sem data')); const g=by(arr,a=>a[dim]||'Sem info'); const keys=ordered(Object.keys(g),order||[]); return keys.map(k=>({key:k,value:g[k].length,items:g[k]}));}
 function renderDonuts(){donutChart('chDonutTenure',donutData('tenureBand',TENURE_ORDER),{colors:DISTINCT_COLORS,activeKey:donutState.tenureBand,onClick:d=>{donutState.tenureBand=donutState.tenureBand===d.key?null:d.key; renderDonuts(); renderAthleteStrip();}}); donutChart('chDonutPosition',donutData('position'),{colors:DISTINCT_COLORS,activeKey:donutState.position,onClick:d=>{donutState.position=donutState.position===d.key?null:d.key; renderDonuts(); renderAthleteStrip();}}); renderQuartileBar(); const active=Object.entries(donutState).filter(([k,v])=>v).map(([k,v])=>`${k==='tenureBand'?'Tempo':k==='quartile'?'Quartil':'Posição'}: ${v}`); $('donutStateText').textContent=active.length?active.join(' · '):'Sem seleção ativa';}
 function renderQuartileBar(){const rows=donutData('quartile',QUARTILE_ORDER).map(d=>({quartile:d.key,value:d.value})); verticalBar('chQuartileBar',rows,'quartile',['value'],{dataLabel:true,decimals:0,labels:['Atletas'],activeKey:donutState.quartile,onClick:d=>{donutState.quartile=donutState.quartile===d.quartile?null:d.quartile; renderDonuts(); renderAthleteStrip();},tooltipFn:d=>`<b>${d.quartile}</b><br>${fmtInt(d.value)} atleta(s)`});}
-function renderAthleteStrip(){const arr=rosterForDonut(null); const tile=a=>`<div class="ath-tile" data-ath="${String(a.nickname).replace(/"/g,'&quot;')}"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="this.src='${fallbackPhoto()}'"><div><b>${a.nickname}</b><span>${a.position||'—'} · ${a.quartile||'—'} · ${a.tenureBand||'—'}</span></div></div>`; const tiles=arr.map(tile).join(''); $('athleteStrip').innerHTML=`<div class="marquee-track">${tiles}${tiles}</div>`; $('athleteStrip').querySelectorAll('.ath-tile').forEach(el=>{el.onmousemove=e=>tip(athleteHTML(el.dataset.ath),e);el.onmouseleave=hideTip;});}
+function renderAthleteStrip(){const arr=rosterForDonut(null); const tile=a=>`<div class="ath-tile" data-ath="${String(a.nickname).replace(/"/g,'&quot;')}"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="photoErr(this,'${(a.photoExternal||'').replace(/'/g,"&#39;")}')"><div><b>${a.nickname}</b><span>${a.position||'—'} · ${a.quartile||'—'} · ${a.tenureBand||'—'}</span></div></div>`; const tiles=arr.map(tile).join(''); $('athleteStrip').innerHTML=`<div class="marquee-track">${tiles}${tiles}</div>`; $('athleteStrip').querySelectorAll('.ath-tile').forEach(el=>{el.onmousemove=e=>tip(athleteHTML(el.dataset.ath),e);el.onmouseleave=hideTip;});}
 
 function renderControle(f){const t=filteredTrainings(f), b=filteredBlocks(f); const perf=avg(b.map(x=>x.performance)); const parts=PART_ORDER.map(p=>({label:p,value:avg(b.filter(x=>x.part===p).map(x=>x.performance))})); const effectiveAvg=avg(t.map(x=>x.effectiveMinutes)); kpi('kpisControle',[
   {label:'Nº de treinos',value:fmtInt(t.length),sub:'sessões no filtro atual'},
@@ -485,11 +791,11 @@ function renderPosJogo(f){const gi=filteredGameInd(f), games=filteredGames(f), s
   horizontalBar('chMinPerGA',[...s].filter(x=>x.ga>0).sort((a,b)=>a.minPerGA-b.minPerGA).slice(0,12),'athlete',['minPerGA'],{left:130,dataLabel:true,athleteTooltip:true});
   const nMap=Object.fromEntries(noteSummary({start:filterState.start,end:filterState.end}).map(x=>[x.athlete,x.avg])); scatterChart('chTrainNoteGameMin',s.map(x=>({label:x.athlete,note:nMap[x.athlete]||null,minutes:x.minutes,size:Math.min(8,x.related/2)})).filter(x=>x.note),'note','minutes',{xLabel:'Nota treino',yLabel:'Minutagem jogo',xMin:4,xMax:10,athleteTooltip:true});
   const opp=opportunityRows(s,nMap); renderTable('tblOpportunity',['Atleta','Nota treino','Minutos','% min.','Status'],opp.map(x=>[athleteCell(x.athlete),fmt(x.note),fmtInt(x.minutes),fmt(x.pct,1)+'%',`<span class="status ${x.cls}">${x.status}</span>`])); renderOpportunityStrip(opp);}
-function renderOpportunityStrip(opp){const wanted=['Referência do grupo','Monitorar coerência','Plano de desenvolvimento']; const arr=opp.filter(x=>wanted.includes(x.status)).sort((a,b)=>wanted.indexOf(a.status)-wanted.indexOf(b.status)||b.minutes-a.minutes); const el=$('oppStrip'); if(!el)return; if(!arr.length){el.innerHTML='<div class="empty">Sem atletas classificados nesses status no filtro atual</div>';return} const tile=x=>{const a=athleteObj(x.athlete)||{}; return `<div class="opp-tile"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="this.src='${fallbackPhoto()}'"><div><b>${x.athlete}</b><br><span class="status ${x.cls}">${x.status}</span><br><span>${fmtInt(x.minutes)} min · ${fmt(x.pct,1)}% min.</span></div></div>`}; const tiles=arr.map(tile).join(''); el.innerHTML=`<div class="mini" style="margin:0 0 10px 4px;text-transform:uppercase;letter-spacing:.12em;font-weight:900">Atletas em status de decisão</div><div class="marquee-track">${tiles}${tiles}</div>`;}
+function renderOpportunityStrip(opp){const wanted=['Referência do grupo','Monitorar coerência','Plano de desenvolvimento']; const arr=opp.filter(x=>wanted.includes(x.status)).sort((a,b)=>wanted.indexOf(a.status)-wanted.indexOf(b.status)||b.minutes-a.minutes); const el=$('oppStrip'); if(!el)return; if(!arr.length){el.innerHTML='<div class="empty">Sem atletas classificados nesses status no filtro atual</div>';return} const tile=x=>{const a=athleteObj(x.athlete)||{}; return `<div class="opp-tile"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="photoErr(this,'${(a.photoExternal||'').replace(/'/g,"&#39;")}')"><div><b>${x.athlete}</b><br><span class="status ${x.cls}">${x.status}</span><br><span>${fmtInt(x.minutes)} min · ${fmt(x.pct,1)}% min.</span></div></div>`}; const tiles=arr.map(tile).join(''); el.innerHTML=`<div class="mini" style="margin:0 0 10px 4px;text-transform:uppercase;letter-spacing:.12em;font-weight:900">Atletas em status de decisão</div><div class="marquee-track">${tiles}${tiles}</div>`;}
 function opportunityRows(s,nMap){const avgMin=avg(s.map(x=>x.minutes))||0, avgNote=avg(Object.values(nMap).filter(Boolean))||0; return s.map(x=>{const note=nMap[x.athlete]||0; let status='Equilibrado',cls='neutral'; if(note>=avgNote+.3 && x.minutes<avgMin*.75){status='Merece mais oportunidade';cls='good'} else if(note<avgNote-.3 && x.minutes>avgMin*1.15){status='Monitorar coerência';cls='warn'} else if(note<avgNote-.3 && x.minutes<avgMin*.75){status='Plano de desenvolvimento';cls='bad'} else if(note>=avgNote+.3 && x.minutes>=avgMin*1.15){status='Referência do grupo';cls='good'} return {...x,note,pct:x.pctMinutes,status,cls};}).sort((a,b)=>b.note-a.note);}
 function tenureFull(joined){if(!joined)return 'Sem data de chegada'; let start=new Date(joined+'T00:00:00'), end=new Date(DATA.meta.asOf+'T00:00:00'); if(isNaN(start))return 'Sem data de chegada'; let y=end.getFullYear()-start.getFullYear(), m=end.getMonth()-start.getMonth(), d=end.getDate()-start.getDate(); if(d<0){m--; const prev=new Date(end.getFullYear(),end.getMonth(),0).getDate(); d+=prev;} if(m<0){y--; m+=12;} return `${y} ano(s), ${m} mês(es) e ${d} dia(s)`;}
 function renderCard(){const selected=$('cardAthlete').value || filterState.athlete || DATA.meta.athletes[0]; const a=athleteObj(selected)||DATA.athletes[0]; $('cardAthlete').value=a.nickname; const name=a.nickname; const notes=DATA.notes.filter(x=>x.athlete===name).sort((a,b)=>a.date.localeCompare(b.date)); const gi=DATA.gameInd.filter(x=>x.athlete===name).sort((a,b)=>a.date.localeCompare(b.date)); const games=DATA.games; const gsum=gameSummary(gi,games)[0]||{minutes:0,pctMinutes:0,related:0,titular:0,reserva:0,nao:0,goals:0,assists:0,ga:0,minPerGA:null,avgPerf:null}; const ns=notes.map(x=>x.note); const recent=avg(notes.slice(-5).map(x=>x.note)); const gamePerf=gi.filter(x=>x.performance!=null); const recentGame=avg(gamePerf.slice(-5).map(x=>x.performance)); const trainDates=uniq(notes.map(x=>x.date)); const trainMinutes=sum(trainDates.map(d=>(DATA.trainings.find(t=>t.date===d)||{}).effectiveMinutes||0)); const possibleTrain=sum(DATA.trainings.map(t=>t.effectiveMinutes||0)); const trainingParticipation=pct(trainMinutes,possibleTrain); const nMap=Object.fromEntries(noteSummary({start:DATA.meta.minDate,end:DATA.meta.maxDate}).map(x=>[x.athlete,x.avg])); const opp=opportunityRows(gameSummary(DATA.gameInd,DATA.games),nMap).find(x=>x.athlete===name)||{}; const trendDiff=(recent||0)-(avg(ns)||0); const trendStatus=trendDiff>=.5?'Em evolução':trendDiff<=-.5?'Em queda':'Estável';
-  $('profileBox').innerHTML=`<img class="photo" src="${safePhoto(a)||fallbackPhoto()}" onerror="this.src='${fallbackPhoto()}'"><h2>${a.nickname}</h2><div class="meta">${a.name||''}<br>${a.position||'—'} · ${a.quartile||'—'} · Pé ${a.foot||'—'}<br>Nascimento: ${a.dob||'—'}<br>Chegada: ${a.joined||'—'}<br>Tempo de clube: <b>${tenureFull(a.joined)}</b></div><div class="text-block"><b>Características</b><p>${a.characteristic||'Sem registro.'}</p></div><div class="text-block"><b>Pontos a melhorar</b><p>${a.improvement||'Sem registro.'}</p></div>`;
+  $('profileBox').innerHTML=`<img class="photo" src="${safePhoto(a)||fallbackPhoto()}" onerror="photoErr(this,'${(a.photoExternal||'').replace(/'/g,"&#39;")}')"><h2>${a.nickname}</h2><div class="meta">${a.name||''}<br>${a.position||'—'} · ${a.quartile||'—'} · Pé ${a.foot||'—'}<br>Nascimento: ${a.dob||'—'}<br>Chegada: ${a.joined||'—'}<br>Tempo de clube: <b>${tenureFull(a.joined)}</b></div><div class="text-block"><b>Características</b><p>${a.characteristic||'Sem registro.'}</p></div><div class="text-block"><b>Pontos a melhorar</b><p>${a.improvement||'Sem registro.'}</p></div>`;
   metricCards('kpisCard',[{label:'Nota de treino',value:fmt(avg(ns)),sub:`${notes.length} avaliações`},{label:'Nota últimos 5 treinos',value:fmt(recent),sub:`Δ ${fmt(trendDiff)}`},{label:'Nota de jogo',value:fmt(gsum.avgPerf),sub:`${gamePerf.length} avaliações`},{label:'Nota últimos 5 jogos',value:fmt(recentGame),sub:'desempenho recente'},{label:'Minutagem treino',value:fmtInt(trainMinutes)+' min',sub:`${fmt(trainingParticipation,1)}% da minutagem possível`},{label:'Minutagem jogo',value:fmtInt(gsum.minutes)+' min',sub:`${fmt(gsum.pctMinutes,1)}% da minutagem possível`},{label:'Status oportunidade',value:opp.status||'—',sub:`Nota ref.: ${fmt(opp.note)}`},{label:'Tendência recente',value:trendStatus,sub:`Δ ${fmt(trendDiff)}`}],true);
   const groupByDate=Object.entries(by(DATA.notes,'date')).map(([date,rows])=>({date,grupo:avg(rows.map(x=>x.note)),month:rows[0].month})); const athleteByDate=Object.fromEntries(notes.map(x=>[x.date,x.note])); const sessionData=groupByDate.filter(x=>athleteByDate[x.date]!=null).map(x=>({date:x.date,month:x.month,atleta:athleteByDate[x.date],grupo:x.grupo})).sort((a,b)=>a.date.localeCompare(b.date)); lineChartSessionTicks('chCardEvolution',sessionData,'date',[{key:'atleta',label:a.nickname,color:COLORS[0]},{key:'grupo',label:'Grupo',color:COLORS[3]}],{yMin:3,yMax:10});
   const allS=gameSummary(DATA.gameInd,DATA.games); const groupAvgNote=avg(Object.values(nMap)); const groupAvgMin=avg(allS.map(x=>x.minutes)); const groupAvgGA=avg(allS.map(x=>x.ga)); const groupAvgRelated=avg(allS.map(x=>x.related)); const groupTrainAvg=avg(DATA.athletes.map(at=>{const nd=DATA.notes.filter(n=>n.athlete===at.nickname); return sum(uniq(nd.map(n=>n.date)).map(d=>(DATA.trainings.find(t=>t.date===d)||{}).effectiveMinutes||0));})); const comp=[{metric:'Nota treino',idx:pct(avg(ns),groupAvgNote)},{metric:'Min. jogo',idx:pct(gsum.minutes,groupAvgMin)},{metric:'G+A',idx:pct(gsum.ga,groupAvgGA)},{metric:'Relacionamentos',idx:pct(gsum.related,groupAvgRelated)},{metric:'Min. treino',idx:pct(trainMinutes,groupTrainAvg)}]; comparisonIndexBar('chCardCompare',comp);
