@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Preenchimento · Sistema do treinador</title>
+<style>
+:root{
+  --bg:#05070c; --panel:#0a101c; --panel2:#0f1726; --card:#101827dd; --stroke:#253047; --stroke2:#1b2538;
+  --text:#edf4ff; --muted:#8fa1bd; --soft:#b8c8df; --cyan:#22d3ee; --blue:#60a5fa; --green:#32d583; --yellow:#fdb022; --red:#f97066;
+  --radius:18px;
+}
+body.light{
+  --bg:#f3f7fb; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffffee; --stroke:#cbd7e6; --stroke2:#d9e3ef;
+  --text:#0b1220; --muted:#526276; --soft:#314156;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+h1,h2,h3{margin:0}
+input,select,textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:12px;color:var(--text);padding:10px 11px;font-size:14px;font-family:inherit}
+body.light input,body.light select,body.light textarea{background:#fff}
+textarea{resize:vertical;min-height:64px}
+label{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin:0 0 6px}
+.field{margin-bottom:14px}
+.btn{border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.055);color:var(--text);padding:11px 16px;cursor:pointer;font-weight:800;font-size:14px}
+.btn.primary{background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;border:0}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;border-bottom:1px solid var(--stroke2);background:linear-gradient(180deg,rgba(10,15,25,.92),rgba(10,15,25,.82));backdrop-filter:blur(10px)}
+body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(242,247,253,.82))}
+.topbar h1{font-size:17px;font-weight:900}
+.topbar .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.wrap{max-width:900px;margin:0 auto;padding:20px 18px 80px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.tabs button{border:1px solid var(--stroke);border-radius:999px;background:rgba(255,255,255,.045);color:var(--muted);padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer}
+.tabs button.active{background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;border-color:transparent}
+.card{border:1px solid var(--stroke);border-radius:var(--radius);background:linear-gradient(180deg,rgba(16,24,39,.7),rgba(10,16,28,.6));padding:20px;margin-bottom:16px}
+body.light .card{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,250,255,.92))}
+.card h2{font-size:16px;margin-bottom:4px}
+.card .hint{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.part-title{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);margin:22px 0 12px;padding-top:14px;border-top:1px solid var(--stroke2)}
+.part-title:first-of-type{border-top:0;padding-top:0;margin-top:4px}
+table.roster{width:100%;border-collapse:collapse;font-size:13px}
+table.roster th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--stroke2);white-space:nowrap}
+table.roster td{padding:6px 8px;border-bottom:1px solid var(--stroke2);vertical-align:middle}
+table.roster input,table.roster select{padding:7px 8px;font-size:13px;min-width:64px}
+table.roster .name-cell{font-weight:800;white-space:nowrap;min-width:120px}
+.roster-scroll{overflow-x:auto;margin:0 -4px;padding:0 4px}
+.msg{border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;margin-bottom:14px}
+.msg.ok{background:rgba(50,213,131,.12);border:1px solid rgba(50,213,131,.4);color:#32d583}
+.msg.err{background:rgba(249,112,102,.12);border:1px solid rgba(249,112,102,.4);color:#f97066}
+.msg.warn{background:rgba(253,176,34,.12);border:1px solid rgba(253,176,34,.4);color:#fdb022}
+.gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.gate-box{width:min(340px,90vw);text-align:center}
+.gate-box h2{margin-bottom:6px}
+.gate-box p{color:var(--muted);font-size:13px;margin:0 0 18px}
+.theme-toggle{position:fixed;left:16px;bottom:16px;z-index:50;border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.06);color:var(--text);padding:9px 12px;font-weight:800;cursor:pointer;font-size:12px}
+.bulk-actions{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.foot-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <h2>Área de preenchimento</h2>
+    <p>Senha do treinador</p>
+    <div class="field"><input type="password" id="gatePassword" autocomplete="current-password" /></div>
+    <button class="btn primary" id="gateBtn" style="width:100%">Entrar</button>
+    <div id="gateMsg" style="margin-top:10px;font-size:12.5px;color:var(--red)"></div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div>
+    <h1>Preenchimento da planilha</h1>
+    <div class="sub">Sistema do treinador · Sub-10</div>
+  </div>
+  <a class="btn" href="./index.html">Ver dashboard</a>
+</div>
+
+<div class="wrap">
+  <div id="setupWarning"></div>
+
+  <div class="tabs" id="tabs">
+    <button data-tab="atleta" class="active">Novo atleta</button>
+    <button data-tab="treino">Treino</button>
+    <button data-tab="avaliacao">Avaliação individual</button>
+    <button data-tab="posjogo">Pós-jogo</button>
+    <button data-tab="posjogoind">Pós-jogo individual</button>
+  </div>
+
+  <div id="panels"></div>
+</div>
+
+<button class="theme-toggle" id="themeToggle">☀️ Modo claro</button>
+
+<script>
+// =====================================================================
+// CONFIGURAÇÃO — preencha depois de implantar o Apps Script (veja
+// apps-script.gs neste mesmo repositório para as instruções de instalação).
+// =====================================================================
+const SCRIPT_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+// Hash SHA-256 da senha de acesso a esta página (não é a senha em texto puro).
+// Para trocar a senha: gere um novo hash (ex.: no console do navegador rode
+// `crypto.subtle.digest('SHA-256', new TextEncoder().encode('sua-senha')).then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))`)
+// e cole o resultado abaixo.
+const PASSWORD_HASH = '4d4f5a5396cf10094e055d1df2d4d6b09d36e5f1d9552b810c0260e2c5c4b282'; // senha padrão: sub10cruzeiro
+
+const QUARTIS = ['Q1','Q2','Q3','Q4'];
+const POSICOES = ['Goleiro','Lateral','Defensor','Meia','Atacante'];
+const PES = ['Direito','Esquerdo','Ambidestro'];
+const TASK_ORDER = ['Analítico','Situacional','Conceitual','Conceitual em ambiente específico','Jogo formal'];
+const COMPLEX_ORDER = ['Baixa','Média','Alta'];
+const LOCAIS = ['Casa','Fora'];
+const PERIODOS = ['Manhã','Tarde','Noite'];
+const RANKS = ['A','B','C'];
+const TITULARIDADES = ['Não-relacionado','Titular','Reserva'];
+
+let ROSTER = [];
+let DATALISTS = { contents: [], contentTypes: [], opponents: [], competitions: [], platforms: [] };
+
+function $(id){ return document.getElementById(id); }
+function opts(arr){ return arr.map(v=>`<option value="${v}">${v}</option>`).join(''); }
+function todayIso(){ return new Date().toISOString().slice(0,10); }
+function isoToDDMMYYYY(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+
+async function sha256Hex(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkGate(){
+  const pass = $('gatePassword').value;
+  if(PASSWORD_HASH === 'TROQUE_ESTE_HASH'){
+    $('gateMsg').textContent = 'Senha ainda não configurada em entrada.html (PASSWORD_HASH).';
+    return;
+  }
+  const hash = await sha256Hex(pass);
+  if(hash === PASSWORD_HASH){
+    sessionStorage.setItem('entradaAuth','1');
+    $('gate').style.display='none';
+  } else {
+    $('gateMsg').textContent = 'Senha incorreta.';
+  }
+}
+
+function initGate(){
+  if(sessionStorage.getItem('entradaAuth')==='1'){ $('gate').style.display='none'; }
+  $('gateBtn').onclick = checkGate;
+  $('gatePassword').addEventListener('keydown', e=>{ if(e.key==='Enter') checkGate(); });
+}
+
+async function fetchRosterAndLists(){
+  const warn = [];
+  if(SCRIPT_URL.indexOf('COLE_AQUI') === 0 || !SCRIPT_URL){
+    warn.push('A URL do Apps Script ainda não foi configurada (SCRIPT_URL) — os formulários não conseguem enviar dados ainda.');
+  } else {
+    try{
+      const res = await fetch(SCRIPT_URL, {cache:'no-store'});
+      const json = await res.json();
+      if(json.ok) ROSTER = json.athletes || [];
+      else warn.push('Erro ao buscar lista de atletas: ' + json.error);
+    }catch(e){
+      warn.push('Não foi possível buscar a lista de atletas ao vivo. Confira a URL do Apps Script e o compartilhamento.');
+    }
+  }
+  try{
+    const d = await (await fetch('./data.json',{cache:'no-store'})).json();
+    if(!ROSTER.length) ROSTER = (d.athletes||[]).map(a=>({nome:a.name,apelido:a.nickname,posicao:a.position,quartil:a.quartile}));
+    DATALISTS.contents = (d.meta && d.meta.contents) || [];
+    DATALISTS.contentTypes = [...new Set((d.blocks||[]).map(b=>b.contentType).filter(Boolean))].sort();
+    DATALISTS.opponents = [...new Set((d.games||[]).map(g=>g.opponent).filter(Boolean))].sort();
+    DATALISTS.competitions = (d.meta && d.meta.competitions) || [];
+    DATALISTS.platforms = [...new Set((d.games||[]).map(g=>g.platform).filter(Boolean))].sort();
+  }catch(e){ /* segue sem sugestões, formulário ainda funciona */ }
+
+  if(warn.length){
+    $('setupWarning').innerHTML = warn.map(w=>`<div class="msg warn">${w}</div>`).join('');
+  }
+  renderDatalists();
+}
+
+async function loadRosterAndLists(){
+  await fetchRosterAndLists();
+  renderAllPanels();
+}
+
+async function refreshRoster(){
+  await fetchRosterAndLists();
+  refreshRosterDependentPanels();
+}
+
+function renderDatalists(){
+  const dl = (id, arr) => `<datalist id="${id}">${arr.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('')}</datalist>`;
+  let el = document.getElementById('datalistsHost');
+  if(!el){ el = document.createElement('div'); el.id = 'datalistsHost'; document.body.appendChild(el); }
+  el.innerHTML = dl('dlContents',DATALISTS.contents) + dl('dlContentTypes',DATALISTS.contentTypes) +
+    dl('dlOpponents',DATALISTS.opponents) + dl('dlCompetitions',DATALISTS.competitions) + dl('dlPlatforms',DATALISTS.platforms);
+}
+
+async function sendToScript(payload){
+  if(SCRIPT_URL.indexOf('COLE_AQUI') === 0 || !SCRIPT_URL){
+    return {ok:false, error:'URL do Apps Script não configurada em entrada.html.'};
+  }
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload),
+    });
+    return await res.json();
+  }catch(e){
+    return {ok:false, error:String(e)};
+  }
+}
+
+function showMsg(container, ok, text){
+  container.innerHTML = `<div class="msg ${ok?'ok':'err'}">${text}</div>`;
+  if(ok) setTimeout(()=>{ if(container.firstChild) container.innerHTML=''; }, 6000);
+}
+
+// ---------- Painel: Novo atleta ----------
+function panelAtleta(){
+  return `<div class="card">
+    <h2>Cadastro de novo atleta</h2>
+    <div class="hint">Preenche a linha em "Banco de atletas". O ID do atleta é gerado automaticamente. Foto continua sendo enviada à parte pelo GitHub.</div>
+    <div id="msgAtleta"></div>
+    <div class="grid2">
+      <div class="field"><label>Nome completo</label><input id="a_nome" required></div>
+      <div class="field"><label>Apelido</label><input id="a_apelido" required></div>
+      <div class="field"><label>Data de nascimento</label><input type="date" id="a_dob"></div>
+      <div class="field"><label>Chegada ao clube</label><input type="date" id="a_joined" value="${todayIso()}"></div>
+      <div class="field"><label>Quartil</label><select id="a_quartil"><option value="">—</option>${opts(QUARTIS)}</select></div>
+      <div class="field"><label>Posição</label><select id="a_posicao"><option value="">—</option>${opts(POSICOES)}</select></div>
+      <div class="field"><label>Pé dominante</label><select id="a_pe"><option value="">—</option>${opts(PES)}</select></div>
+      <div class="field"><label>Categoria</label><input id="a_categoria" value="Sub-10"></div>
+    </div>
+    <div class="field"><label>Link da foto (opcional, se ainda não subiu o arquivo)</label><input id="a_foto"></div>
+    <div class="field"><label>Características</label><textarea id="a_carac"></textarea></div>
+    <div class="field"><label>Pontos a melhorar</label><textarea id="a_melhorar"></textarea></div>
+    <div class="foot-actions"><button class="btn primary" id="btnAtleta">Salvar atleta</button></div>
+  </div>`;
+}
+function wireAtleta(){
+  $('btnAtleta').onclick = async () => {
+    const nome = $('a_nome').value.trim(), apelido = $('a_apelido').value.trim();
+    const msg = $('msgAtleta');
+    if(!nome || !apelido){ showMsg(msg,false,'Preencha nome e apelido.'); return; }
+    $('btnAtleta').disabled = true;
+    const r = await sendToScript({action:'addAthlete', data:{
+      nome, apelido, dataNascimento:$('a_dob').value, chegadaAoClube:$('a_joined').value,
+      quartil:$('a_quartil').value, posicao:$('a_posicao').value, peDominante:$('a_pe').value,
+      categoria:$('a_categoria').value, linkFoto:$('a_foto').value, caracteristica:$('a_carac').value,
+      pontosAMelhorar:$('a_melhorar').value,
+    }});
+    $('btnAtleta').disabled = false;
+    if(r.ok){
+      showMsg(msg,true,`Atleta salvo (ID ${r.result.id}). Lista de atletas atualizada nas outras abas.`);
+      ['a_nome','a_apelido','a_carac','a_melhorar','a_foto'].forEach(id=>$(id).value='');
+      refreshRoster();
+    } else showMsg(msg,false,'Erro: '+r.error);
+  };
+}
+
+// ---------- Painel: Treino ----------
+function partSection(suf, label){
+  const isConexao = suf==='conexao';
+  return `<div class="part-title">Parte ${label}</div>
+    <div class="grid3">
+      ${isConexao ? `
+      <div class="field"><label>Relação numérica</label><input id="t_${suf}_relacao" placeholder="ex.: 5 vs 5"></div>
+      ` : `
+      <div class="field"><label>Conteúdo principal</label><input id="t_${suf}_prin" list="dlContents"></div>
+      <div class="field"><label>Conteúdo secundário</label><input id="t_${suf}_sec" list="dlContents"></div>
+      <div class="field"><label>Conteúdo concorrente</label><input id="t_${suf}_conc" list="dlContents"></div>
+      <div class="field"><label>Tipo de conteúdo</label><input id="t_${suf}_tipo" list="dlContentTypes"></div>
+      `}
+      <div class="field"><label>Tipo de tarefa</label><select id="t_${suf}_tarefa"><option value="">—</option>${opts(TASK_ORDER)}</select></div>
+      <div class="field"><label>Complexidade</label><select id="t_${suf}_complex"><option value="">—</option>${opts(COMPLEX_ORDER)}</select></div>
+      <div class="field"><label>Minutagem (min)</label><input type="number" min="0" id="t_${suf}_min"></div>
+      <div class="field"><label>Jogadores ativos</label><input type="number" min="0" id="t_${suf}_ativos"></div>
+      <div class="field"><label>Desempenho (0 a 10)</label><input type="number" min="0" max="10" step="0.5" id="t_${suf}_desemp"></div>
+    </div>`;
+}
+function panelTreino(){
+  return `<div class="card">
+    <h2>Sessão de treino</h2>
+    <div class="hint">Preenche uma linha em "Banco de treinos". As colunas calculadas (TAA, % de minutagem etc.) são preenchidas automaticamente pela planilha.</div>
+    <div id="msgTreino"></div>
+    <div class="grid3">
+      <div class="field"><label>Data</label><input type="date" id="t_data" value="${todayIso()}"></div>
+      <div class="field"><label>Categoria</label><input id="t_categoria" value="Sub-10"></div>
+      <div class="field"><label>ID da sessão (opcional)</label><input id="t_sessao"></div>
+      <div class="field"><label>Nota geral da sessão (0 a 10)</label><input type="number" min="0" max="10" step="0.5" id="t_nota"></div>
+      <div class="field"><label>Nº de atletas presentes</label><input type="number" min="0" id="t_numatletas"></div>
+      <div class="field"><label>Atletas em avaliação</label><input type="number" min="0" id="t_avaliacao"></div>
+    </div>
+    <div class="field"><label>Observações</label><textarea id="t_obs"></textarea></div>
+    ${partSection('preparatoria','preparatória')}
+    ${partSection('conceitual','conceitual')}
+    ${partSection('conexao','de conexão com o jogo')}
+    <div class="foot-actions"><button class="btn primary" id="btnTreino">Salvar treino</button></div>
+  </div>`;
+}
+function wireTreino(){
+  $('btnTreino').onclick = async () => {
+    const msg = $('msgTreino');
+    if(!$('t_data').value){ showMsg(msg,false,'Preencha a data.'); return; }
+    const num = id => { const v=$(id).value; return v===''?null:Number(v); };
+    const txt = id => $(id).value || null;
+    const part = suf => ({
+      conteudoPrincipal: txt(`t_${suf}_prin`), conteudoSecundario: txt(`t_${suf}_sec`), conteudoConcorrente: txt(`t_${suf}_conc`),
+      tipoConteudo: txt(`t_${suf}_tipo`), tipoTarefa: txt(`t_${suf}_tarefa`), complexidade: txt(`t_${suf}_complex`),
+      minutagem: num(`t_${suf}_min`), jogadoresAtivos: num(`t_${suf}_ativos`), desempenho: num(`t_${suf}_desemp`),
+    });
+    $('btnTreino').disabled = true;
+    const r = await sendToScript({action:'addTraining', data:{
+      data:$('t_data').value, categoria:$('t_categoria').value, idSessao:txt('t_sessao'),
+      notaGeral:num('t_nota'), numAtletas:num('t_numatletas'), atletasAvaliacao:num('t_avaliacao'),
+      observacoes:txt('t_obs'),
+      preparatoria: part('preparatoria'), conceitual: part('conceitual'),
+      conexao: { relacaoNumerica: txt('t_conexao_relacao'), tipoTarefa: txt('t_conexao_tarefa'),
+        complexidade: txt('t_conexao_complex'), minutagem: num('t_conexao_min'),
+        jogadoresAtivos: num('t_conexao_ativos'), desempenho: num('t_conexao_desemp') },
+    }});
+    $('btnTreino').disabled = false;
+    if(r.ok) showMsg(msg,true,'Treino salvo com sucesso.');
+    else showMsg(msg,false,'Erro: '+r.error);
+  };
+}
+
+// ---------- Painel: Avaliação individual ----------
+function panelAvaliacao(){
+  const rows = ROSTER.map(a=>`<tr>
+    <td class="name-cell">${a.apelido}</td>
+    <td>${a.posicao||'—'}</td>
+    <td><input type="number" min="0" max="10" step="0.5" data-nick="${a.apelido}" class="av-nota"></td>
+  </tr>`).join('');
+  return `<div class="card">
+    <h2>Avaliação individual do treino</h2>
+    <div class="hint">Escolha a data do treino e preencha a nota (0 a 10) de quem participou. Deixe em branco quem não treinou — é assim que o sistema identifica ausência.</div>
+    <div id="msgAvaliacao"></div>
+    <div class="field" style="max-width:220px"><label>Data do treino</label><input type="date" id="av_data" value="${todayIso()}"></div>
+    <div class="bulk-actions">
+      <button class="btn" id="avClear">Limpar todas as notas</button>
+    </div>
+    ${!ROSTER.length ? '<div class="msg warn">Lista de atletas vazia — confira a configuração do Apps Script.</div>' : `
+    <div class="roster-scroll"><table class="roster">
+      <thead><tr><th>Atleta</th><th>Posição</th><th>Nota</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`}
+    <div class="foot-actions"><button class="btn primary" id="btnAvaliacao">Salvar avaliações</button></div>
+  </div>`;
+}
+function wireAvaliacao(){
+  const clearBtn = $('avClear');
+  if(clearBtn) clearBtn.onclick = () => document.querySelectorAll('.av-nota').forEach(i=>i.value='');
+  $('btnAvaliacao').onclick = async () => {
+    const msg = $('msgAvaliacao');
+    if(!$('av_data').value){ showMsg(msg,false,'Escolha a data.'); return; }
+    const entries = [...document.querySelectorAll('.av-nota')]
+      .map(i=>({apelido:i.dataset.nick, nota:i.value===''?null:Number(i.value)}))
+      .filter(e=>e.nota!==null);
+    if(!entries.length){ showMsg(msg,false,'Preencha ao menos uma nota.'); return; }
+    $('btnAvaliacao').disabled = true;
+    const r = await sendToScript({action:'addAvaliacoes', date:isoToDDMMYYYY($('av_data').value), entries});
+    $('btnAvaliacao').disabled = false;
+    if(r.ok) showMsg(msg,true,`${r.result.written} nota(s) salva(s).`);
+    else showMsg(msg,false,'Erro: '+r.error);
+  };
+}
+
+// ---------- Painel: Pós-jogo ----------
+function panelPosJogo(){
+  return `<div class="card">
+    <h2>Pós-jogo</h2>
+    <div class="hint">Preenche uma linha em "Pós-jogo". Nº do jogo, saldo e resultado são calculados automaticamente.</div>
+    <div id="msgPosJogo"></div>
+    <div class="grid3">
+      <div class="field"><label>Data</label><input type="date" id="g_data" value="${todayIso()}"></div>
+      <div class="field"><label>Categoria</label><input id="g_categoria" value="Sub-10"></div>
+      <div class="field"><label>Adversário</label><input id="g_adversario" list="dlOpponents"></div>
+      <div class="field"><label>Ranking do adversário</label><select id="g_ranking"><option value="">—</option>${opts(RANKS)}</select></div>
+      <div class="field"><label>Categoria do adversário</label><input id="g_catadv"></div>
+      <div class="field"><label>Competição</label><input id="g_competicao" list="dlCompetitions"></div>
+      <div class="field"><label>Local</label><select id="g_local"><option value="">—</option>${opts(LOCAIS)}</select></div>
+      <div class="field"><label>Cidade</label><input id="g_cidade"></div>
+      <div class="field"><label>Período</label><select id="g_periodo"><option value="">—</option>${opts(PERIODOS)}</select></div>
+      <div class="field"><label>Formato</label><input id="g_formato" placeholder="ex.: 9x9"></div>
+      <div class="field"><label>Plataforma (formação)</label><input id="g_plataforma" list="dlPlatforms"></div>
+      <div class="field"><label>Treinador</label><input id="g_treinador" value="Pedro"></div>
+      <div class="field"><label>Capitão</label><input id="g_capitao" list="dlCapitaes"></div>
+      <div class="field"><label>Minutagem total</label><input type="number" min="0" id="g_minutagem"></div>
+      <div class="field"><label>Gols feitos</label><input type="number" min="0" id="g_golsfeitos"></div>
+      <div class="field"><label>Gols sofridos</label><input type="number" min="0" id="g_golssofridos"></div>
+      <div class="field"><label>Cartões amarelos (equipe)</label><input type="number" min="0" id="g_ca"></div>
+      <div class="field"><label>Cartões vermelhos (equipe)</label><input type="number" min="0" id="g_cv"></div>
+      <div class="field"><label>Desempenho (0 a 10)</label><input type="number" min="0" max="10" step="0.5" id="g_desempenho"></div>
+    </div>
+    <div class="field"><label>Comentários gerais</label><textarea id="g_comentarios"></textarea></div>
+    <div class="grid2">
+      <div class="field"><label>Pontos positivos</label><textarea id="g_positivos"></textarea></div>
+      <div class="field"><label>Pontos negativos</label><textarea id="g_negativos"></textarea></div>
+    </div>
+    <div class="foot-actions"><button class="btn primary" id="btnPosJogo">Salvar jogo</button></div>
+  </div>`;
+}
+function wirePosJogo(){
+  $('btnPosJogo').onclick = async () => {
+    const msg = $('msgPosJogo');
+    if(!$('g_data').value || !$('g_adversario').value){ showMsg(msg,false,'Preencha ao menos data e adversário.'); return; }
+    const num = id => { const v=$(id).value; return v===''?null:Number(v); };
+    const txt = id => $(id).value || null;
+    $('btnPosJogo').disabled = true;
+    const r = await sendToScript({action:'addGame', data:{
+      data:$('g_data').value, categoria:$('g_categoria').value, adversario:$('g_adversario').value,
+      ranking:txt('g_ranking'), categoriaAdversario:txt('g_catadv'), competicao:txt('g_competicao'),
+      local:txt('g_local'), cidade:txt('g_cidade'), periodo:txt('g_periodo'), formato:txt('g_formato'),
+      plataforma:txt('g_plataforma'), treinador:txt('g_treinador'), capitao:txt('g_capitao'),
+      minutagem:num('g_minutagem'), golsFeitos:num('g_golsfeitos'), golsSofridos:num('g_golssofridos'),
+      cartaoAmarelo:num('g_ca'), cartaoVermelho:num('g_cv'), desempenho:num('g_desempenho'),
+      comentariosGerais:txt('g_comentarios'), pontosPositivos:txt('g_positivos'), pontosNegativos:txt('g_negativos'),
+    }});
+    $('btnPosJogo').disabled = false;
+    if(r.ok) showMsg(msg,true,`Jogo Nº ${r.result.gameNo} salvo com sucesso.`);
+    else showMsg(msg,false,'Erro: '+r.error);
+  };
+}
+
+// ---------- Painel: Pós-jogo individual ----------
+function panelPosJogoInd(){
+  const rows = ROSTER.map(a=>`<tr>
+    <td class="name-cell">${a.apelido}</td>
+    <td><select class="pi-tit" data-nick="${a.apelido}">${opts(TITULARIDADES)}</select></td>
+    <td><input type="text" class="pi-pos" data-nick="${a.apelido}" value="${a.posicao||''}"></td>
+    <td><input type="number" min="0" class="pi-min" data-nick="${a.apelido}" value="0"></td>
+    <td><input type="number" min="0" max="10" step="0.5" class="pi-desemp" data-nick="${a.apelido}"></td>
+    <td><input type="number" min="0" class="pi-gf" data-nick="${a.apelido}" value="0"></td>
+    <td><input type="number" min="0" class="pi-gs" data-nick="${a.apelido}" value="0"></td>
+    <td><input type="number" min="0" class="pi-as" data-nick="${a.apelido}" value="0"></td>
+    <td><input type="number" min="0" class="pi-ca" data-nick="${a.apelido}" value="0"></td>
+    <td><input type="number" min="0" class="pi-cv" data-nick="${a.apelido}" value="0"></td>
+    <td><input type="text" class="pi-com" data-nick="${a.apelido}" style="min-width:140px"></td>
+  </tr>`).join('');
+  return `<div class="card">
+    <h2>Pós-jogo individual</h2>
+    <div class="hint">Todos começam como "Não-relacionado". Mude a titularidade só de quem jogou e preencha os números dele.</div>
+    <div id="msgPosJogoInd"></div>
+    <div class="grid3">
+      <div class="field"><label>Nº do jogo</label><input type="number" min="1" id="pi_numero" placeholder="deixe em branco pra numerar automático"></div>
+      <div class="field"><label>Data</label><input type="date" id="pi_data" value="${todayIso()}"></div>
+      <div class="field"><label>Categoria</label><input id="pi_categoria" value="Sub-10"></div>
+    </div>
+    ${!ROSTER.length ? '<div class="msg warn">Lista de atletas vazia — confira a configuração do Apps Script.</div>' : `
+    <div class="roster-scroll"><table class="roster">
+      <thead><tr><th>Atleta</th><th>Titularidade</th><th>Posição</th><th>Min.</th><th>Desemp.</th><th>Gols</th><th>Sofridos</th><th>Assist.</th><th>CA</th><th>CV</th><th>Comentários</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`}
+    <div class="foot-actions"><button class="btn primary" id="btnPosJogoInd">Salvar pós-jogo individual</button></div>
+  </div>`;
+}
+function wirePosJogoInd(){
+  $('btnPosJogoInd').onclick = async () => {
+    const msg = $('msgPosJogoInd');
+    if(!$('pi_data').value){ showMsg(msg,false,'Preencha a data.'); return; }
+    const val = (cls,nick) => { const el=document.querySelector(`.${cls}[data-nick="${CSS.escape(nick)}"]`); return el?el.value:''; };
+    const num = v => v===''?0:Number(v);
+    const entries = ROSTER.map(a=>({
+      apelido:a.apelido, titularidade: val('pi-tit',a.apelido), posicao: val('pi-pos',a.apelido) || null,
+      minutagem: num(val('pi-min',a.apelido)), desempenho: val('pi-desemp',a.apelido)===''?null:Number(val('pi-desemp',a.apelido)),
+      golsFeitos: num(val('pi-gf',a.apelido)), golsSofridos: num(val('pi-gs',a.apelido)), assistencias: num(val('pi-as',a.apelido)),
+      cartaoAmarelo: num(val('pi-ca',a.apelido)), cartaoVermelho: num(val('pi-cv',a.apelido)),
+      comentarios: val('pi-com',a.apelido) || null,
+    }));
+    $('btnPosJogoInd').disabled = true;
+    const r = await sendToScript({action:'addGameInd',
+      gameNo: $('pi_numero').value ? Number($('pi_numero').value) : null,
+      date: $('pi_data').value, category: $('pi_categoria').value, entries});
+    $('btnPosJogoInd').disabled = false;
+    if(r.ok) showMsg(msg,true,`${r.result.rows} linha(s) salva(s).`);
+    else showMsg(msg,false,'Erro: '+r.error);
+  };
+}
+
+const PANELS = {
+  atleta: {render: panelAtleta, wire: wireAtleta},
+  treino: {render: panelTreino, wire: wireTreino},
+  avaliacao: {render: panelAvaliacao, wire: wireAvaliacao},
+  posjogo: {render: panelPosJogo, wire: wirePosJogo},
+  posjogoind: {render: panelPosJogoInd, wire: wirePosJogoInd},
+};
+let activeTab = 'atleta';
+
+function renderPanel(key){
+  const p = document.getElementById(`panel-${key}`);
+  if(!p) return;
+  p.innerHTML = PANELS[key].render();
+  PANELS[key].wire();
+}
+
+function renderAllPanels(){
+  $('panels').innerHTML = Object.keys(PANELS).map(k=>`<div class="panel" id="panel-${k}" style="display:${k===activeTab?'block':'none'}"></div>`).join('');
+  Object.keys(PANELS).forEach(renderPanel);
+}
+
+// Depois de cadastrar um atleta no meio do preenchimento de outra aba, só
+// atualiza as duas telas que dependem da lista de atletas (avaliação e
+// pós-jogo individual) — as outras abas mantêm o que já estava digitado.
+function refreshRosterDependentPanels(){
+  renderPanel('avaliacao');
+  renderPanel('posjogoind');
+}
+
+function initTabs(){
+  document.querySelectorAll('#tabs button').forEach(btn=>{
+    btn.onclick = () => {
+      activeTab = btn.dataset.tab;
+      document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b===btn));
+      document.querySelectorAll('.panel').forEach(p=>p.style.display = p.id==='panel-'+activeTab ? 'block':'none');
+    };
+  });
+}
+
+function initTheme(){
+  const btn = $('themeToggle');
+  btn.onclick = () => {
+    document.body.classList.toggle('light');
+    btn.textContent = document.body.classList.contains('light') ? '🌙 Modo escuro' : '☀️ Modo claro';
+  };
+}
+
+initGate();
+initTabs();
+initTheme();
+loadRosterAndLists();
+</script>
+</body>
+</html>

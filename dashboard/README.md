@@ -8,26 +8,43 @@ tarefa de treino, Avaliação do treino, Princípios pedagógicos).
 ## Como funciona hoje
 
 ```
-sistema.xlsx  --(build_data.py)-->  data.json  --(fetch)-->  index.html
+Google Sheets --(fetch CSV ao vivo)--> index.html   [fonte principal]
+sistema.xlsx  --(build_data.py)-->     data.json     [fallback]
 ```
 
-`index.html` não tem nenhum dado embutido: ao abrir, ele busca `./data.json`
-(mesma pasta) e renderiza tudo em cima disso. Para atualizar o dashboard com
-dados novos:
+`index.html` busca as 5 abas da planilha do Google Sheets direto no navegador
+(sem backend) e monta os dados na hora. Se isso falhar por qualquer motivo
+(sem internet, aba renomeada, permissão de compartilhamento), ele cai
+automaticamente para o `./data.json` local, gerado a partir de um xlsx antigo
+— então o site nunca fica fora do ar, mas os dados podem ficar desatualizados
+até o problema com o Sheets ser resolvido.
+
+Pra regenerar o `data.json` de fallback a partir de um xlsx mais novo:
 
 ```bash
 python3 build_data.py /caminho/para/Sistema_de_gestao.xlsx data.json
 ```
 
-e recarregar a página (ou fazer commit/push de `data.json` se estiver hospedado
-no GitHub Pages).
+## Preenchimento da planilha (`entrada.html`)
 
-**Isso ainda não é "editar a planilha atualiza o site" automaticamente.**
-Esse é o próximo passo pendente: migrar a fonte de dados para Google Sheets e
-trocar o `fetch('./data.json')` em `index.html` por um fetch direto do Sheets
-publicado como CSV (ou da Visualization API). A estrutura já foi desenhada
-para essa troca ser pontual — só a função de carregamento muda, nada do resto
-do dashboard.
+Página separada (mesma pasta, `dashboard/entrada.html`) com formulários pra
+cadastrar atletas e lançar treinos/jogos sem precisar editar a planilha
+diretamente — pensada pro preenchimento do dia a dia em campo, principalmente
+pelo celular. Escreve na planilha através de um script do Google Apps Script
+(`apps-script.gs`, colado dentro da própria planilha — veja o cabeçalho desse
+arquivo pras instruções de instalação).
+
+Duas configurações precisam ser preenchidas em `entrada.html` antes de
+funcionar:
+- `SCRIPT_URL`: a URL do Apps Script implantado (veja `apps-script.gs`).
+- `PASSWORD_HASH`: hash SHA-256 da senha de acesso à página (senha padrão
+  atual: `sub10cruzeiro` — troque assim que possível, veja o comentário no
+  arquivo pra gerar um novo hash).
+
+Essa senha é uma barreira simples contra acesso casual, não segurança de
+verdade (fica visível em quem souber ler o código-fonte da página). Proteção
+real fica pendente da migração de hospedagem pra Cloudflare Pages + Access
+(ver pendências abaixo).
 
 ## Fotos dos atletas
 
@@ -50,12 +67,11 @@ imagem direta (Henrique Lemes) — esses precisam de foto manual em
 
 ## Pendências conhecidas (decididas na conversa, ainda não implementadas)
 
-- **Google Sheets como fonte viva** — decidido, não feito. Precisa da planilha
-  criada/compartilhada para eu trocar o loader.
-- **Autenticação (login/senha)** — não é urgente, mas o hosting via GitHub
-  Pages por si só não tem isso; se for necessário antes de ter tempo para uma
-  auth de verdade, dá para colocar o repositório como privado ou um gate
-  simples na frente.
+- **Autenticação de verdade** — hoje o site (dashboard e entrada.html) é
+  público/protegido só por uma senha client-side fraca. Migração planejada
+  pra Cloudflare Pages + Cloudflare Access (login por e-mail, gratuito).
+- **Versão mobile do dashboard** — hoje o `index.html` quebra em telas de
+  celular (foi desenhado pra desktop). `entrada.html` já nasceu responsivo.
 - **Multi-clube / multi-categoria** — o schema já carrega `categoria` em
   atletas/treinos/jogos, mas o dashboard ainda assume uma única base
   (`data.json`). Quando for expandir para outros clubes, cada um vira sua
