@@ -293,6 +293,15 @@ function g(row,colmap,name){
   const v=row[idx];
   return (v===''||v===undefined)?null:v;
 }
+// Algumas exportações ao vivo do Sheets (gviz) vêm com o cabeçalho da 1ª
+// coluna em branco (célula mesclada com o título da seção acima). Nessas
+// planilhas a 1ª coluna é sempre o campo-chave da linha (Data / Nº Jogo /
+// Nome), então cai para a posição 0 quando o nome do cabeçalho não é achado.
+function gGate(row,colmap,name,fallbackIdx=0){
+  if(colmap[name]!==undefined) return g(row,colmap,name);
+  const v=row[fallbackIdx];
+  return (v===''||v===undefined)?null:v;
+}
 function csvNum(v){
   if(v===null||v===undefined||v==='') return null;
   const n=Number(v); return isNaN(n)?null:n;
@@ -334,6 +343,15 @@ function monthsBetweenIso(startIso,endIso){
   const [ey,em,ed]=endIso.split('-').map(Number);
   return (ey-sy)*12+(em-sm)-(ed<sd?1:0);
 }
+// Mapas de posição-canônica por aba: usados como fallback quando o rótulo do
+// cabeçalho vem em branco na exportação ao vivo (visto em produção: a planilha
+// real perdeu o texto de vários cabeçalhos de colunas numéricas em "Banco de
+// treinos", mas a ordem das colunas continua estável). Ordem tirada dos CSVs
+// de referência já validados.
+const ATLETAS_COL_FALLBACK={'Nome':0,'Apelido':1,'ID atleta':2,'Data de Nascimento':3,'Quartil':4,'Posição':5,'Pé dominante':6,'Chegada ao clube':7,'Categoria':8,'Link foto':9,'Característica':10,'Pontos a melhorar':11};
+const TREINOS_COL_FALLBACK={'Data':0,'ID da sessão':1,'Categoria':2,'Conteúdo principal - preparatória':3,'Conteúdo secundário - preparatória':4,'Conteúdo concorrente - preparatória':5,'Tipo de conteúdo - preparatória':6,'Tipo de tarefa - preparatória':7,'Complexidade - preparatória':8,'Conteúdo principal - conceitual':9,'Conteúdo secundário - conceitual':10,'Conteúdo concorrente - conceitual':11,'Tipo de conteúdo - conceitual':12,'Tipo de tarefa - conceitual':13,'Complexidade - conceitual':14,'Relação númerica - conexão':15,'Tipo de tarefa - conexão':16,'Complexidade - conexão':17,'Nota geral da sessão (0 a 10)':18,'Nº de atletas':19,'Atletas em avaliação':20,'Minutagem - preparatória':21,'Jogadores ativos - preparatória':22,'TAA - preparatória':23,'Desempenho - preparatória (0 a 10)':24,'Minutagem - conceitual':25,'Jogadores ativos - conceitual':26,'TAA - conceitual':27,'Desempenho - conceitual (0 a 10)':28,'Minutagem - conexão':29,'Jogadores ativos - conexão':30,'TAA - conexão':31,'Desempenho - conexão (0 a 10)':32,'Observações':33,'Minutagem efetiva':34,'Total TAA':35,'% de minutagem':36,'% de TAA':37};
+const JOGOS_COL_FALLBACK={'Nº Jogo':0,'Data':1,'Categoria':2,'Adversário':3,'Ranking':4,'Categoria adversário':5,'Competição':6,'Local':7,'Cidade':8,'Período':9,'Formato':10,'Plataforma de jogo':11,'Treinador':12,'Capitão':13,'Minutagem':14,'Gols feitos':15,'Gols sofridos':16,'Saldo':17,'Resultado':18,'Cartão amarelo':19,'Cartão vermelho':20,'Desempenho':21,'Comentários gerais':22,'Pontos positivos':23,'Pontos negativos':24,'Data entre jogos':25};
+const JOGOSIND_COL_FALLBACK={'Nº Jogo':0,'Data':1,'Categoria':2,'Nome':3,'Posição':4,'Titularidade':5,'Minutagem':6,'Desempenho':7,'Gols feitos':8,'Gols sofridos':9,'Assistências':10,'Cartão amarelo':11,'Cartão vermelho':12,'Comentários individuais':13};
 function slugName(name){
   return String(name).normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase();
@@ -342,24 +360,25 @@ function normLowerText(s){ return (s===null||s===undefined)?'':String(s).trim().
 
 function extractAthletesFromCSV(csvText){
   const rows=parseCSV(csvText); const col=headerMap(rows,0);
+  const gv=(row,name)=>gGate(row,col,name,ATLETAS_COL_FALLBACK[name]);
   const athletes=[]; const athleteByNick={};
   const todayIso=new Date().toISOString().slice(0,10);
   for(let r=1;r<rows.length;r++){
-    const row=rows[r]; const name=g(row,col,'Nome'); if(!name) continue;
-    const nickname=g(row,col,'Apelido');
-    const dob=parseSheetsDate(g(row,col,'Data de Nascimento'));
-    const joined=parseSheetsDate(g(row,col,'Chegada ao clube'));
-    const photoLink=g(row,col,'Link foto');
+    const row=rows[r]; const name=gv(row,'Nome'); if(!name) continue;
+    const nickname=gv(row,'Apelido');
+    const dob=parseSheetsDate(gv(row,'Data de Nascimento'));
+    const joined=parseSheetsDate(gv(row,'Chegada ao clube'));
+    const photoLink=gv(row,'Link foto');
     const tenureMonths=joined?monthsBetweenIso(joined,todayIso):null;
     const photoExternal=(photoLink && String(photoLink).startsWith('http') && !String(photoLink).includes('drive.google.com')) ? photoLink : null;
     const a={
-      id:g(row,col,'ID atleta'), name, nickname, dob,
+      id:gv(row,'ID atleta'), name, nickname, dob,
       birthMonth: dob?sheetsMonthLabel(dob):null,
-      quartile:g(row,col,'Quartil'), position:g(row,col,'Posi\u00e7\u00e3o'), foot:g(row,col,'P\u00e9 dominante'),
+      quartile:gv(row,'Quartil'), position:gv(row,'Posi\u00e7\u00e3o'), foot:gv(row,'P\u00e9 dominante'),
       joined, tenureMonths, tenureBand:sheetsTenureBand(tenureMonths),
-      category:g(row,col,'Categoria'),
+      category:gv(row,'Categoria'),
       photo:`./photos/${slugName(nickname)}.png`, photoExternal,
-      characteristic:g(row,col,'Caracter\u00edstica'), improvement:g(row,col,'Pontos a melhorar'),
+      characteristic:gv(row,'Caracter\u00edstica'), improvement:gv(row,'Pontos a melhorar'),
       status:'ativo',
     };
     athletes.push(a); athleteByNick[normLowerText(nickname)]=a;
@@ -369,35 +388,36 @@ function extractAthletesFromCSV(csvText){
 
 function extractTrainingsFromCSV(csvText){
   const rows=parseCSV(csvText); const col=headerMap(rows,2);
+  const gv=(row,name)=>gGate(row,col,name,TREINOS_COL_FALLBACK[name]);
   const trainings=[], blocks=[], contents=[];
   for(let r=3;r<rows.length;r++){
     const row=rows[r];
-    const dt=parseSheetsDate(g(row,col,'Data'));
+    const dt=parseSheetsDate(gv(row,'Data'));
     if(!dt) continue;
     const month=sheetsMonthLabel(dt);
-    const sessionId=g(row,col,'ID da sess\u00e3o');
-    const category=g(row,col,'Categoria');
-    const notaGeral=csvNum(g(row,col,'Nota geral da sess\u00e3o (0 a 10)'));
-    const numAtletas=csvNum(g(row,col,'N\u00ba de atletas'));
-    const atletasAvaliacao=csvNum(g(row,col,'Atletas em avalia\u00e7\u00e3o'));
-    const observacoes=g(row,col,'Observa\u00e7\u00f5es');
+    const sessionId=gv(row,'ID da sess\u00e3o');
+    const category=gv(row,'Categoria');
+    const notaGeral=csvNum(gv(row,'Nota geral da sess\u00e3o (0 a 10)'));
+    const numAtletas=csvNum(gv(row,'N\u00ba de atletas'));
+    const atletasAvaliacao=csvNum(gv(row,'Atletas em avalia\u00e7\u00e3o'));
+    const observacoes=gv(row,'Observa\u00e7\u00f5es');
     const partsDef=[['Preparat\u00f3ria','preparat\u00f3ria'],['Conceitual','conceitual'],['Conex\u00e3o','conex\u00e3o']];
     let minutagemEfetiva=0, totalTAA=0; const partsOut=[];
     for(const [partLabel,suffix] of partsDef){
-      const minutes=csvNum(g(row,col,`Minutagem - ${suffix}`));
-      const jogAtivos=csvNum(g(row,col,`Jogadores ativos - ${suffix}`));
-      const desemp=csvNum(g(row,col,`Desempenho - ${suffix} (0 a 10)`));
-      const taskType=g(row,col,`Tipo de tarefa - ${suffix}`);
-      const complexity=g(row,col,`Complexidade - ${suffix}`);
+      const minutes=csvNum(gv(row,`Minutagem - ${suffix}`));
+      const jogAtivos=csvNum(gv(row,`Jogadores ativos - ${suffix}`));
+      const desemp=csvNum(gv(row,`Desempenho - ${suffix} (0 a 10)`));
+      const taskType=gv(row,`Tipo de tarefa - ${suffix}`);
+      const complexity=gv(row,`Complexidade - ${suffix}`);
       let contentType, content, cPrin, cSec, cConc;
       if(suffix==='conex\u00e3o'){
-        contentType='Conex\u00e3o com jogo'; content=g(row,col,'Rela\u00e7\u00e3o n\u00famerica - conex\u00e3o');
+        contentType='Conex\u00e3o com jogo'; content=gv(row,'Rela\u00e7\u00e3o n\u00famerica - conex\u00e3o');
         cPrin=null; cSec=null; cConc=null;
       } else {
-        contentType=g(row,col,`Tipo de conte\u00fado - ${suffix}`);
-        cPrin=g(row,col,`Conte\u00fado principal - ${suffix}`);
-        cSec=g(row,col,`Conte\u00fado secund\u00e1rio - ${suffix}`);
-        cConc=g(row,col,`Conte\u00fado concorrente - ${suffix}`);
+        contentType=gv(row,`Tipo de conte\u00fado - ${suffix}`);
+        cPrin=gv(row,`Conte\u00fado principal - ${suffix}`);
+        cSec=gv(row,`Conte\u00fado secund\u00e1rio - ${suffix}`);
+        cConc=gv(row,`Conte\u00fado concorrente - ${suffix}`);
         content=cPrin;
       }
       const taa=(jogAtivos!=null && numAtletas)?(jogAtivos/numAtletas)*(minutes||0):null;
@@ -443,51 +463,55 @@ function extractNotesFromCSV(csvText, athleteByNick){
 }
 
 function extractGamesFromCSV(csvText){
-  const rows=parseCSV(csvText); const col=headerMap(rows,1); const games=[];
+  const rows=parseCSV(csvText); const col=headerMap(rows,1);
+  const gv=(row,name)=>gGate(row,col,name,JOGOS_COL_FALLBACK[name]);
+  const games=[];
   for(let r=2;r<rows.length;r++){
-    const row=rows[r]; const gameNo=g(row,col,'N\u00ba Jogo'); if(gameNo===null) continue;
-    const dt=parseSheetsDate(g(row,col,'Data'));
-    const gf=csvNum(g(row,col,'Gols feitos')), ga=csvNum(g(row,col,'Gols sofridos'));
-    const result=g(row,col,'Resultado');
+    const row=rows[r]; const gameNo=gv(row,'N\u00ba Jogo'); if(gameNo===null) continue;
+    const dt=parseSheetsDate(gv(row,'Data'));
+    const gf=csvNum(gv(row,'Gols feitos')), ga=csvNum(gv(row,'Gols sofridos'));
+    const result=gv(row,'Resultado');
     games.push({
-      gameNo:csvNum(gameNo), date:dt, month:sheetsMonthLabel(dt), category:g(row,col,'Categoria'),
-      opponent:g(row,col,'Advers\u00e1rio'), rank:g(row,col,'Ranking'),
-      oppCategory:g(row,col,'Categoria advers\u00e1rio'), competition:g(row,col,'Competi\u00e7\u00e3o'),
-      local:g(row,col,'Local'), city:g(row,col,'Cidade'), period:g(row,col,'Per\u00edodo'),
-      format:g(row,col,'Formato'), platform:g(row,col,'Plataforma de jogo'),
-      coach:g(row,col,'Treinador'), captain:g(row,col,'Capit\u00e3o'),
-      minutes:csvNum(g(row,col,'Minutagem')), goalsFor:gf, goalsAgainst:ga,
-      saldo:csvNum(g(row,col,'Saldo')),
+      gameNo:csvNum(gameNo), date:dt, month:sheetsMonthLabel(dt), category:gv(row,'Categoria'),
+      opponent:gv(row,'Advers\u00e1rio'), rank:gv(row,'Ranking'),
+      oppCategory:gv(row,'Categoria advers\u00e1rio'), competition:gv(row,'Competi\u00e7\u00e3o'),
+      local:gv(row,'Local'), city:gv(row,'Cidade'), period:gv(row,'Per\u00edodo'),
+      format:gv(row,'Formato'), platform:gv(row,'Plataforma de jogo'),
+      coach:gv(row,'Treinador'), captain:gv(row,'Capit\u00e3o'),
+      minutes:csvNum(gv(row,'Minutagem')), goalsFor:gf, goalsAgainst:ga,
+      saldo:csvNum(gv(row,'Saldo')),
       result:(gf!==null&&ga!==null)?result:null,
-      yellow:csvNum(g(row,col,'Cart\u00e3o amarelo')), red:csvNum(g(row,col,'Cart\u00e3o vermelho')),
-      performance:csvNum(g(row,col,'Desempenho')), comments:g(row,col,'Coment\u00e1rios gerais'),
-      positives:g(row,col,'Pontos positivos'), negatives:g(row,col,'Pontos negativos'),
-      daysSinceLastGame:csvNum(g(row,col,'Data entre jogos')),
+      yellow:csvNum(gv(row,'Cart\u00e3o amarelo')), red:csvNum(gv(row,'Cart\u00e3o vermelho')),
+      performance:csvNum(gv(row,'Desempenho')), comments:gv(row,'Coment\u00e1rios gerais'),
+      positives:gv(row,'Pontos positivos'), negatives:gv(row,'Pontos negativos'),
+      daysSinceLastGame:csvNum(gv(row,'Data entre jogos')),
     });
   }
   return games;
 }
 
 function extractGameIndFromCSV(csvText, athleteByNick){
-  const rows=parseCSV(csvText); const col=headerMap(rows,1); const gameInd=[];
+  const rows=parseCSV(csvText); const col=headerMap(rows,1);
+  const gv=(row,name)=>gGate(row,col,name,JOGOSIND_COL_FALLBACK[name]);
+  const gameInd=[];
   for(let r=2;r<rows.length;r++){
-    const row=rows[r]; const name=g(row,col,'Nome'); if(name===null) continue;
-    const dt=parseSheetsDate(g(row,col,'Data'));
-    const position=g(row,col,'Posi\u00e7\u00e3o');
-    const minutes=csvNum(g(row,col,'Minutagem'));
-    const goals=csvNum(g(row,col,'Gols feitos')), goalsAgainst=csvNum(g(row,col,'Gols sofridos'));
-    const assists=csvNum(g(row,col,'Assist\u00eancias'));
-    const yellow=csvNum(g(row,col,'Cart\u00e3o amarelo')), red=csvNum(g(row,col,'Cart\u00e3o vermelho'));
+    const row=rows[r]; const name=gv(row,'Nome'); if(name===null) continue;
+    const dt=parseSheetsDate(gv(row,'Data'));
+    const position=gv(row,'Posi\u00e7\u00e3o');
+    const minutes=csvNum(gv(row,'Minutagem'));
+    const goals=csvNum(gv(row,'Gols feitos')), goalsAgainst=csvNum(gv(row,'Gols sofridos'));
+    const assists=csvNum(gv(row,'Assist\u00eancias'));
+    const yellow=csvNum(gv(row,'Cart\u00e3o amarelo')), red=csvNum(gv(row,'Cart\u00e3o vermelho'));
     const a=athleteByNick[normLowerText(name)];
     gameInd.push({
-      gameNo:csvNum(g(row,col,'N\u00ba Jogo')), date:dt, month:sheetsMonthLabel(dt),
-      category:g(row,col,'Categoria'),
+      gameNo:csvNum(gv(row,'N\u00ba Jogo')), date:dt, month:sheetsMonthLabel(dt),
+      category:gv(row,'Categoria'),
       athlete:name, position: position||(a?a.position:null),
       quartile:a?a.quartile:null, foot:a?a.foot:null,
-      titularity:g(row,col,'Titularidade'), minutes:minutes||0,
-      performance:csvNum(g(row,col,'Desempenho')),
+      titularity:gv(row,'Titularidade'), minutes:minutes||0,
+      performance:csvNum(gv(row,'Desempenho')),
       goals:goals||0, goalsAgainst:goalsAgainst||0, assists:assists||0,
-      yellow:yellow||0, red:red||0, comments:g(row,col,'Coment\u00e1rios individuais'),
+      yellow:yellow||0, red:red||0, comments:gv(row,'Coment\u00e1rios individuais'),
     });
   }
   return gameInd;
