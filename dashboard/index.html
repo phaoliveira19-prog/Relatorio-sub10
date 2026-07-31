@@ -106,6 +106,13 @@ body.light .theme-toggle{background:rgba(255,255,255,.92)}
 .nav-groups button:hover{background:rgba(255,255,255,.05);color:var(--text)}
 .nav-groups button.active{background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(59,130,246,.12));color:#eafcff;border-color:rgba(34,211,238,.25)}
 .sidebar-divider{height:1px;background:var(--stroke2);margin:14px 2px 4px}
+.filter-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.04);color:var(--text);padding:10px 12px;cursor:pointer;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin-top:6px}
+.filter-toggle:hover{filter:brightness(1.08)}
+.filter-toggle .chev{transition:transform .15s ease;font-size:14px}
+.filter-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.filter-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .2s ease;margin-top:8px}
+.filter-panel>div{overflow:hidden}
+.filter-panel.open{grid-template-rows:1fr}
 .eyebrow-row{display:flex;align-items:center;gap:10px}
 .eyebrow-bar{height:3px;flex:0 0 46px;border-radius:99px;background:linear-gradient(90deg,var(--cyan),transparent)}
 @media (max-width:1220px){
@@ -125,10 +132,14 @@ body.light .theme-toggle{background:rgba(255,255,255,.92)}
   <aside class="sidebar">
     <nav class="nav-groups" id="navGroups"></nav>
     <div class="sidebar-divider"></div>
-    <div class="filter-title" id="filterTitle">Filtros da página</div>
-    <div class="filter-grid" id="filterGrid"></div>
-    <div class="filter-actions"><button class="btn primary" id="applyBtn">Aplicar</button><button class="btn" id="resetBtn">Limpar</button></div>
-    <div class="small-note" style="margin-top:14px">Os filtros exibidos mudam conforme a página ativa para evitar seleções sem relação com a análise.</div>
+    <button class="filter-toggle" id="filterToggle" aria-expanded="false"><span id="filterToggleLabel">Filtros da página</span><span class="chev">▾</span></button>
+    <div class="filter-panel" id="filterPanel">
+      <div>
+        <div class="filter-grid" id="filterGrid"></div>
+        <div class="filter-actions"><button class="btn primary" id="applyBtn">Aplicar</button><button class="btn" id="resetBtn">Limpar</button></div>
+        <div class="small-note" style="margin-top:14px">Os filtros exibidos mudam conforme a página ativa para evitar seleções sem relação com a análise.</div>
+      </div>
+    </div>
   </aside>
   <main class="main">
     <div class="topbar">
@@ -710,12 +721,12 @@ function filterOptions(key){
   return [];
 }
 const filterLabels={start:'Data inicial',end:'Data final',month:'Mês',athlete:'Atleta',position:'Posição',quartile:'Quartil',tenure:'Tempo de clube',competition:'Competição',rank:'Ranking adversário',format:'Formato',result:'Resultado',task:'Tipo de tarefa',complexity:'Complexidade',part:'Parte da sessão',content:'Conteúdo',contentType:'Tipo de conteúdo'};
-function renderFilters(){const keys=FILTERS_BY_PAGE[activePage]||[]; $('filterTitle').textContent='Filtros · '+(PAGES.find(p=>p[0]===activePage)||[])[1]; const grid=$('filterGrid'); grid.innerHTML=''; keys.forEach(k=>{const div=document.createElement('div'); div.className='field'; const label=document.createElement('label'); label.textContent=filterLabels[k]; div.appendChild(label); if(k==='start'||k==='end'){const inp=document.createElement('input'); inp.type='date'; inp.value=filterState[k]||''; inp.onchange=()=>{filterState[k]=inp.value}; div.appendChild(inp);} else {const sel=document.createElement('select'); sel.innerHTML=`<option value="">Todos</option>`+filterOptions(k).map(v=>`<option value="${v}">${v}</option>`).join(''); sel.value=filterState[k]||''; sel.onchange=()=>{filterState[k]=sel.value}; div.appendChild(sel);} grid.appendChild(div);});}
+function renderFilters(){const keys=FILTERS_BY_PAGE[activePage]||[]; $('filterToggleLabel').textContent='Filtros · '+(PAGES.find(p=>p[0]===activePage)||[])[1]; const grid=$('filterGrid'); grid.innerHTML=''; keys.forEach(k=>{const div=document.createElement('div'); div.className='field'; const label=document.createElement('label'); label.textContent=filterLabels[k]; div.appendChild(label); if(k==='start'||k==='end'){const inp=document.createElement('input'); inp.type='date'; inp.value=filterState[k]||''; inp.onchange=()=>{filterState[k]=inp.value}; div.appendChild(inp);} else {const sel=document.createElement('select'); sel.innerHTML=`<option value="">Todos</option>`+filterOptions(k).map(v=>`<option value="${v}">${v}</option>`).join(''); sel.value=filterState[k]||''; sel.onchange=()=>{filterState[k]=sel.value}; div.appendChild(sel);} grid.appendChild(div);});}
 function activeFilters(){const keys=FILTERS_BY_PAGE[activePage]||[]; const f={}; keys.forEach(k=>f[k]=filterState[k]||''); if(!('start'in f)) f.start=filterState.start; if(!('end'in f)) f.end=filterState.end; return f;}
 function activeFilterPills(f){const div=$('activeFilters'); div.innerHTML=''; Object.keys(f).forEach(k=>{if(f[k]){let s=document.createElement('span'); s.className='pill'; s.textContent=`${filterLabels[k]||k}: ${f[k]}`; div.appendChild(s)}});}
 function resetActiveFilters(){(FILTERS_BY_PAGE[activePage]||[]).forEach(k=>{filterState[k]=(k==='start'?DATA.meta.minDate:(k==='end'?DATA.meta.maxDate:''));}); renderFilters(); renderActive();}
 function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive();}
-function init(){const themeBtn=$('themeToggle'); if(themeBtn){themeBtn.onclick=()=>{document.body.classList.toggle('light'); themeBtn.textContent=document.body.classList.contains('light')?'🌙 Modo escuro':'☀️ Modo claro'; renderActive();};} const navEl=$('navGroups'); NAV_GROUPS.forEach(grp=>{const gt=document.createElement('div'); gt.className='nav-group-title'; gt.textContent=grp.group; navEl.appendChild(gt); grp.pages.forEach(pid=>{const p=PAGES.find(x=>x[0]===pid); if(!p)return; const b=document.createElement('button'); b.dataset.page=p[0]; b.textContent=p[3]||p[1]; b.onclick=()=>go(p[0]); navEl.appendChild(b);});}); $('applyBtn').onclick=()=>renderActive(); $('resetBtn').onclick=resetActiveFilters; $('clearDonuts').onclick=()=>{donutState={tenureBand:null,quartile:null,position:null}; renderGeral(activeFilters());}; populateCardAthletes(); $('openCardBtn').onclick=()=>renderCard(); $('cardAthlete').onchange=()=>{filterState.athlete=$('cardAthlete').value; renderCard();}; $('dataFoot').textContent=`Período: ${DATA.meta.minDate} a ${DATA.meta.maxDate}`; go('geral');}
+function init(){const themeBtn=$('themeToggle'); if(themeBtn){themeBtn.onclick=()=>{document.body.classList.toggle('light'); themeBtn.textContent=document.body.classList.contains('light')?'🌙 Modo escuro':'☀️ Modo claro'; renderActive();};} const navEl=$('navGroups'); NAV_GROUPS.forEach(grp=>{const gt=document.createElement('div'); gt.className='nav-group-title'; gt.textContent=grp.group; navEl.appendChild(gt); grp.pages.forEach(pid=>{const p=PAGES.find(x=>x[0]===pid); if(!p)return; const b=document.createElement('button'); b.dataset.page=p[0]; b.textContent=p[3]||p[1]; b.onclick=()=>go(p[0]); navEl.appendChild(b);});}); $('filterToggle').onclick=()=>{const p=$('filterPanel'); const open=p.classList.toggle('open'); $('filterToggle').setAttribute('aria-expanded', open?'true':'false');}; $('applyBtn').onclick=()=>renderActive(); $('resetBtn').onclick=resetActiveFilters; $('clearDonuts').onclick=()=>{donutState={tenureBand:null,quartile:null,position:null}; renderGeral(activeFilters());}; populateCardAthletes(); $('openCardBtn').onclick=()=>renderCard(); $('cardAthlete').onchange=()=>{filterState.athlete=$('cardAthlete').value; renderCard();}; $('dataFoot').textContent=`Período: ${DATA.meta.minDate} a ${DATA.meta.maxDate}`; go('geral');}
 function populateCardAthletes(){const sel=$('cardAthlete'); sel.innerHTML=DATA.meta.athletes.map(a=>`<option value="${a}">${a}</option>`).join('');}
 function filteredAthletes(f){return DATA.athletes.filter(a=>(!f.athlete||a.nickname===f.athlete||a.name===f.athlete)&&(!f.position||a.position===f.position)&&(!f.quartile||a.quartile===f.quartile)&&(!f.tenure||a.tenureBand===f.tenure));}
 function filteredTrainings(f){return DATA.trainings.filter(d=>dateOK(d.date,f)&&(!f.month||d.month===f.month));}
