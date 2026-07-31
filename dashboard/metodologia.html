@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Como funciona o sistema · Sistema do treinador</title>
+<style>
+:root{
+  --bg:#05070c; --panel:#0a101c; --panel2:#0f1726; --card:#101827dd; --stroke:#253047; --stroke2:#1b2538;
+  --text:#edf4ff; --muted:#8fa1bd; --soft:#b8c8df; --cyan:#22d3ee; --blue:#60a5fa; --purple:#a78bfa; --green:#32d583; --yellow:#fdb022; --red:#f97066;
+  --radius:20px;
+}
+body.light{
+  --bg:#f3f7fb; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffffee; --stroke:#cbd7e6; --stroke2:#d9e3ef;
+  --text:#0b1220; --muted:#526276; --soft:#314156;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5}
+body:before{content:"";position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(1000px 650px at 10% 0%,rgba(34,211,238,.14),transparent 55%),
+  radial-gradient(900px 580px at 80% 8%,rgba(167,139,250,.14),transparent 50%),
+  linear-gradient(135deg,#04060b 0%,#09101e 48%,#05070c 100%)}
+body.light:before{background:radial-gradient(1000px 650px at 10% 0%,rgba(34,211,238,.16),transparent 55%),radial-gradient(900px 580px at 80% 8%,rgba(59,130,246,.13),transparent 50%),linear-gradient(135deg,#f7fbff 0%,#edf5ff 48%,#f8fbff 100%)}
+
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;border-bottom:1px solid var(--stroke2);background:linear-gradient(180deg,rgba(10,15,25,.92),rgba(10,15,25,.82));backdrop-filter:blur(10px)}
+body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(242,247,253,.82))}
+.topbar a{color:var(--text);text-decoration:none;font-weight:800;font-size:13px;border:1px solid var(--stroke);border-radius:12px;padding:8px 12px}
+.topbar a:hover{filter:brightness(1.1)}
+.topbar .links{display:flex;gap:8px}
+
+.wrap{max-width:880px;margin:0 auto;padding:40px 20px 100px}
+.hero{margin-bottom:40px}
+.eyebrow{color:var(--cyan);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.16em;margin-bottom:8px}
+body.light .eyebrow{color:#0e7490}
+h1{font-size:clamp(26px,4vw,38px);font-weight:900;margin:0 0 12px;letter-spacing:-.5px}
+.lead{color:var(--muted);font-size:15.5px;max-width:640px;margin:0}
+
+section{margin-bottom:44px}
+h2{font-size:21px;font-weight:900;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+h2 .n{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;font-size:13px;font-weight:900}
+.section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px}
+
+.card{border:1px solid var(--stroke);border-radius:var(--radius);background:linear-gradient(180deg,rgba(16,24,39,.7),rgba(10,16,28,.6));padding:20px}
+body.light .card{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,250,255,.92))}
+
+.def-grid{display:grid;gap:12px}
+.def-item{border:1px solid var(--stroke2);border-radius:14px;padding:14px 16px}
+.def-item b{display:block;font-size:14px;margin-bottom:4px;color:var(--cyan)}
+body.light .def-item b{color:#0e7490}
+.def-item p{margin:0;font-size:13.5px;color:var(--soft)}
+
+details{border:1px solid var(--stroke2);border-radius:14px;margin-top:14px;overflow:hidden}
+summary{cursor:pointer;padding:13px 16px;font-weight:800;font-size:13.5px;list-style:none;display:flex;align-items:center;justify-content:space-between}
+summary::-webkit-details-marker{display:none}
+summary:after{content:'+';font-size:18px;color:var(--muted)}
+details[open] summary:after{content:'–'}
+.tag-table{width:100%;border-collapse:collapse;font-size:13px}
+.tag-table td{padding:8px 16px;border-top:1px solid var(--stroke2)}
+.tag-table td.tag-fase{color:var(--muted);white-space:nowrap;width:110px}
+
+.continuum{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.continuum-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;margin-bottom:6px}
+.continuum-bar span{flex:1}
+.task-card{border:1px solid var(--stroke2);border-radius:16px;padding:16px 18px}
+.task-card .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.task-card h3{font-size:15px;margin:0;font-weight:900}
+.task-card .pill{font-size:10.5px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:999px;color:#06101b}
+.task-card p{margin:6px 0 0;font-size:13px;color:var(--soft)}
+.task-card .meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;font-size:12.5px}
+.task-card .meta b{display:block;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;font-weight:900}
+
+.formula{font-family:'SFMono-Regular',Consolas,Menlo,monospace;background:rgba(255,255,255,.05);border:1px solid var(--stroke2);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--cyan);margin:8px 0}
+body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
+
+.metric-link{font-size:11.5px;color:var(--muted);margin-top:6px}
+.metric-link b{color:var(--green)}
+
+.footer-note{margin-top:56px;padding-top:24px;border-top:1px solid var(--stroke2);font-size:12px;color:var(--muted)}
+.theme-toggle{position:fixed;left:16px;bottom:16px;z-index:50;border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.06);color:var(--text);padding:9px 12px;font-weight:800;cursor:pointer;font-size:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="./index.html">← Início</a>
+  <div class="links">
+    <a href="./dashboard.html">Dashboard</a>
+    <a href="./entrada.html">Preenchimento</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Metodologia</div>
+    <h1>Como funciona o sistema</h1>
+    <p class="lead">O dashboard mede o dia a dia do treino a partir de uma estrutura pedagógica com três camadas: <b>o que</b> se treina (conteúdos), <b>como</b> se treina (tipo de tarefa) e <b>quanto</b> se treina de fato (avaliação da sessão). Esta página explica cada uma.</p>
+  </div>
+
+  <section>
+    <h2><span class="n">1</span>Como o conteúdo é organizado</h2>
+    <p class="section-sub">Todo conteúdo trabalhado num treino pertence a um destes cinco tipos, do mais geral ao mais específico:</p>
+    <div class="card">
+      <div class="def-grid">
+        <div class="def-item"><b>Capacidades táticas básicas</b><p>Noções básicas para tomada de decisão comum a esportes coletivos de invasão.</p></div>
+        <div class="def-item"><b>Famílias de Habilidades Esportivas</b><p>Combinação das habilidades motoras fundamentais aplicadas ao contexto esportivo — a transição entre o treino da coordenação e o treino da técnica.</p></div>
+        <div class="def-item"><b>Técnico-tático individual</b><p>Resposta motora de uma decisão para solucionar problemas do jogo na escala individual.</p></div>
+        <div class="def-item"><b>Tática de grupo</b><p>Ações técnico-táticas que dependem da interação de pequenos grupos de atletas para sua correta aplicação.</p></div>
+        <div class="def-item"><b>Tática coletiva</b><p>Ações técnico-táticas que dependem da interação de todos os atletas da equipe para sua correta aplicação.</p></div>
+      </div>
+
+      <details>
+        <summary>Ver o catálogo completo de conteúdos (agrupados por tipo e fase)</summary>
+        <table class="tag-table">
+          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Técnico-tático individual · Ofensiva</td></tr>
+          <tr><td>Domínio orientado</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Passe de apoio</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Passe de ruptura</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Cruzamento de canal</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Cruzamento de quina</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Cruzamento de retorno</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Condução</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Fixação com bola</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Drible (1x1 ofensivo)</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Proteção de bola (pivô)</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Finalização média/longa</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Finalização curta</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Finalização de 1ª</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Cabeceio</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Desmarque de apoio</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Desmarque de ruptura</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Ajuste corporal</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Escaneamento</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Ganho de intervalo</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Técnico-tático individual · Defensiva</td></tr>
+          <tr><td>Abordagem</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Cobertura</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Pressão</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Recomposição</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Equilíbrio defensivo</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Temporização</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Bloqueio (frontal e lateral)</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Rebatida</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Defesa de tabela</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Perseguição</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Ajuste corporal defensivo</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Tática de grupo · Ofensiva</td></tr>
+          <tr><td>Tabela</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Dinâmica de 3º homem</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Ruptura</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Ultrapassagem</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Troca de posição</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Tática de grupo · Defensiva</td></tr>
+          <tr><td>Troca de marcação</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Fechar janela (setorial)</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Controle de profundidade (por setor)</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Tática coletiva · Ofensiva</td></tr>
+          <tr><td>Troca de corredor</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Atacar marcando</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Jogo por fora do bloco</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Jogo por dentro do bloco</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Jogo nas costas do bloco</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Ataque rápido</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Ataque posicional</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Contra-ataque</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Ampliar o espaço efetivo de jogo</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td>Retirar da zona de pressão</td><td class="tag-fase">Ofensiva</td></tr>
+          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Tática coletiva · Defensiva</td></tr>
+          <tr><td>Proteção do corredor lateral</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Controle de profundidade (intersetores)</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Defender em bloco</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Proteção do corredor central</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Compactação</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td>Redução do espaço efetivo de jogo</td><td class="tag-fase">Defensiva</td></tr>
+          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Família de habilidade esportiva · Geral</td></tr>
+          <tr><td>Organizar ângulos</td><td class="tag-fase">Geral</td></tr>
+          <tr><td>Regular força</td><td class="tag-fase">Geral</td></tr>
+          <tr><td>Manejo de bola</td><td class="tag-fase">Geral</td></tr>
+          <tr><td>Determinar momento do passe</td><td class="tag-fase">Geral</td></tr>
+          <tr><td>Reconhecer voo da bola</td><td class="tag-fase">Geral</td></tr>
+          <tr><td>Antecipar a posição do adversário</td><td class="tag-fase">Geral</td></tr>
+          <tr><td>Mudança de direção</td><td class="tag-fase">Geral</td></tr>
+        </table>
+      </details>
+      <div class="metric-link">↳ é esse catálogo que alimenta os filtros e gráficos da página <b>Mapa de Conteúdos</b> no dashboard.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>Papel de cada conteúdo na sessão</h2>
+    <p class="section-sub">Dentro de uma mesma tarefa de treino, um conteúdo pode ter três papéis diferentes — todos intencionais, nenhum "secundário" no sentido de menos importante:</p>
+    <div class="card">
+      <div class="def-grid">
+        <div class="def-item"><b>Conteúdo principal</b><p>O principal conteúdo objetivado por determinada tarefa de treino em determinada sessão.</p></div>
+        <div class="def-item"><b>Conteúdo secundário</b><p>Conteúdo trabalhado, porém não é a principal ênfase daquela tarefa naquela sessão.</p></div>
+        <div class="def-item"><b>Conteúdo concorrente</b><p>Conteúdo correspondente à fase oposta do conteúdo principal daquela tarefa de treino.</p></div>
+      </div>
+      <div class="metric-link">↳ o dashboard mantém os três separados em todos os gráficos (nunca somados) — é por isso que o Mapa de Conteúdos tem uma visão para cada papel.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>O continuum de tarefas de treino</h2>
+    <p class="section-sub">Toda tarefa de treino se encaixa numa escala — do mais fechado e sem oposição até o jogo formal completo. Quanto mais à direita, mais "parecido com o jogo real" (representatividade):</p>
+    <div class="continuum-bar">
+      <span style="background:#f97066"></span><span style="background:#fdb022"></span><span style="background:#fde047"></span><span style="background:#a3e635"></span><span style="background:#4ade80"></span><span style="background:#22d3ee"></span><span style="background:#60a5fa"></span>
+    </div>
+
+    <div class="continuum">
+      <div class="task-card">
+        <div class="head"><h3>Analítico geral</h3><span class="pill" style="background:#f97066">Representatividade muito baixa</span></div>
+        <p>Tarefa fechada, sem oposição e sem bola em contexto decisório. Repetição de um padrão motor isolado, com baixa fidelidade de ação e referências funcionais ausentes/nulas.</p>
+        <div class="meta">
+          <div><b>Quando usar</b>Familiarização com padrão motor novo, ativação neuromuscular, correção pontual, reabilitação, níveis sem repertório prévio.</div>
+          <div><b>Benefícios</b>Alta densidade de repetição, controle total das condições, baixo custo cognitivo.</div>
+          <div><b>Limitações</b>Representatividade muito baixa, com custo em retenção — não deve ser o método predominante da sessão/microciclo.</div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="head"><h3>Analítico em contexto específico</h3><span class="pill" style="background:#fdb022">Representatividade baixa</span></div>
+        <p>Tarefa fechada, sem oposição, mas com alta fidelidade de ação (distância, ângulo, trajetória e zona reais do campo). Refino fino de um gesto já estabelecido; funcionalidade ainda nula.</p>
+        <div class="meta">
+          <div><b>Quando usar</b>Refinamento fino de gesto técnico em parâmetros reais (faltas, pênaltis, cruzamentos); alto volume de repetição sem consumir tempo de treino coletivo.</div>
+          <div><b>Benefícios</b>Preserva a fidelidade de ação.</div>
+          <div><b>Limitações</b>Não desenvolve tomada de decisão — deve ser combinada, na mesma sessão/microciclo, com tarefas com oposição.</div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="head"><h3>Jogo fundamental</h3><span class="pill" style="background:#fde047;color:#3a2f00">Representatividade baixa–moderada</span></div>
+        <p>Primeiro degrau do continuum de jogo: oposição mínima ou passiva (manequim, defensor estático). Introduz decisão real contra oposição mantendo o problema tático simples.</p>
+        <div class="meta">
+          <div><b>Quando usar</b>Introdução de noções básicas de decisão contra oposição mínima; fases iniciais de formação; cargas cognitivas baixas.</div>
+          <div><b>Benefícios</b>Primeiro contato com decisão real mantendo o problema tático simples.</div>
+          <div><b>Limitações</b>Baixa fidelidade estrutural ao jogo formal.</div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="head"><h3>Conceitual</h3><span class="pill" style="background:#a3e635;color:#1a2e05">Representatividade moderada</span></div>
+        <p>Jogos reduzidos com oposição presente, porém em configuração desproporcional ao jogo formal. Contexto informacional presente, mas distorcido; foco em princípios gerais de jogo.</p>
+        <div class="meta">
+          <div><b>Quando usar</b>Desenvolvimento de princípios gerais de jogo; maximizar frequência de contato com bola e de decisões por unidade de tempo.</div>
+          <div><b>Benefícios</b>Alta densidade de repetição funcional.</div>
+          <div><b>Limitações</b>A configuração desproporcional pode distorcer o comportamento tático coletivo — exige retorno periódico a formatos mais proporcionais.</div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="head"><h3>Situacional</h3><span class="pill" style="background:#4ade80;color:#052e12">Representatividade moderada–alta</span></div>
+        <p>Oposição presente com recorte de uma subfase específica do jogo. Informação funcional focal, mantendo oposição real sobre o problema tático-alvo.</p>
+        <div class="meta">
+          <div><b>Quando usar</b>Isolar e trabalhar intensivamente uma subfase específica (ex.: superioridade numérica na saída de bola, transições ofensivas numa zona).</div>
+          <div><b>Benefícios</b>Alta frequência de repetição do problema tático-alvo com oposição real.</div>
+          <div><b>Limitações</b>O nível de oposição afeta o tempo de decisão e a taxa de sucesso — calibrar pra não subestimar a pressão real da competição.</div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="head"><h3>Jogo condicionado</h3><span class="pill" style="background:#22d3ee;color:#06101b">Representatividade alta</span></div>
+        <p>Oposição presente e proporcional ao jogo formal. Máxima especificidade ao modelo de jogo sem abrir mão da proporcionalidade estrutural.</p>
+        <div class="meta">
+          <div><b>Quando usar</b>Ajuste do comportamento tático em função de um adversário real ou modelo de jogo específico.</div>
+          <div><b>Benefícios</b>Máxima especificidade ao modelo de jogo com proporcionalidade estrutural.</div>
+          <div><b>Limitações</b>Exige domínio técnico do treinador no desenho da tarefa e conhecimento prévio do modelo de jogo.</div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="head"><h3>Jogo formal</h3><span class="pill" style="background:#60a5fa;color:#06101b">Representatividade máxima</span></div>
+        <p>Oposição completa e fidelidade total. Reproduz integralmente a configuração do jogo.</p>
+        <div class="meta">
+          <div><b>Quando usar</b>Consolidação e avaliação do modelo de jogo como um todo; testagem de padrões coletivos completos.</div>
+          <div><b>Benefícios</b>Representatividade máxima.</div>
+          <div><b>Limitações</b>Menor controle sobre o que emerge; menor frequência de repetição de um conteúdo específico por unidade de tempo.</div>
+        </div>
+      </div>
+    </div>
+    <div class="metric-link">↳ essa é a mesma ordem usada no filtro <b>Tipo de tarefa</b> e nos gráficos de "Minutagem por tipo de tarefa" do dashboard.</div>
+  </section>
+
+  <section>
+    <h2><span class="n">4</span>Como a sessão é avaliada (TEA, TAA, AAT)</h2>
+    <p class="section-sub">Os números do dashboard vêm de uma cadeia de cálculo simples, pensada pra medir não só quanto tempo o treino durou, mas quanto dele foi aprendizagem de verdade pra cada atleta:</p>
+    <div class="card">
+      <div class="def-grid">
+        <div class="def-item">
+          <b>Tempo total de treino</b>
+          <p>Tempo destinado para a sessão (geralmente 90 minutos no Cruzeiro).</p>
+        </div>
+        <div class="def-item">
+          <b>Tempo Efetivo da Atividade (TEA)</b>
+          <p>Tempo do treino excluindo partes inativas (hidratação, transições, feedbacks).</p>
+          <div class="formula">TEA = Tempo total da atividade − tempo inativo</div>
+        </div>
+        <div class="def-item">
+          <b>Tempo de Aprendizagem Ativa (TAA)</b>
+          <p>Tempo de prática de cada atleta: o tempo efetivo ponderado pelo número de atletas ativamente envolvidos.</p>
+          <div class="formula">TAA = (jogadores envolvidos na tarefa / total de jogadores) × tempo efetivo da atividade</div>
+        </div>
+        <div class="def-item">
+          <b>Aprendizagem Ativa do Treino (AAT)</b>
+          <p>Somatório do TAA de todas as tarefas da sessão.</p>
+          <div class="formula">AAT = Σ TAA de todas as atividades
+% de AAT = (TAA / TEA) × 100</div>
+        </div>
+      </div>
+      <div class="metric-link">↳ isso é exatamente o que vira <b>Minutagem efetiva</b>, <b>TAA</b> e <b>% de minutagem</b> nas páginas "Visão Geral" e "Controle Pedagógico" — a referência de 80 min usada no dashboard é a meta de tempo efetivo dentro dos 90 min totais de sessão.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">5</span>Comportamento-chave</h2>
+    <div class="card">
+      <p style="margin:0;font-size:13.5px;color:var(--soft)">Aspectos que o treinador deve observar na execução dos atletas para entender se a tarefa está cumprindo sua função pedagógica — o critério qualitativo por trás da nota de desempenho de cada bloco de treino.</p>
+    </div>
+  </section>
+
+  <div class="footer-note">Conteúdo baseado nas abas "Caderno de conteúdos", "Tipos de tarefa de treino" e "Avaliação do treino" da planilha. Prof. Ms. Pedro Henrique.</div>
+</div>
+
+<button class="theme-toggle" id="themeToggle">☀️ Modo claro</button>
+<script>
+document.getElementById('themeToggle').onclick = () => {
+  document.body.classList.toggle('light');
+  document.getElementById('themeToggle').textContent = document.body.classList.contains('light') ? '🌙 Modo escuro' : '☀️ Modo claro';
+};
+</script>
+</body>
+</html>

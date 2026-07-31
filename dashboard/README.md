@@ -5,19 +5,33 @@ Dashboard de planejamento e monitoramento da categoria, construído a partir do
 individual, Pós-jogo, Pós-jogo individual, Caderno de conteúdos, Tipos de
 tarefa de treino, Avaliação do treino, Princípios pedagógicos).
 
+## Páginas do site
+
+- `index.html` — capa (logo + botões "Acesso ao sistema" / "Como funciona o
+  sistema?"). Estática, sem dados, é a porta de entrada.
+- `dashboard.html` — o dashboard em si (era o `index.html` antes da capa
+  existir — qualquer link/bookmark antigo pra `index.html` como dashboard
+  precisa ser atualizado).
+- `metodologia.html` — explicação da metodologia (conteúdos, tipos de
+  tarefa, TEA/TAA/AAT), com conteúdo tirado das abas "Caderno de
+  conteúdos", "Tipos de tarefa de treino" e "Avaliação do treino" da
+  planilha.
+- `entrada.html` — preenchimento (ver seção própria abaixo).
+
 ## Como funciona hoje
 
 ```
-Google Sheets --(fetch CSV ao vivo)--> index.html   [fonte principal]
-sistema.xlsx  --(build_data.py)-->     data.json     [fallback]
+Google Sheets --(fetch CSV ao vivo)--> dashboard.html   [fonte principal]
+sistema.xlsx  --(build_data.py)-->     data.json         [fallback]
 ```
 
-`index.html` busca as 5 abas da planilha do Google Sheets direto no navegador
-(sem backend) e monta os dados na hora. Se isso falhar por qualquer motivo
-(sem internet, aba renomeada, permissão de compartilhamento), ele cai
-automaticamente para o `./data.json` local, gerado a partir de um xlsx antigo
-— então o site nunca fica fora do ar, mas os dados podem ficar desatualizados
-até o problema com o Sheets ser resolvido.
+`dashboard.html` busca as 5 abas da planilha do Google Sheets direto no
+navegador (sem backend) e monta os dados na hora. Se isso falhar por
+qualquer motivo (sem internet, aba renomeada, permissão de
+compartilhamento), ele cai automaticamente para o `./data.json` local,
+gerado a partir de um xlsx antigo — então o site nunca fica fora do ar, mas
+os dados podem ficar desatualizados até o problema com o Sheets ser
+resolvido.
 
 Pra regenerar o `data.json` de fallback a partir de um xlsx mais novo:
 
@@ -56,7 +70,7 @@ atleta naquela data (antes era célula em branco na grade).
 Se você ainda está na planilha antiga (formato largo), rode a migração
 única em `migrate-avaliacao.gs` primeiro — ela só lê a aba antiga e cria uma
 aba nova, não apaga nada (instruções completas no cabeçalho do arquivo).
-`build_data.py`, `index.html` e `apps-script.gs` já esperam o formato novo.
+`build_data.py`, `dashboard.html` e `apps-script.gs` já esperam o formato novo.
 
 ## Fotos dos atletas
 
@@ -82,12 +96,13 @@ imagem direta (Henrique Lemes) — esses precisam de foto manual em
 - **Autenticação de verdade** — hoje o site (dashboard e entrada.html) é
   público/protegido só por uma senha client-side fraca. Migração planejada
   pra Cloudflare Pages + Cloudflare Access (login por e-mail, gratuito).
-- **Versão mobile do dashboard** — hoje o `index.html` quebra em telas de
-  celular (foi desenhado pra desktop). `entrada.html` já nasceu responsivo.
+- **Versão mobile do dashboard** — hoje o `dashboard.html` quebra em telas
+  de celular (foi desenhado pra desktop). `index.html`, `entrada.html` e
+  `metodologia.html` já nasceram responsivos.
 - **Multi-clube / multi-categoria** — o schema já carrega `categoria` em
   atletas/treinos/jogos, mas o dashboard ainda assume uma única base
   (`data.json`). Quando for expandir para outros clubes, cada um vira sua
-  própria pasta/`data.json`, reaproveitando o mesmo `index.html`.
+  própria pasta/`data.json`, reaproveitando o mesmo `dashboard.html`.
 
 ## Lacunas de dados encontradas na extração (não são bugs do dashboard)
 
