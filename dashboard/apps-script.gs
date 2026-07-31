@@ -14,11 +14,17 @@
  * Sempre que editar este script depois de já implantado, use
  * "Implantar -> Gerenciar implantações -> Editar -> Nova versão" para as
  * mudanças valerem (só salvar o arquivo não atualiza a URL já publicada).
+ *
+ * Funciona tanto colado dentro da planilha (Extensões -> Apps Script) quanto
+ * num projeto avulso do Apps Script — nos dois casos ele abre a planilha
+ * pelo ID abaixo em vez de depender de "planilha ativa".
  */
+var SPREADSHEET_ID = '1XBswfpypHskEIG75ZrVm5_Gu7A8FaVbs';
+function getSS() { return SpreadsheetApp.openById(SPREADSHEET_ID); }
 
 function doGet(e) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSS();
     var sheet = ss.getSheetByName('Banco de atletas');
     var col = headerMap(sheet, 1);
     var lastRow = sheet.getLastRow();
@@ -118,7 +124,7 @@ function nextNumber(sheet, startRow, col, count) {
 
 // ---------- Banco de atletas ----------
 function addAthlete(d) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Banco de atletas');
+  var sheet = getSS().getSheetByName('Banco de atletas');
   var col = headerMap(sheet, 1);
   var lastRow = sheet.getLastRow();
   var newRow = lastRow + 1;
@@ -140,7 +146,7 @@ function addAthlete(d) {
 
 // ---------- Banco de treinos ----------
 function addTraining(d) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Banco de treinos');
+  var sheet = getSS().getSheetByName('Banco de treinos');
   var headerRow = 3;
   var col = headerMap(sheet, headerRow);
   var lastRow = sheet.getLastRow();
@@ -185,7 +191,7 @@ function addTraining(d) {
 // Formato longo: uma linha por atleta-por-treino (Data | Apelido | Nota).
 // dateIso chega como "AAAA-MM-DD" (do <input type=date> de entrada.html).
 function addAvaliacoes(dateIso, entries) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Avaliação individual do treino');
+  var sheet = getSS().getSheetByName('Avaliação individual do treino');
   var col = headerMap(sheet, 1);
   var written = 0;
   (entries || []).forEach(function (en) {
@@ -201,7 +207,7 @@ function addAvaliacoes(dateIso, entries) {
 
 // ---------- Pós-jogo ----------
 function addGame(d) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Pós-jogo');
+  var sheet = getSS().getSheetByName('Pós-jogo');
   var headerRow = 2;
   var col = headerMap(sheet, headerRow);
   var lastRow = sheet.getLastRow();
@@ -228,7 +234,7 @@ function addGame(d) {
 
 // ---------- Pós-jogo individual ----------
 function addGameInd(gameNo, dateStr, categoria, entries) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Pós-jogo individual');
+  var sheet = getSS().getSheetByName('Pós-jogo individual');
   var headerRow = 2;
   var col = headerMap(sheet, headerRow);
   var startRow = sheet.getLastRow() + 1;

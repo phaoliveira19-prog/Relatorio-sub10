@@ -25,9 +25,18 @@
  *       "Avaliação individual do treino" (o nome exato que o site espera).
  * 5. Me avise quando terminar — nesse momento eu aviso quando o site e a
  *    página de preenchimento já estiverem lendo/escrevendo no formato novo.
+ *
+ * Funciona tanto colado dentro da planilha quanto num projeto avulso do
+ * Apps Script — abre a planilha pelo ID abaixo em vez de depender de
+ * "planilha ativa". Se este arquivo estiver no mesmo projeto que
+ * apps-script.gs, pode apagar a linha do SPREADSHEET_ID/getSS() daqui
+ * (já existe uma lá) — deixei duplicado pra funcionar sozinho também.
  */
+if (typeof SPREADSHEET_ID === 'undefined') var SPREADSHEET_ID = '1XBswfpypHskEIG75ZrVm5_Gu7A8FaVbs';
+if (typeof getSS === 'undefined') { var getSS = function () { return SpreadsheetApp.openById(SPREADSHEET_ID); }; }
+
 function migrateAvaliacaoIndividual() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSS();
   var oldSheet = ss.getSheetByName('Avaliação individual do treino');
   if (!oldSheet) throw new Error('Aba "Avaliação individual do treino" não encontrada.');
 
