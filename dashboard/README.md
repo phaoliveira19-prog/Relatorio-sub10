@@ -46,6 +46,18 @@ verdade (fica visível em quem souber ler o código-fonte da página). Proteçã
 real fica pendente da migração de hospedagem pra Cloudflare Pages + Access
 (ver pendências abaixo).
 
+## Formato da aba "Avaliação individual do treino"
+
+Desde 31/07/2026, essa aba é **formato longo**: uma linha por
+atleta-por-treino (`Data | Apelido | Nota`), em vez do formato largo antigo
+(uma coluna nova a cada treino). Ausência = não existe linha para aquele
+atleta naquela data (antes era célula em branco na grade).
+
+Se você ainda está na planilha antiga (formato largo), rode a migração
+única em `migrate-avaliacao.gs` primeiro — ela só lê a aba antiga e cria uma
+aba nova, não apaga nada (instruções completas no cabeçalho do arquivo).
+`build_data.py`, `index.html` e `apps-script.gs` já esperam o formato novo.
+
 ## Fotos dos atletas
 
 As fotos hoje apontam para links externos (i.ibb.co) copiados da planilha.

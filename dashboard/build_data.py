@@ -257,29 +257,26 @@ def main():
                     })
 
     # ---------- Avaliacao individual do treino ----------
+    # Formato longo: uma linha por atleta-por-treino (Data | Apelido | Nota).
+    # Ausencia = nao ha linha (nao mais celula em branco numa grade larga).
     ws = wb['Avaliação individual do treino']
-    header = [c.value for c in ws[1]]
-    date_cols = header[2:]
+    col_ai = header_map(ws, 1)
     notes = []
-    training_by_date = {t['date']: t for t in trainings}
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=True):
-        nickname = row[0]
-        if not nickname:
+        nickname = g(row, col_ai, 'Apelido')
+        dt = g(row, col_ai, 'Data')
+        note = g(row, col_ai, 'Nota')
+        if not nickname or dt is None or note is None:
             continue
         a = athlete_by_nick.get(norm(nickname).lower())
-        for col_idx, raw_date in enumerate(date_cols, start=2):
-            note = row[col_idx]
-            if note is None:
-                continue
-            dt = datetime.strptime(raw_date, '%d/%m/%Y').date()
-            notes.append({
-                'athlete': nickname, 'date': dt.isoformat(), 'month': month_label(dt), 'note': note,
-                'position': a['position'] if a else None,
-                'quartile': a['quartile'] if a else None,
-                'foot': a['foot'] if a else None,
-                'tenureBand': a['tenureBand'] if a else None,
-                'photo': a['photo'] if a else None,
-            })
+        notes.append({
+            'athlete': nickname, 'date': d(dt), 'month': month_label(dt), 'note': note,
+            'position': a['position'] if a else None,
+            'quartile': a['quartile'] if a else None,
+            'foot': a['foot'] if a else None,
+            'tenureBand': a['tenureBand'] if a else None,
+            'photo': a['photo'] if a else None,
+        })
 
     # ---------- Pos-jogo ----------
     games = []

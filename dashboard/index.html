@@ -326,14 +326,6 @@ function parseSheetsDate(v){
   const [,mo,da,yr]=m;
   return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`;
 }
-// Cabecalhos de data em "Avaliacao individual" sao texto literal "02/02/2026" (DD/MM/AAAA)
-function parseHeaderDateDDMMYYYY(v){
-  if(!v) return null;
-  const m=String(v).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(!m) return null;
-  const [,da,mo,yr]=m;
-  return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`;
-}
 const SHEETS_MONTH_PT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function sheetsMonthLabel(isoDate){
   if(!isoDate) return null;
@@ -361,6 +353,7 @@ function monthsBetweenIso(startIso,endIso){
 // treinos", mas a ordem das colunas continua estável). Ordem tirada dos CSVs
 // de referência já validados.
 const ATLETAS_COL_FALLBACK={'Nome':0,'Apelido':1,'ID atleta':2,'Data de Nascimento':3,'Quartil':4,'Posição':5,'Pé dominante':6,'Chegada ao clube':7,'Categoria':8,'Link foto':9,'Característica':10,'Pontos a melhorar':11};
+const AVALIACAO_COL_FALLBACK={'Data':0,'Apelido':1,'Nota':2};
 const TREINOS_COL_FALLBACK={'Data':0,'ID da sessão':1,'Categoria':2,'Conteúdo principal - preparatória':3,'Conteúdo secundário - preparatória':4,'Conteúdo concorrente - preparatória':5,'Tipo de conteúdo - preparatória':6,'Tipo de tarefa - preparatória':7,'Complexidade - preparatória':8,'Conteúdo principal - conceitual':9,'Conteúdo secundário - conceitual':10,'Conteúdo concorrente - conceitual':11,'Tipo de conteúdo - conceitual':12,'Tipo de tarefa - conceitual':13,'Complexidade - conceitual':14,'Relação númerica - conexão':15,'Tipo de tarefa - conexão':16,'Complexidade - conexão':17,'Nota geral da sessão (0 a 10)':18,'Nº de atletas':19,'Atletas em avaliação':20,'Minutagem - preparatória':21,'Jogadores ativos - preparatória':22,'TAA - preparatória':23,'Desempenho - preparatória (0 a 10)':24,'Minutagem - conceitual':25,'Jogadores ativos - conceitual':26,'TAA - conceitual':27,'Desempenho - conceitual (0 a 10)':28,'Minutagem - conexão':29,'Jogadores ativos - conexão':30,'TAA - conexão':31,'Desempenho - conexão (0 a 10)':32,'Observações':33,'Minutagem efetiva':34,'Total TAA':35,'% de minutagem':36,'% de TAA':37};
 const JOGOS_COL_FALLBACK={'Nº Jogo':0,'Data':1,'Categoria':2,'Adversário':3,'Ranking':4,'Categoria adversário':5,'Competição':6,'Local':7,'Cidade':8,'Período':9,'Formato':10,'Plataforma de jogo':11,'Treinador':12,'Capitão':13,'Minutagem':14,'Gols feitos':15,'Gols sofridos':16,'Saldo':17,'Resultado':18,'Cartão amarelo':19,'Cartão vermelho':20,'Desempenho':21,'Comentários gerais':22,'Pontos positivos':23,'Pontos negativos':24,'Data entre jogos':25};
 const JOGOSIND_COL_FALLBACK={'Nº Jogo':0,'Data':1,'Categoria':2,'Nome':3,'Posição':4,'Titularidade':5,'Minutagem':6,'Desempenho':7,'Gols feitos':8,'Gols sofridos':9,'Assistências':10,'Cartão amarelo':11,'Cartão vermelho':12,'Comentários individuais':13};
@@ -454,21 +447,22 @@ function extractTrainingsFromCSV(csvText){
   return {trainings, blocks, contents};
 }
 
+// Formato longo: uma linha por atleta-por-treino (Data | Apelido | Nota).
+// Ausência = não há linha (não mais célula em branco numa grade larga).
 function extractNotesFromCSV(csvText, athleteByNick){
-  const rows=parseCSV(csvText); const header=rows[0]||[]; const dateCols=header.slice(2);
+  const rows=parseCSV(csvText); const col=headerMap(rows,0);
+  const gv=(row,name)=>gGate(row,col,name,AVALIACAO_COL_FALLBACK[name]);
   const notes=[];
   for(let r=1;r<rows.length;r++){
-    const row=rows[r]; const nickname=row[0]; if(!nickname) continue;
+    const row=rows[r];
+    const dt=parseSheetsDate(gv(row,'Data')); if(!dt) continue;
+    const nickname=gv(row,'Apelido'); if(!nickname) continue;
+    const noteRaw=gv(row,'Nota'); if(noteRaw===null) continue;
     const a=athleteByNick[normLowerText(nickname)];
-    dateCols.forEach((rawDate,i)=>{
-      const colIdx=i+2; const note=row[colIdx];
-      if(note===undefined||note===null||note==='') return;
-      const dt=parseHeaderDateDDMMYYYY(rawDate); if(!dt) return;
-      notes.push({
-        athlete:nickname, date:dt, month:sheetsMonthLabel(dt), note:csvNum(note),
-        position:a?a.position:null, quartile:a?a.quartile:null, foot:a?a.foot:null,
-        tenureBand:a?a.tenureBand:null, photo:a?a.photo:null,
-      });
+    notes.push({
+      athlete:nickname, date:dt, month:sheetsMonthLabel(dt), note:csvNum(noteRaw),
+      position:a?a.position:null, quartile:a?a.quartile:null, foot:a?a.foot:null,
+      tenureBand:a?a.tenureBand:null, photo:a?a.photo:null,
     });
   }
   return notes;

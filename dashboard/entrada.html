@@ -126,7 +126,6 @@ let DATALISTS = { contents: [], contentTypes: [], opponents: [], competitions: [
 function $(id){ return document.getElementById(id); }
 function opts(arr){ return arr.map(v=>`<option value="${v}">${v}</option>`).join(''); }
 function todayIso(){ return new Date().toISOString().slice(0,10); }
-function isoToDDMMYYYY(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
 
 async function sha256Hex(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -367,7 +366,7 @@ function wireAvaliacao(){
       .filter(e=>e.nota!==null);
     if(!entries.length){ showMsg(msg,false,'Preencha ao menos uma nota.'); return; }
     $('btnAvaliacao').disabled = true;
-    const r = await sendToScript({action:'addAvaliacoes', date:isoToDDMMYYYY($('av_data').value), entries});
+    const r = await sendToScript({action:'addAvaliacoes', date:$('av_data').value, entries});
     $('btnAvaliacao').disabled = false;
     if(r.ok) showMsg(msg,true,`${r.result.written} nota(s) salva(s).`);
     else showMsg(msg,false,'Erro: '+r.error);

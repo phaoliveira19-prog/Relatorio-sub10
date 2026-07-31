@@ -182,29 +182,21 @@ function addTraining(d) {
 }
 
 // ---------- Avaliação individual do treino ----------
-function addAvaliacoes(dateStr, entries) {
+// Formato longo: uma linha por atleta-por-treino (Data | Apelido | Nota).
+// dateIso chega como "AAAA-MM-DD" (do <input type=date> de entrada.html).
+function addAvaliacoes(dateIso, entries) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Avaliação individual do treino');
-  var lastCol = sheet.getLastColumn();
-  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  var dateCol = null;
-  for (var i = 2; i < headers.length; i++) {
-    if (String(headers[i]).trim() === dateStr) { dateCol = i + 1; break; }
-  }
-  if (!dateCol) {
-    dateCol = lastCol + 1;
-    sheet.getRange(1, dateCol).setValue(dateStr);
-  }
-  var lastRow = sheet.getLastRow();
-  var nicknames = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
+  var col = headerMap(sheet, 1);
   var written = 0;
   (entries || []).forEach(function (en) {
-    var rowIdx = nicknames.indexOf(en.apelido);
-    if (rowIdx === -1) return;
     if (en.nota === '' || en.nota === null || en.nota === undefined) return;
-    sheet.getRange(rowIdx + 2, dateCol).setValue(Number(en.nota));
+    var row = sheet.getLastRow() + 1;
+    setDateByHeader(sheet, row, col, 'Data', dateIso);
+    setByHeader(sheet, row, col, 'Apelido', en.apelido);
+    setByHeader(sheet, row, col, 'Nota', Number(en.nota));
     written++;
   });
-  return { dateCol: dateCol, written: written };
+  return { written: written };
 }
 
 // ---------- Pós-jogo ----------
