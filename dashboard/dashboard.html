@@ -318,12 +318,19 @@ function csvNum(v){
   if(v===null||v===undefined||v==='') return null;
   const n=Number(v); return isNaN(n)?null:n;
 }
-// Celulas de data reais exportam "2/6/2026" (M/D/AAAA, sem zero a esquerda)
+// A planilha exporta datas no formato DD/MM/AAAA (ex.: "03/08/2026" = 3 de
+// agosto), com zero à esquerda — confirmado batendo a sequência cronológica
+// real das sessões contra a data de início da temporada (06/02) e a sessão
+// mais recente. Se o componente que seria o mês vier > 12, é sinal de que a
+// ordem real é a outra (M/D) — nesse caso inverte, defensivamente.
 function parseSheetsDate(v){
   if(!v) return null;
   const m=String(v).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if(!m) return null;
-  const [,mo,da,yr]=m;
+  let [,da,mo,yr]=m;
+  da=Number(da); mo=Number(mo);
+  if(mo>12 && da<=12) [mo,da]=[da,mo];
+  if(mo<1||mo>12||da<1||da>31) return null;
   return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`;
 }
 const SHEETS_MONTH_PT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
