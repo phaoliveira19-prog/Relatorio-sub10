@@ -35,6 +35,7 @@ function doGet(e) {
         apelido: r[(col['Apelido'] || 2) - 1],
         posicao: r[(col['Posição'] || 6) - 1],
         quartil: r[(col['Quartil'] || 5) - 1],
+        foto: r[(col['Link foto'] || 10) - 1],
       };
     }).filter(function (a) { return a.apelido; });
     return jsonOut({ ok: true, athletes: athletes });
