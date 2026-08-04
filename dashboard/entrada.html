@@ -6,11 +6,13 @@
 <title>Preenchimento · Sistema do treinador</title>
 <style>
 :root{
+  color-scheme: dark;
   --bg:#05070c; --panel:#0a101c; --panel2:#0f1726; --card:#101827dd; --stroke:#253047; --stroke2:#1b2538;
   --text:#edf4ff; --muted:#8fa1bd; --soft:#b8c8df; --cyan:#22d3ee; --blue:#60a5fa; --green:#32d583; --yellow:#fdb022; --red:#f97066;
   --radius:18px;
 }
 body.light{
+  color-scheme: light;
   --bg:#f3f7fb; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffffee; --stroke:#cbd7e6; --stroke2:#d9e3ef;
   --text:#0b1220; --muted:#526276; --soft:#314156;
 }
@@ -80,7 +82,10 @@ table.roster .name-cell{font-weight:800;white-space:nowrap;min-width:120px}
     <h1>Preenchimento da planilha</h1>
     <div class="sub">Sistema do treinador · Sub-10</div>
   </div>
-  <a class="btn" href="./dashboard.html">Ver dashboard</a>
+  <div style="display:flex;gap:8px">
+    <a class="btn" href="./index.html">← Capa</a>
+    <a class="btn" href="./dashboard.html">Ver dashboard</a>
+  </div>
 </div>
 
 <div class="wrap">
@@ -237,9 +242,8 @@ function panelAtleta(){
     <div class="grid2">
       <div class="field"><label>Nome completo</label><input id="a_nome" required></div>
       <div class="field"><label>Apelido</label><input id="a_apelido" required></div>
-      <div class="field"><label>Data de nascimento</label><input type="date" id="a_dob"></div>
+      <div class="field"><label>Data de nascimento</label><input type="date" id="a_dob"><div class="hint" id="a_quartilHint" style="margin:6px 0 0">Quartil: —</div></div>
       <div class="field"><label>Chegada ao clube</label><input type="date" id="a_joined" value="${todayIso()}"></div>
-      <div class="field"><label>Quartil</label><select id="a_quartil"><option value="">—</option>${opts(QUARTIS)}</select></div>
       <div class="field"><label>Posição</label><select id="a_posicao"><option value="">—</option>${opts(POSICOES)}</select></div>
       <div class="field"><label>Pé dominante</label><select id="a_pe"><option value="">—</option>${opts(PES)}</select></div>
       <div class="field"><label>Categoria</label><input id="a_categoria" value="Sub-10"></div>
@@ -250,7 +254,19 @@ function panelAtleta(){
     <div class="foot-actions"><button class="btn primary" id="btnAtleta">Salvar atleta</button></div>
   </div>`;
 }
+// Quartil etário: trimestre de nascimento no ano (Jan-Mar=Q1 ... Out-Dez=Q4),
+// mesma convenção usada hoje na planilha (conferida contra os dados reais).
+function quartilFromDob(iso){
+  if(!iso) return '';
+  const mo = Number(iso.split('-')[1]);
+  if(!mo) return '';
+  return QUARTIS[Math.floor((mo-1)/3)];
+}
 function wireAtleta(){
+  $('a_dob').addEventListener('input', () => {
+    const q = quartilFromDob($('a_dob').value);
+    $('a_quartilHint').textContent = 'Quartil: ' + (q || '—');
+  });
   $('btnAtleta').onclick = async () => {
     const nome = $('a_nome').value.trim(), apelido = $('a_apelido').value.trim();
     const msg = $('msgAtleta');
@@ -258,7 +274,7 @@ function wireAtleta(){
     $('btnAtleta').disabled = true;
     const r = await sendToScript({action:'addAthlete', data:{
       nome, apelido, dataNascimento:$('a_dob').value, chegadaAoClube:$('a_joined').value,
-      quartil:$('a_quartil').value, posicao:$('a_posicao').value, peDominante:$('a_pe').value,
+      quartil:quartilFromDob($('a_dob').value), posicao:$('a_posicao').value, peDominante:$('a_pe').value,
       categoria:$('a_categoria').value, linkFoto:$('a_foto').value, caracteristica:$('a_carac').value,
       pontosAMelhorar:$('a_melhorar').value,
     }});
@@ -266,6 +282,7 @@ function wireAtleta(){
     if(r.ok){
       showMsg(msg,true,`Atleta salvo (ID ${r.result.id}). Lista de atletas atualizada nas outras abas.`);
       ['a_nome','a_apelido','a_carac','a_melhorar','a_foto'].forEach(id=>$(id).value='');
+      $('a_quartilHint').textContent = 'Quartil: —';
       refreshRoster();
     } else showMsg(msg,false,'Erro: '+r.error);
   };
