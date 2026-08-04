@@ -28,8 +28,8 @@ label{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase
 .btn.primary{background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;border:0}
 .btn:hover{filter:brightness(1.08)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;border-bottom:1px solid var(--stroke2);background:linear-gradient(180deg,rgba(10,15,25,.92),rgba(10,15,25,.82));backdrop-filter:blur(10px)}
-body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(242,247,253,.82))}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;border-bottom:1px solid var(--stroke2);background:linear-gradient(180deg,rgba(10,15,25,.90),rgba(10,15,25,.88)),url('./photos/capa-bg.jpg');background-size:auto,cover;background-position:center,center 30%;background-repeat:no-repeat,no-repeat;backdrop-filter:blur(10px)}
+body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(242,247,253,.92)),url('./photos/capa-bg.jpg');background-size:auto,cover;background-position:center,center 30%;background-repeat:no-repeat,no-repeat}
 .topbar h1{font-size:17px;font-weight:900}
 .topbar .sub{font-size:12px;color:var(--muted);margin-top:2px}
 .wrap{max-width:900px;margin:0 auto;padding:20px 18px 80px}
@@ -57,8 +57,11 @@ table.roster .name-cell{font-weight:800;white-space:nowrap;min-width:120px}
 .msg.ok{background:rgba(50,213,131,.12);border:1px solid rgba(50,213,131,.4);color:#32d583}
 .msg.err{background:rgba(249,112,102,.12);border:1px solid rgba(249,112,102,.4);color:#f97066}
 .msg.warn{background:rgba(253,176,34,.12);border:1px solid rgba(253,176,34,.4);color:#fdb022}
-.gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--bg)}
-.gate-box{width:min(340px,90vw);text-align:center}
+.gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
+  background-image:linear-gradient(160deg,rgba(5,7,12,.45) 0%,rgba(5,7,12,.86) 62%,var(--bg) 100%),url('./photos/pedro-capa-web.jpg');
+  background-size:cover;background-position:center 15%;background-repeat:no-repeat}
+body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%,rgba(243,247,251,.92) 62%,var(--bg) 100%),url('./photos/pedro-capa-web.jpg')}
+.gate-box{width:min(360px,92vw);text-align:center;background:var(--card);border:1px solid var(--stroke);border-radius:22px;padding:34px 28px;box-shadow:0 30px 80px rgba(0,0,0,.4);backdrop-filter:blur(8px)}
 .gate-box h2{margin-bottom:6px}
 .gate-box p{color:var(--muted);font-size:13px;margin:0 0 18px}
 .theme-toggle{position:fixed;left:16px;bottom:16px;z-index:50;border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.06);color:var(--text);padding:9px 12px;font-weight:800;cursor:pointer;font-size:12px}
