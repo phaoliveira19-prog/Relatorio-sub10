@@ -67,8 +67,9 @@ table.roster .name-cell{font-weight:800;white-space:nowrap;min-width:120px}
 <div class="gate" id="gate">
   <div class="gate-box">
     <h2>Área de preenchimento</h2>
-    <p>Senha do treinador</p>
-    <div class="field"><input type="password" id="gatePassword" autocomplete="current-password" /></div>
+    <p>Login do treinador</p>
+    <div class="field" style="text-align:left"><label>Usuário</label><input type="text" id="gateLogin" autocomplete="username" /></div>
+    <div class="field" style="text-align:left"><label>Senha</label><input type="password" id="gatePassword" autocomplete="current-password" /></div>
     <button class="btn primary" id="gateBtn" style="width:100%">Entrar</button>
     <div id="gateMsg" style="margin-top:10px;font-size:12.5px;color:var(--red)"></div>
   </div>
@@ -104,6 +105,8 @@ table.roster .name-cell{font-weight:800;white-space:nowrap;min-width:120px}
 // apps-script.gs neste mesmo repositório para as instruções de instalação).
 // =====================================================================
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyazQGCdsQR_iyh1e_lX1rDZAy792z_eLbqHYfplFW45fqHqozRd_8DVscrD2B7_ww/exec';
+// Login de acesso a esta página (comparação sem diferenciar maiúsculas/minúsculas).
+const LOGIN = 'pedrohenrique';
 // Hash SHA-256 da senha de acesso a esta página (não é a senha em texto puro).
 // Para trocar a senha: gere um novo hash (ex.: no console do navegador rode
 // `crypto.subtle.digest('SHA-256', new TextEncoder().encode('sua-senha')).then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))`)
@@ -134,23 +137,25 @@ async function sha256Hex(text){
 }
 
 async function checkGate(){
+  const login = $('gateLogin').value.trim().toLowerCase();
   const pass = $('gatePassword').value;
   if(PASSWORD_HASH === 'TROQUE_ESTE_HASH'){
     $('gateMsg').textContent = 'Senha ainda não configurada em entrada.html (PASSWORD_HASH).';
     return;
   }
   const hash = await sha256Hex(pass);
-  if(hash === PASSWORD_HASH){
+  if(login === LOGIN.toLowerCase() && hash === PASSWORD_HASH){
     sessionStorage.setItem('entradaAuth','1');
     $('gate').style.display='none';
   } else {
-    $('gateMsg').textContent = 'Senha incorreta.';
+    $('gateMsg').textContent = 'Usuário ou senha incorretos.';
   }
 }
 
 function initGate(){
   if(sessionStorage.getItem('entradaAuth')==='1'){ $('gate').style.display='none'; }
   $('gateBtn').onclick = checkGate;
+  $('gateLogin').addEventListener('keydown', e=>{ if(e.key==='Enter') checkGate(); });
   $('gatePassword').addEventListener('keydown', e=>{ if(e.key==='Enter') checkGate(); });
 }
 

@@ -48,14 +48,14 @@ pelo celular. Escreve na planilha através de um script do Google Apps Script
 (`apps-script.gs`, colado dentro da própria planilha — veja o cabeçalho desse
 arquivo pras instruções de instalação).
 
-Duas configurações precisam ser preenchidas em `entrada.html` antes de
-funcionar:
+Configurações em `entrada.html` antes de funcionar:
 - `SCRIPT_URL`: a URL do Apps Script implantado (veja `apps-script.gs`).
+- `LOGIN`: usuário de acesso à página (padrão atual: `pedrohenrique`).
 - `PASSWORD_HASH`: hash SHA-256 da senha de acesso à página (senha padrão
   atual: `sub10cruzeiro` — troque assim que possível, veja o comentário no
   arquivo pra gerar um novo hash).
 
-Essa senha é uma barreira simples contra acesso casual, não segurança de
+Esse login é uma barreira simples contra acesso casual, não segurança de
 verdade (fica visível em quem souber ler o código-fonte da página). Proteção
 real fica pendente da migração de hospedagem pra Cloudflare Pages + Access
 (ver pendências abaixo).
