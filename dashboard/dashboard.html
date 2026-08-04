@@ -190,7 +190,7 @@ body.light .eyebrow{color:#0e7490}
         <div class="card span-4"><h3>Top · Concorrente</h3><div class="desc">Fase oposta, pareada de propósito com o principal.</div><div class="chart" id="chTopConcorrente"></div></div>
         <div class="card span-6"><h3>Conteúdos com melhor avaliação média</h3><div class="desc">Mínimo de 3 ocorrências em blocos de treino.</div><div class="chart" id="chBestContentPerf"></div></div>
         <div class="card span-6"><h3>Conteúdos com pior avaliação média</h3><div class="desc">Ajuda a identificar conteúdos mais desafiadores.</div><div class="chart" id="chWorstContentPerf"></div></div>
-        <div class="card span-6"><h3>Distribuição por tipo de conteúdo</h3><div class="desc">Recorrência por grupo do currículo.</div><div class="chart" id="chContentTypeDist"></div></div>
+        <div class="card span-6"><h3>Distribuição por tipo de conteúdo</h3><div class="desc">Minutagem por grupo do currículo.</div><div class="chart" id="chContentTypeDist"></div></div>
         <div class="card span-3"><h3>Ofensivo x defensivo</h3><div class="desc">Distribuição das ocorrências por fase.</div><div class="chart short" id="chOffDef"></div></div>
         <div class="card span-3"><h3>Individual · grupo · coletivo</h3><div class="desc">Nível de organização enfatizado.</div><div class="chart short" id="chLevelDist"></div></div>
         <div class="card span-12"><h3>Conteúdos sem foco (principal/secundário) há mais de 30 dias</h3><div class="desc">Baseado em quando o conteúdo apareceu como principal ou secundário — concorrente cumpre outro papel pedagógico e não entra nesse alerta. Recalculado a cada nova sessão registrada na base.</div><div class="table-wrap" id="tblContentGaps"></div></div>
@@ -333,6 +333,14 @@ function parseSheetsDate(v){
   if(mo<1||mo>12||da<1||da>31) return null;
   return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`;
 }
+// Cabeçalhos de data em "Avaliação individual" são texto literal "02/02/2026" (DD/MM/AAAA)
+function parseHeaderDateDDMMYYYY(v){
+  if(!v) return null;
+  const m=String(v).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  const [,da,mo,yr]=m;
+  return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`;
+}
 const SHEETS_MONTH_PT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function sheetsMonthLabel(isoDate){
   if(!isoDate) return null;
@@ -360,7 +368,6 @@ function monthsBetweenIso(startIso,endIso){
 // treinos", mas a ordem das colunas continua estável). Ordem tirada dos CSVs
 // de referência já validados.
 const ATLETAS_COL_FALLBACK={'Nome':0,'Apelido':1,'ID atleta':2,'Data de Nascimento':3,'Quartil':4,'Posição':5,'Pé dominante':6,'Chegada ao clube':7,'Categoria':8,'Link foto':9,'Característica':10,'Pontos a melhorar':11};
-const AVALIACAO_COL_FALLBACK={'Data':0,'Apelido':1,'Nota':2};
 const TREINOS_COL_FALLBACK={'Data':0,'ID da sessão':1,'Categoria':2,'Conteúdo principal - preparatória':3,'Conteúdo secundário - preparatória':4,'Conteúdo concorrente - preparatória':5,'Tipo de conteúdo - preparatória':6,'Tipo de tarefa - preparatória':7,'Complexidade - preparatória':8,'Conteúdo principal - conceitual':9,'Conteúdo secundário - conceitual':10,'Conteúdo concorrente - conceitual':11,'Tipo de conteúdo - conceitual':12,'Tipo de tarefa - conceitual':13,'Complexidade - conceitual':14,'Relação númerica - conexão':15,'Tipo de tarefa - conexão':16,'Complexidade - conexão':17,'Nota geral da sessão (0 a 10)':18,'Nº de atletas':19,'Atletas em avaliação':20,'Minutagem - preparatória':21,'Jogadores ativos - preparatória':22,'TAA - preparatória':23,'Desempenho - preparatória (0 a 10)':24,'Minutagem - conceitual':25,'Jogadores ativos - conceitual':26,'TAA - conceitual':27,'Desempenho - conceitual (0 a 10)':28,'Minutagem - conexão':29,'Jogadores ativos - conexão':30,'TAA - conexão':31,'Desempenho - conexão (0 a 10)':32,'Observações':33,'Minutagem efetiva':34,'Total TAA':35,'% de minutagem':36,'% de TAA':37};
 const JOGOS_COL_FALLBACK={'Nº Jogo':0,'Data':1,'Categoria':2,'Adversário':3,'Ranking':4,'Categoria adversário':5,'Competição':6,'Local':7,'Cidade':8,'Período':9,'Formato':10,'Plataforma de jogo':11,'Treinador':12,'Capitão':13,'Minutagem':14,'Gols feitos':15,'Gols sofridos':16,'Saldo':17,'Resultado':18,'Cartão amarelo':19,'Cartão vermelho':20,'Desempenho':21,'Comentários gerais':22,'Pontos positivos':23,'Pontos negativos':24,'Data entre jogos':25};
 const JOGOSIND_COL_FALLBACK={'Nº Jogo':0,'Data':1,'Categoria':2,'Nome':3,'Posição':4,'Titularidade':5,'Minutagem':6,'Desempenho':7,'Gols feitos':8,'Gols sofridos':9,'Assistências':10,'Cartão amarelo':11,'Cartão vermelho':12,'Comentários individuais':13};
@@ -454,22 +461,23 @@ function extractTrainingsFromCSV(csvText){
   return {trainings, blocks, contents};
 }
 
-// Formato longo: uma linha por atleta-por-treino (Data | Apelido | Nota).
-// Ausência = não há linha (não mais célula em branco numa grade larga).
+// Formato largo: uma linha por atleta, uma coluna nova por data de treino.
+// Ausência = célula em branco na grade.
 function extractNotesFromCSV(csvText, athleteByNick){
-  const rows=parseCSV(csvText); const col=headerMap(rows,0);
-  const gv=(row,name)=>gGate(row,col,name,AVALIACAO_COL_FALLBACK[name]);
+  const rows=parseCSV(csvText); const header=rows[0]||[]; const dateCols=header.slice(2);
   const notes=[];
   for(let r=1;r<rows.length;r++){
-    const row=rows[r];
-    const dt=parseSheetsDate(gv(row,'Data')); if(!dt) continue;
-    const nickname=gv(row,'Apelido'); if(!nickname) continue;
-    const noteRaw=gv(row,'Nota'); if(noteRaw===null) continue;
+    const row=rows[r]; const nickname=row[0]; if(!nickname) continue;
     const a=athleteByNick[normLowerText(nickname)];
-    notes.push({
-      athlete:nickname, date:dt, month:sheetsMonthLabel(dt), note:csvNum(noteRaw),
-      position:a?a.position:null, quartile:a?a.quartile:null, foot:a?a.foot:null,
-      tenureBand:a?a.tenureBand:null, photo:a?a.photo:null,
+    dateCols.forEach((rawDate,i)=>{
+      const colIdx=i+2; const note=row[colIdx];
+      if(note===undefined||note===null||note==='') return;
+      const dt=parseHeaderDateDDMMYYYY(rawDate); if(!dt) return;
+      notes.push({
+        athlete:nickname, date:dt, month:sheetsMonthLabel(dt), note:csvNum(note),
+        position:a?a.position:null, quartile:a?a.quartile:null, foot:a?a.foot:null,
+        tenureBand:a?a.tenureBand:null, photo:a?a.photo:null,
+      });
     });
   }
   return notes;
@@ -603,7 +611,7 @@ try{
   try{DATA = await (await fetch('./data.json',{cache:'no-store'})).json();}catch(e){document.body.innerHTML='<div style="padding:40px;color:#eef4ff;font-family:sans-serif">N\u00e3o foi poss\u00edvel carregar dados do Google Sheets nem do data.json local. Verifique a conex\u00e3o e o compartilhamento da planilha.</div>';return;}
 }
 const COLORS = ['#22d3ee','#60a5fa','#a78bfa','#32d583','#fdb022','#f97066','#f472b6','#38bdf8','#c4b5fd','#86efac'];
-const DISTINCT_COLORS = [COLORS[0],COLORS[4],COLORS[2],COLORS[3],COLORS[5],COLORS[6]];
+const DISTINCT_COLORS = [COLORS[0],COLORS[4],COLORS[2],COLORS[3],COLORS[5],COLORS[6],COLORS[1]];
 const RESULT_COLORS = {'Vitória':'#32d583','Empate':'#fdb022','Derrota':'#f97066'};
 const tooltip = document.getElementById('tooltip');
 const PAGES = [
@@ -661,7 +669,7 @@ function monthLabelFromDate(d){const months=['Jan','Fev','Mar','Abr','Mai','Jun'
 const allDated = [...DATA.trainings,...DATA.games,...DATA.blocks,...DATA.contents,...DATA.notes];
 const monthFirstDate = {}; allDated.forEach(d=>{if(d.month&&d.date){if(!monthFirstDate[d.month]||d.date<monthFirstDate[d.month]) monthFirstDate[d.month]=d.date;}});
 const MONTHS = Object.keys(monthFirstDate).sort((a,b)=>monthFirstDate[a].localeCompare(monthFirstDate[b]));
-const TASK_ORDER = ['Analítico','Situacional','Conceitual','Conceitual em ambiente específico','Jogo formal'];
+const TASK_ORDER = ['Analítico geral','Analítico em contexto específico','Jogo fundamental','Conceitual','Situacional','Jogo condicionado','Jogo formal'];
 const COMPLEX_ORDER = ['Baixa','Média','Alta'];
 const PART_ORDER = ['Preparatória','Conceitual','Conexão'];
 const TENURE_ORDER = ['0–3 meses','4–6 meses','7–12 meses','13–24 meses','+24 meses'];
@@ -794,7 +802,7 @@ function renderConteudos(f){const c=filteredContents(f), b=filteredBlocks(f); co
   const perfContent=Object.entries(by(b.filter(x=>x.performance!=null&&x.content&&x.content!=='Sem conteúdo registrado'),'content')).map(([k,v])=>({content:k,performance:avg(v.map(x=>x.performance)),count:v.length})).filter(x=>x.count>=3&&x.performance!=null);
   horizontalBar('chBestContentPerf',[...perfContent].sort((a,b)=>b.performance-a.performance).slice(0,8),'content',['performance'],{xMin:3,xMax:10,left:185,dataLabel:true,decimals:1,truncate:26});
   horizontalBar('chWorstContentPerf',[...perfContent].sort((a,b)=>a.performance-b.performance).slice(0,8),'content',['performance'],{xMin:3,xMax:10,left:185,dataLabel:true,decimals:1,truncate:26});
-  const typeDist=Object.entries(by(c,x=>normalizeContentType(x.contentType))).map(([k,v])=>({type:k,count:v.length})).sort((a,b)=>b.count-a.count).slice(0,8); horizontalBar('chContentTypeDist',typeDist,'type',['count'],{left:190,dataLabel:true,truncate:32});
+  const typeDist=Object.entries(by(b,x=>normalizeContentType(x.contentType))).map(([k,v])=>({type:k,minutes:sum(v.map(x=>x.minutes))})).sort((a,b)=>b.minutes-a.minutes).slice(0,8); horizontalBar('chContentTypeDist',typeDist,'type',['minutes'],{left:190,dataLabel:true,truncate:32});
   const od=Object.entries(by(c,x=>contentOrientation(x.contentType))).map(([k,v])=>({key:k,value:v.length,items:v})); donutChart('chOffDef',od,{unit:'ocorrência(s)',showNames:false,colors:DISTINCT_COLORS}); const ld=Object.entries(by(c,x=>contentLevel(x.contentType))).map(([k,v])=>({key:k,value:v.length,items:v})); donutChart('chLevelDist',ld,{unit:'ocorrência(s)',showNames:false,colors:DISTINCT_COLORS});
   renderTable('tblContentGaps',['Conteúdo','Tipo','Última vez como foco','Dias sem foco','Total (princ.+sec.)','Status'],contentGapRows().filter(x=>x.days>30).map(x=>[x.content,x.type,x.last||'—',x.days===999?'—':x.days,x.total,`<span class="status ${x.cls}">${x.status}</span>`]));}
 function contentGapRows(){const asOf=DATA.meta.asOf; const relevant=DATA.contents.filter(x=>x.role==='principal'||x.role==='secundario'); const all=uniq(DATA.contents.map(x=>x.content)); return all.map(name=>{const arr=relevant.filter(x=>x.content===name).sort((a,b)=>a.date.localeCompare(b.date)); const last=arr.length?arr[arr.length-1].date:null; const days=last?Math.round((new Date(asOf)-new Date(last))/(1000*3600*24)):999; const type=(arr[0]||(DATA.contents.find(x=>x.content===name)||{})).contentType||'Sem tipo'; let status='Recente',cls='good'; if(days>30){status='Sem foco recente';cls='bad'} else if(days>15){status='Atenção';cls='warn'} if(!last){status='Nunca foi foco (princ./sec.)';cls='neutral'} return {content:name,type,last,days,total:arr.length,status,cls};}).sort((a,b)=>b.days-a.days||a.content.localeCompare(b.content,'pt-BR'));}

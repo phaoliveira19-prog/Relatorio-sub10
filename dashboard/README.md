@@ -62,15 +62,11 @@ real fica pendente da migração de hospedagem pra Cloudflare Pages + Access
 
 ## Formato da aba "Avaliação individual do treino"
 
-Desde 31/07/2026, essa aba é **formato longo**: uma linha por
-atleta-por-treino (`Data | Apelido | Nota`), em vez do formato largo antigo
-(uma coluna nova a cada treino). Ausência = não existe linha para aquele
-atleta naquela data (antes era célula em branco na grade).
-
-Se você ainda está na planilha antiga (formato largo), rode a migração
-única em `migrate-avaliacao.gs` primeiro — ela só lê a aba antiga e cria uma
-aba nova, não apaga nada (instruções completas no cabeçalho do arquivo).
-`build_data.py`, `dashboard.html` e `apps-script.gs` já esperam o formato novo.
+Essa aba é **formato largo**: uma linha por atleta, uma coluna nova a cada
+treino (cabeçalho da coluna = data do treino em texto, `DD/MM/AAAA`).
+Ausência = célula em branco na grade. `build_data.py`, `dashboard.html` e
+`apps-script.gs` leem esse formato — é o jeito mais fácil de preencher no
+dia a dia.
 
 ## Fotos dos atletas
 
