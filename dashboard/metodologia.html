@@ -9,10 +9,12 @@
   --bg:#05070c; --panel:#0a101c; --panel2:#0f1726; --card:#101827dd; --stroke:#253047; --stroke2:#1b2538;
   --text:#edf4ff; --muted:#8fa1bd; --soft:#b8c8df; --cyan:#22d3ee; --blue:#60a5fa; --purple:#a78bfa; --green:#32d583; --yellow:#fdb022; --red:#f97066;
   --radius:20px;
+  color-scheme: dark;
 }
 body.light{
   --bg:#f3f7fb; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffffee; --stroke:#cbd7e6; --stroke2:#d9e3ef;
   --text:#0b1220; --muted:#526276; --soft:#314156;
+  color-scheme: light;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5}
@@ -28,12 +30,33 @@ body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(
 .topbar a:hover{filter:brightness(1.1)}
 .topbar .links{display:flex;gap:8px}
 
-.wrap{max-width:880px;margin:0 auto;padding:40px 20px 100px}
-.hero{margin-bottom:40px}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px 100px}
+
+.hero{position:relative;margin:0 -20px 34px;padding:44px 20px 30px;overflow:hidden;border-bottom:1px solid var(--stroke2)}
+.hero-bg{position:absolute;inset:0;z-index:0;background-image:url('./photos/capa-bg.jpg');background-size:cover;background-position:center;opacity:.16}
+body.light .hero-bg{opacity:.08}
+.hero-inner{position:relative;z-index:1;max-width:880px;margin:0 auto;display:flex;align-items:center;gap:28px}
+.hero-photo{flex:none;width:118px;height:118px;border-radius:50%;overflow:hidden;border:3px solid rgba(34,211,238,.55);box-shadow:0 14px 40px rgba(0,0,0,.35)}
+.hero-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-text{flex:1;min-width:0}
 .eyebrow{color:var(--cyan);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.16em;margin-bottom:8px}
 body.light .eyebrow{color:#0e7490}
-h1{font-size:clamp(26px,4vw,38px);font-weight:900;margin:0 0 12px;letter-spacing:-.5px}
-.lead{color:var(--muted);font-size:15.5px;max-width:640px;margin:0}
+h1{font-size:clamp(24px,4vw,36px);font-weight:900;margin:0 0 10px;letter-spacing:-.5px}
+.lead{color:var(--muted);font-size:15px;max-width:680px;margin:0}
+.lead b{color:var(--text)}
+@media (max-width:640px){.hero-inner{flex-direction:column;text-align:center}.hero-photo{width:100px;height:100px}}
+
+.topic-select{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:36px}
+@media (max-width:700px){.topic-select{grid-template-columns:1fr}}
+.topic-btn{border:1px solid var(--stroke);border-radius:var(--radius);background:linear-gradient(180deg,rgba(16,24,39,.7),rgba(10,16,28,.6));padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit;transition:.15s}
+body.light .topic-btn{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,250,255,.92))}
+.topic-btn:hover{border-color:var(--cyan)}
+.topic-btn.active{background:linear-gradient(135deg,var(--cyan),#4f8cff);border-color:transparent;color:#06101b}
+.topic-btn .topic-icon{font-size:22px;flex:none;width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center}
+.topic-btn.active .topic-icon{background:rgba(6,16,27,.14)}
+.topic-btn b{display:block;font-size:14px;font-weight:900;margin-bottom:2px}
+.topic-btn small{display:block;font-size:11.5px;color:var(--muted);font-weight:600}
+.topic-btn.active small{color:rgba(6,16,27,.72)}
 
 section{margin-bottom:44px}
 h2{font-size:21px;font-weight:900;margin:0 0 6px;display:flex;align-items:center;gap:10px}
@@ -88,13 +111,35 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
   </div>
 </div>
 
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+    <div class="hero-photo"><img src="./photos/pedro-capa-web.jpg" alt="Prof. Ms. Pedro Henrique"></div>
+    <div class="hero-text">
+      <div class="eyebrow">Metodologia</div>
+      <h1>Como funciona o sistema</h1>
+      <p class="lead">Nosso protocolo entende o sistema de formação e treinamento esportivo a partir de três estruturas: <b>o que ensinar?</b> (conteúdos a serem desenvolvidos), <b>como ensinar?</b> (tipos de tarefa de treino) e <b>como avaliar?</b> (medidas de avaliação do treino). Escolha um tópico abaixo pra ver os detalhes.</p>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
-  <div class="hero">
-    <div class="eyebrow">Metodologia</div>
-    <h1>Como funciona o sistema</h1>
-    <p class="lead">O dashboard mede o dia a dia do treino a partir de uma estrutura pedagógica com três camadas: <b>o que</b> se treina (conteúdos), <b>como</b> se treina (tipo de tarefa) e <b>quanto</b> se treina de fato (avaliação da sessão). Esta página explica cada uma.</p>
+  <div class="topic-select" id="topicSelect">
+    <button class="topic-btn active" data-topic="oque">
+      <span class="topic-icon">📚</span>
+      <span><b>O que ensinar?</b><small>Conteúdos a serem desenvolvidos</small></span>
+    </button>
+    <button class="topic-btn" data-topic="como">
+      <span class="topic-icon">🎯</span>
+      <span><b>Como ensinar?</b><small>Tipos de tarefa de treino</small></span>
+    </button>
+    <button class="topic-btn" data-topic="avaliar">
+      <span class="topic-icon">📊</span>
+      <span><b>Como avaliar?</b><small>Medidas de avaliação do treino</small></span>
+    </button>
   </div>
 
+  <div class="topic-panel" data-topic-panel="oque">
   <section>
     <h2><span class="n">1</span>Como o conteúdo é organizado</h2>
     <p class="section-sub">Todo conteúdo trabalhado num treino pertence a um destes cinco tipos, do mais geral ao mais específico:</p>
@@ -196,9 +241,11 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
       <div class="metric-link">↳ o dashboard mantém os três separados em todos os gráficos (nunca somados) — é por isso que o Mapa de Conteúdos tem uma visão para cada papel.</div>
     </div>
   </section>
+  </div>
 
+  <div class="topic-panel" data-topic-panel="como" hidden>
   <section>
-    <h2><span class="n">3</span>O continuum de tarefas de treino</h2>
+    <h2><span class="n">1</span>O continuum de tarefas de treino</h2>
     <p class="section-sub">Toda tarefa de treino se encaixa numa escala — do mais fechado e sem oposição até o jogo formal completo. Quanto mais à direita, mais "parecido com o jogo real" (representatividade):</p>
     <div class="continuum-bar">
       <span style="background:#f97066"></span><span style="background:#fdb022"></span><span style="background:#fde047"></span><span style="background:#a3e635"></span><span style="background:#4ade80"></span><span style="background:#22d3ee"></span><span style="background:#60a5fa"></span>
@@ -277,9 +324,11 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
     </div>
     <div class="metric-link">↳ essa é a mesma ordem usada no filtro <b>Tipo de tarefa</b> e nos gráficos de "Minutagem por tipo de tarefa" do dashboard.</div>
   </section>
+  </div>
 
+  <div class="topic-panel" data-topic-panel="avaliar" hidden>
   <section>
-    <h2><span class="n">4</span>Como a sessão é avaliada (TEA, TAA, AAT)</h2>
+    <h2><span class="n">1</span>Como a sessão é avaliada (TEA, TAA, AAT)</h2>
     <p class="section-sub">Os números do dashboard vêm de uma cadeia de cálculo simples, pensada pra medir não só quanto tempo o treino durou, mas quanto dele foi aprendizagem de verdade pra cada atleta:</p>
     <div class="card">
       <div class="def-grid">
@@ -309,11 +358,12 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
   </section>
 
   <section>
-    <h2><span class="n">5</span>Comportamento-chave</h2>
+    <h2><span class="n">2</span>Comportamento-chave</h2>
     <div class="card">
       <p style="margin:0;font-size:13.5px;color:var(--soft)">Aspectos que o treinador deve observar na execução dos atletas para entender se a tarefa está cumprindo sua função pedagógica — o critério qualitativo por trás da nota de desempenho de cada bloco de treino.</p>
     </div>
   </section>
+  </div>
 
   <div class="footer-note">Conteúdo baseado nas abas "Caderno de conteúdos", "Tipos de tarefa de treino" e "Avaliação do treino" da planilha. Prof. Ms. Pedro Henrique.</div>
 </div>
@@ -324,6 +374,17 @@ document.getElementById('themeToggle').onclick = () => {
   document.body.classList.toggle('light');
   document.getElementById('themeToggle').textContent = document.body.classList.contains('light') ? '🌙 Modo escuro' : '☀️ Modo claro';
 };
+
+function selectTopic(topic){
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.toggle('active', b.dataset.topic === topic));
+  document.querySelectorAll('.topic-panel').forEach(p => { p.hidden = p.dataset.topicPanel !== topic; });
+  if(history.replaceState) history.replaceState(null, '', '#' + topic);
+}
+document.querySelectorAll('.topic-btn').forEach(btn => {
+  btn.addEventListener('click', () => selectTopic(btn.dataset.topic));
+});
+const initialTopic = ['oque','como','avaliar'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'oque';
+selectTopic(initialTopic);
 </script>
 </body>
 </html>
