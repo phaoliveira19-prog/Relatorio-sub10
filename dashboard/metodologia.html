@@ -29,6 +29,7 @@ body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(
 .topbar a{color:var(--text);text-decoration:none;font-weight:800;font-size:13px;border:1px solid var(--stroke);border-radius:12px;padding:8px 12px}
 .topbar a:hover{filter:brightness(1.1)}
 .topbar .links{display:flex;gap:8px}
+.brand-logo{width:32px;height:32px;object-fit:contain;flex:none}
 
 .wrap{max-width:880px;margin:0 auto;padding:0 20px 100px}
 
@@ -104,8 +105,12 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
 </head>
 <body>
 <div class="topbar">
-  <a href="./index.html">← Início</a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador" class="brand-logo">
+    <b style="font-size:13px">QG do Treinador</b>
+  </div>
   <div class="links">
+    <a href="./index.html">← Início</a>
     <a href="./dashboard.html">Dashboard</a>
     <a href="./entrada.html">Preenchimento</a>
   </div>

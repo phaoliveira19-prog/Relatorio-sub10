@@ -30,6 +30,7 @@ label{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;border-bottom:1px solid var(--stroke2);background:linear-gradient(180deg,rgba(10,15,25,.90),rgba(10,15,25,.88)),url('./photos/capa-bg.jpg');background-size:auto,cover;background-position:center,center 30%;background-repeat:no-repeat,no-repeat;backdrop-filter:blur(10px)}
 body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(242,247,253,.92)),url('./photos/capa-bg.jpg');background-size:auto,cover;background-position:center,center 30%;background-repeat:no-repeat,no-repeat}
+.brand-logo{width:38px;height:38px;object-fit:contain;flex:none}
 .topbar h1{font-size:17px;font-weight:900}
 .topbar .sub{font-size:12px;color:var(--muted);margin-top:2px}
 .wrap{max-width:900px;margin:0 auto;padding:20px 18px 80px}
@@ -83,9 +84,12 @@ body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%
 </div>
 
 <div class="topbar">
-  <div>
-    <h1>Preenchimento da planilha</h1>
-    <div class="sub">QG do Treinador · Sub-10</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador" class="brand-logo">
+    <div>
+      <h1>Preenchimento da planilha</h1>
+      <div class="sub">QG do Treinador · Sub-10</div>
+    </div>
   </div>
   <div style="display:flex;gap:8px">
     <a class="btn" href="./index.html">← Capa</a>
