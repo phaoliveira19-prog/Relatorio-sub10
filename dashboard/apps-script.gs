@@ -22,6 +22,17 @@
 var SPREADSHEET_ID = '1XBswfpypHskEIG75ZrVm5_Gu7A8FaVbs';
 function getSS() { return SpreadsheetApp.openById(SPREADSHEET_ID); }
 
+// Datas voltam como objeto Date do Sheets; convertidas pra "AAAA-MM-DD" (o
+// formato que <input type=date> espera) usando o calendário local, não UTC.
+function dateToIso(v) {
+  if (!v) return '';
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    var y = v.getFullYear(), m = v.getMonth() + 1, d = v.getDate();
+    return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+  return String(v);
+}
+
 function doGet(e) {
   try {
     var ss = getSS();
@@ -31,11 +42,18 @@ function doGet(e) {
     var rows = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues() : [];
     var athletes = rows.map(function (r) {
       return {
+        id: r[(col['ID atleta'] || 3) - 1],
         nome: r[(col['Nome'] || 1) - 1],
         apelido: r[(col['Apelido'] || 2) - 1],
+        dataNascimento: dateToIso(r[(col['Data de Nascimento'] || 4) - 1]),
         posicao: r[(col['Posição'] || 6) - 1],
         quartil: r[(col['Quartil'] || 5) - 1],
+        peDominante: r[(col['Pé dominante'] || 7) - 1],
+        chegadaAoClube: dateToIso(r[(col['Chegada ao clube'] || 8) - 1]),
+        categoria: r[(col['Categoria'] || 9) - 1],
         foto: r[(col['Link foto'] || 10) - 1],
+        caracteristica: r[(col['Característica'] || 11) - 1],
+        pontosAMelhorar: r[(col['Pontos a melhorar'] || 12) - 1],
       };
     }).filter(function (a) { return a.apelido; });
     return jsonOut({ ok: true, athletes: athletes });
@@ -50,6 +68,7 @@ function doPost(e) {
     var action = body.action;
     var result;
     if (action === 'addAthlete') result = addAthlete(body.data);
+    else if (action === 'updateAthlete') result = updateAthlete(body.id, body.data);
     else if (action === 'addTraining') result = addTraining(body.data);
     else if (action === 'addAvaliacoes') result = addAvaliacoes(body.date, body.entries);
     else if (action === 'addGame') result = addGame(body.data);
@@ -143,6 +162,32 @@ function addAthlete(d) {
   setByHeader(sheet, newRow, col, 'Característica', d.caracteristica);
   setByHeader(sheet, newRow, col, 'Pontos a melhorar', d.pontosAMelhorar);
   return { id: nextId, row: newRow };
+}
+
+// Atualiza um atleta já cadastrado (localizado pelo ID atleta). Campos em
+// branco no formulário não sobrescrevem o que já está na planilha (mesma
+// regra de setByHeader usada no cadastro novo).
+function updateAthlete(id, d) {
+  var sheet = getSS().getSheetByName('Banco de atletas');
+  var col = headerMap(sheet, 1);
+  var lastRow = sheet.getLastRow();
+  var idCol = col['ID atleta'];
+  var ids = lastRow > 1 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues().flat() : [];
+  var rowIdx = ids.findIndex(function (v) { return String(v) === String(id); });
+  if (rowIdx === -1) throw new Error('Atleta não encontrado (ID ' + id + ').');
+  var row = rowIdx + 2;
+  setByHeader(sheet, row, col, 'Nome', d.nome);
+  setByHeader(sheet, row, col, 'Apelido', d.apelido);
+  setDateByHeader(sheet, row, col, 'Data de Nascimento', d.dataNascimento);
+  setByHeader(sheet, row, col, 'Quartil', d.quartil);
+  setByHeader(sheet, row, col, 'Posição', d.posicao);
+  setByHeader(sheet, row, col, 'Pé dominante', d.peDominante);
+  setDateByHeader(sheet, row, col, 'Chegada ao clube', d.chegadaAoClube);
+  setByHeader(sheet, row, col, 'Categoria', d.categoria);
+  setByHeader(sheet, row, col, 'Link foto', d.linkFoto);
+  setByHeader(sheet, row, col, 'Característica', d.caracteristica);
+  setByHeader(sheet, row, col, 'Pontos a melhorar', d.pontosAMelhorar);
+  return { id: id, row: row };
 }
 
 // ---------- Banco de treinos ----------

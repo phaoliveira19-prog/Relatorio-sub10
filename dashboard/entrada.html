@@ -193,7 +193,11 @@ async function fetchRosterAndLists(){
   }
   try{
     const d = await (await fetch('./data.json',{cache:'no-store'})).json();
-    if(!ROSTER.length) ROSTER = (d.athletes||[]).map(a=>({nome:a.name,apelido:a.nickname,posicao:a.position,quartil:a.quartile,foto:a.photo}));
+    if(!ROSTER.length) ROSTER = (d.athletes||[]).map(a=>({
+      id:a.id, nome:a.name, apelido:a.nickname, dataNascimento:a.dob, posicao:a.position, quartil:a.quartile,
+      peDominante:a.foot, chegadaAoClube:a.joined, categoria:a.category, foto:a.photo,
+      caracteristica:a.characteristic, pontosAMelhorar:a.improvement,
+    }));
     DATALISTS.contents = (d.meta && d.meta.contents) || [];
     DATALISTS.contentTypes = [...new Set((d.blocks||[]).map(b=>b.contentType).filter(Boolean))].sort();
     DATALISTS.opponents = [...new Set((d.games||[]).map(g=>g.opponent).filter(Boolean))].sort();
@@ -249,9 +253,17 @@ function showMsg(container, ok, text){
 // ---------- Painel: Novo atleta ----------
 function panelAtleta(){
   return `<div class="card">
-    <h2>Cadastro de novo atleta</h2>
-    <div class="hint">Preenche a linha em "Banco de atletas". O ID do atleta é gerado automaticamente. Foto continua sendo enviada à parte pelo GitHub.</div>
+    <h2>Cadastro de atletas</h2>
+    <div class="tabs" style="margin-bottom:16px">
+      <button type="button" data-mode="novo" class="active" id="modeNovoBtn">Novo atleta</button>
+      <button type="button" data-mode="editar" id="modeEditarBtn">Editar atleta existente</button>
+    </div>
+    <div class="hint" id="atletaHint">Preenche a linha em "Banco de atletas". O ID do atleta é gerado automaticamente. Foto continua sendo enviada à parte pelo GitHub.</div>
     <div id="msgAtleta"></div>
+    <div class="field" id="editSelectField" style="display:none">
+      <label>Selecione o atleta</label>
+      <select id="a_editSelect"><option value="">— escolha —</option>${ROSTER.map(a=>`<option value="${a.id||''}">${a.apelido}</option>`).join('')}</select>
+    </div>
     <div class="grid2">
       <div class="field"><label>Nome completo</label><input id="a_nome" required></div>
       <div class="field"><label>Apelido</label><input id="a_apelido" required></div>
@@ -275,7 +287,41 @@ function quartilFromDob(iso){
   if(!mo) return '';
   return QUARTIS[Math.floor((mo-1)/3)];
 }
+let atletaMode = 'novo';
+function clearAtletaForm(){
+  ['a_nome','a_apelido','a_dob','a_carac','a_melhorar','a_foto'].forEach(id=>$(id).value='');
+  $('a_joined').value = todayIso();
+  $('a_posicao').value = ''; $('a_pe').value = ''; $('a_categoria').value = 'Sub-10';
+  $('a_quartilHint').textContent = 'Quartil: —';
+}
+function fillAtletaForm(a){
+  $('a_nome').value = a.nome || ''; $('a_apelido').value = a.apelido || '';
+  $('a_dob').value = a.dataNascimento || ''; $('a_joined').value = a.chegadaAoClube || '';
+  $('a_posicao').value = a.posicao || ''; $('a_pe').value = a.peDominante || '';
+  $('a_categoria').value = a.categoria || 'Sub-10'; $('a_foto').value = a.foto || '';
+  $('a_carac').value = a.caracteristica || ''; $('a_melhorar').value = a.pontosAMelhorar || '';
+  $('a_quartilHint').textContent = 'Quartil: ' + (quartilFromDob(a.dataNascimento) || a.quartil || '—');
+}
+function setAtletaMode(mode){
+  atletaMode = mode;
+  $('modeNovoBtn').classList.toggle('active', mode==='novo');
+  $('modeEditarBtn').classList.toggle('active', mode==='editar');
+  $('editSelectField').style.display = mode==='editar' ? '' : 'none';
+  $('btnAtleta').textContent = mode==='editar' ? 'Atualizar atleta' : 'Salvar atleta';
+  $('atletaHint').textContent = mode==='editar'
+    ? 'Escolha um atleta e ajuste os campos que quiser — o que ficar em branco não apaga o que já está na planilha.'
+    : 'Preenche a linha em "Banco de atletas". O ID do atleta é gerado automaticamente. Foto continua sendo enviada à parte pelo GitHub.';
+  if(mode==='novo'){ $('a_editSelect').value=''; clearAtletaForm(); }
+}
 function wireAtleta(){
+  setAtletaMode('novo');
+  $('modeNovoBtn').onclick = () => setAtletaMode('novo');
+  $('modeEditarBtn').onclick = () => setAtletaMode('editar');
+  $('a_editSelect').onchange = () => {
+    const id = $('a_editSelect').value;
+    const a = ROSTER.find(x => String(x.id) === id);
+    if(a) fillAtletaForm(a); else clearAtletaForm();
+  };
   $('a_dob').addEventListener('input', () => {
     const q = quartilFromDob($('a_dob').value);
     $('a_quartilHint').textContent = 'Quartil: ' + (q || '—');
@@ -284,19 +330,30 @@ function wireAtleta(){
     const nome = $('a_nome').value.trim(), apelido = $('a_apelido').value.trim();
     const msg = $('msgAtleta');
     if(!nome || !apelido){ showMsg(msg,false,'Preencha nome e apelido.'); return; }
+    const editId = $('a_editSelect').value;
+    if(atletaMode==='editar' && !editId){ showMsg(msg,false,'Escolha um atleta pra editar.'); return; }
     $('btnAtleta').disabled = true;
-    const r = await sendToScript({action:'addAthlete', data:{
+    const data = {
       nome, apelido, dataNascimento:$('a_dob').value, chegadaAoClube:$('a_joined').value,
       quartil:quartilFromDob($('a_dob').value), posicao:$('a_posicao').value, peDominante:$('a_pe').value,
       categoria:$('a_categoria').value, linkFoto:$('a_foto').value, caracteristica:$('a_carac').value,
       pontosAMelhorar:$('a_melhorar').value,
-    }});
+    };
+    const r = atletaMode==='editar'
+      ? await sendToScript({action:'updateAthlete', id:editId, data})
+      : await sendToScript({action:'addAthlete', data});
     $('btnAtleta').disabled = false;
     if(r.ok){
-      showMsg(msg,true,`Atleta salvo (ID ${r.result.id}). Lista de atletas atualizada nas outras abas.`);
-      ['a_nome','a_apelido','a_carac','a_melhorar','a_foto'].forEach(id=>$(id).value='');
-      $('a_quartilHint').textContent = 'Quartil: —';
-      refreshRoster();
+      if(atletaMode==='editar'){
+        showMsg(msg,true,'Atleta atualizado. Lista de atletas atualizada nas outras abas.');
+        await refreshRoster();
+      } else {
+        showMsg(msg,true,`Atleta salvo (ID ${r.result.id}). Lista de atletas atualizada nas outras abas.`);
+        clearAtletaForm();
+        await refreshRoster();
+      }
+      const sel = $('a_editSelect');
+      if(sel) sel.innerHTML = '<option value="">— escolha —</option>'+ROSTER.map(a=>`<option value="${a.id||''}">${a.apelido}</option>`).join('');
     } else showMsg(msg,false,'Erro: '+r.error);
   };
 }
