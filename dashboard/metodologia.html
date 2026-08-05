@@ -26,8 +26,8 @@ body.light:before{background:radial-gradient(1000px 650px at 10% 0%,rgba(34,211,
 
 .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;border-bottom:1px solid var(--stroke2);background:linear-gradient(180deg,rgba(10,15,25,.92),rgba(10,15,25,.82));backdrop-filter:blur(10px)}
 body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(242,247,253,.82))}
-.topbar a{color:var(--text);text-decoration:none;font-weight:800;font-size:13px;border:1px solid var(--stroke);border-radius:12px;padding:8px 12px}
-.topbar a:hover{filter:brightness(1.1)}
+.topbar a,.topbar button{color:var(--text);text-decoration:none;font-weight:800;font-size:13px;border:1px solid var(--stroke);border-radius:12px;padding:8px 12px;background:transparent;cursor:pointer;font-family:inherit}
+.topbar a:hover,.topbar button:hover{filter:brightness(1.1)}
 .topbar .links{display:flex;gap:8px}
 .brand-logo{width:32px;height:32px;object-fit:contain;flex:none}
 
@@ -83,8 +83,14 @@ details[open] summary:after{content:'–'}
 .tag-table td.tag-fase{color:var(--muted);white-space:nowrap;width:110px}
 
 .continuum{display:flex;flex-direction:column;gap:10px;margin-top:18px}
-.continuum-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;margin-bottom:6px}
-.continuum-bar span{flex:1}
+.continuum-bar{display:flex;height:16px;border-radius:999px;overflow:hidden;margin-bottom:10px;gap:2px}
+.continuum-bar button{flex:1;border:0;padding:0;cursor:pointer;opacity:.55;transition:opacity .15s}
+.continuum-bar button:hover{opacity:.8}
+.continuum-bar button.active{opacity:1;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7)}
+.continuum-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.continuum-tabs button{border:1px solid var(--stroke2);border-radius:999px;background:transparent;color:var(--muted);font-size:11.5px;font-weight:800;padding:6px 11px;cursor:pointer;font-family:inherit}
+.continuum-tabs button:hover{color:var(--text);border-color:var(--stroke)}
+.continuum-tabs button.active{background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;border-color:transparent}
 .task-card{border:1px solid var(--stroke2);border-radius:16px;padding:16px 18px}
 .task-card .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap}
 .task-card h3{font-size:15px;margin:0;font-weight:900}
@@ -101,6 +107,18 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
 
 .footer-note{margin-top:56px;padding-top:24px;border-top:1px solid var(--stroke2);font-size:12px;color:var(--muted)}
 .theme-toggle{position:fixed;left:16px;bottom:16px;z-index:50;border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.06);color:var(--text);padding:9px 12px;font-weight:800;cursor:pointer;font-size:12px}
+@media print{
+  :root{--text:#0b1220!important;--muted:#526276!important;--soft:#314156!important;--stroke:#cbd7e6!important;--stroke2:#d9e3ef!important}
+  .topbar,.theme-toggle,.hero-bg{display:none!important}
+  body:before{display:none!important}
+  body{background:#fff!important;color:#0b1220!important}
+  .card,.def-item,.task-card{background:#fff!important;color:#0b1220!important;border:1px solid #cbd7e6!important;break-inside:avoid}
+  .section-sub,.lead,.hint{color:#526276!important}
+  .topic-select,.continuum-tabs{display:none!important}
+  .topic-panel{display:block!important}
+  .task-card{margin-bottom:14px}
+  details{break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -110,6 +128,7 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
     <b style="font-size:13px">QG do Treinador</b>
   </div>
   <div class="links">
+    <button type="button" id="exportPdfBtn">Exportar PDF</button>
     <a href="./index.html">← Início</a>
     <a href="./dashboard.html">Dashboard</a>
     <a href="./entrada.html">Preenchimento</a>
@@ -147,89 +166,118 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
   <div class="topic-panel" data-topic-panel="oque">
   <section>
     <h2><span class="n">1</span>Como o conteúdo é organizado</h2>
-    <p class="section-sub">Todo conteúdo trabalhado num treino pertence a um destes cinco tipos, do mais geral ao mais específico:</p>
+    <p class="section-sub">Todo conteúdo trabalhado num treino pertence a um destes cinco tipos, do mais geral ao mais específico. Clique em "Ver catálogo" pra ver os conteúdos de cada tipo:</p>
     <div class="card">
       <div class="def-grid">
         <div class="def-item"><b>Capacidades táticas básicas</b><p>Noções básicas para tomada de decisão comum a esportes coletivos de invasão.</p></div>
-        <div class="def-item"><b>Famílias de Habilidades Esportivas</b><p>Combinação das habilidades motoras fundamentais aplicadas ao contexto esportivo — a transição entre o treino da coordenação e o treino da técnica.</p></div>
-        <div class="def-item"><b>Técnico-tático individual</b><p>Resposta motora de uma decisão para solucionar problemas do jogo na escala individual.</p></div>
-        <div class="def-item"><b>Tática de grupo</b><p>Ações técnico-táticas que dependem da interação de pequenos grupos de atletas para sua correta aplicação.</p></div>
-        <div class="def-item"><b>Tática coletiva</b><p>Ações técnico-táticas que dependem da interação de todos os atletas da equipe para sua correta aplicação.</p></div>
-      </div>
 
-      <details>
-        <summary>Ver o catálogo completo de conteúdos (agrupados por tipo e fase)</summary>
-        <table class="tag-table">
-          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Técnico-tático individual · Ofensiva</td></tr>
-          <tr><td>Domínio orientado</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Passe de apoio</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Passe de ruptura</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Cruzamento de canal</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Cruzamento de quina</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Cruzamento de retorno</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Condução</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Fixação com bola</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Drible (1x1 ofensivo)</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Proteção de bola (pivô)</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Finalização média/longa</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Finalização curta</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Finalização de 1ª</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Cabeceio</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Desmarque de apoio</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Desmarque de ruptura</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Ajuste corporal</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Escaneamento</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Ganho de intervalo</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Técnico-tático individual · Defensiva</td></tr>
-          <tr><td>Abordagem</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Cobertura</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Pressão</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Recomposição</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Equilíbrio defensivo</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Temporização</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Bloqueio (frontal e lateral)</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Rebatida</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Defesa de tabela</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Perseguição</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Ajuste corporal defensivo</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Tática de grupo · Ofensiva</td></tr>
-          <tr><td>Tabela</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Dinâmica de 3º homem</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Ruptura</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Ultrapassagem</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Troca de posição</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Tática de grupo · Defensiva</td></tr>
-          <tr><td>Troca de marcação</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Fechar janela (setorial)</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Controle de profundidade (por setor)</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Tática coletiva · Ofensiva</td></tr>
-          <tr><td>Troca de corredor</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Atacar marcando</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Jogo por fora do bloco</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Jogo por dentro do bloco</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Jogo nas costas do bloco</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Ataque rápido</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Ataque posicional</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Contra-ataque</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Ampliar o espaço efetivo de jogo</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td>Retirar da zona de pressão</td><td class="tag-fase">Ofensiva</td></tr>
-          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Tática coletiva · Defensiva</td></tr>
-          <tr><td>Proteção do corredor lateral</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Controle de profundidade (intersetores)</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Defender em bloco</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Proteção do corredor central</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Compactação</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td>Redução do espaço efetivo de jogo</td><td class="tag-fase">Defensiva</td></tr>
-          <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Família de habilidade esportiva · Geral</td></tr>
-          <tr><td>Organizar ângulos</td><td class="tag-fase">Geral</td></tr>
-          <tr><td>Regular força</td><td class="tag-fase">Geral</td></tr>
-          <tr><td>Manejo de bola</td><td class="tag-fase">Geral</td></tr>
-          <tr><td>Determinar momento do passe</td><td class="tag-fase">Geral</td></tr>
-          <tr><td>Reconhecer voo da bola</td><td class="tag-fase">Geral</td></tr>
-          <tr><td>Antecipar a posição do adversário</td><td class="tag-fase">Geral</td></tr>
-          <tr><td>Mudança de direção</td><td class="tag-fase">Geral</td></tr>
-        </table>
-      </details>
+        <div class="def-item">
+          <b>Famílias de Habilidades Esportivas</b>
+          <p>Combinação das habilidades motoras fundamentais aplicadas ao contexto esportivo — a transição entre o treino da coordenação e o treino da técnica.</p>
+          <details>
+            <summary>Ver catálogo (7 itens)</summary>
+            <table class="tag-table">
+              <tr><td>Organizar ângulos</td><td class="tag-fase">Geral</td></tr>
+              <tr><td>Regular força</td><td class="tag-fase">Geral</td></tr>
+              <tr><td>Manejo de bola</td><td class="tag-fase">Geral</td></tr>
+              <tr><td>Determinar momento do passe</td><td class="tag-fase">Geral</td></tr>
+              <tr><td>Reconhecer voo da bola</td><td class="tag-fase">Geral</td></tr>
+              <tr><td>Antecipar a posição do adversário</td><td class="tag-fase">Geral</td></tr>
+              <tr><td>Mudança de direção</td><td class="tag-fase">Geral</td></tr>
+            </table>
+          </details>
+        </div>
+
+        <div class="def-item">
+          <b>Técnico-tático individual</b>
+          <p>Resposta motora de uma decisão para solucionar problemas do jogo na escala individual.</p>
+          <details>
+            <summary>Ver catálogo (30 itens)</summary>
+            <table class="tag-table">
+              <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Ofensiva</td></tr>
+              <tr><td>Domínio orientado</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Passe de apoio</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Passe de ruptura</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Cruzamento de canal</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Cruzamento de quina</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Cruzamento de retorno</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Condução</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Fixação com bola</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Drible (1x1 ofensivo)</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Proteção de bola (pivô)</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Finalização média/longa</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Finalização curta</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Finalização de 1ª</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Cabeceio</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Desmarque de apoio</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Desmarque de ruptura</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Ajuste corporal</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Escaneamento</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Ganho de intervalo</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Defensiva</td></tr>
+              <tr><td>Abordagem</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Cobertura</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Pressão</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Recomposição</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Equilíbrio defensivo</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Temporização</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Bloqueio (frontal e lateral)</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Rebatida</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Defesa de tabela</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Perseguição</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Ajuste corporal defensivo</td><td class="tag-fase">Defensiva</td></tr>
+            </table>
+          </details>
+        </div>
+
+        <div class="def-item">
+          <b>Tática de grupo</b>
+          <p>Ações técnico-táticas que dependem da interação de pequenos grupos de atletas para sua correta aplicação.</p>
+          <details>
+            <summary>Ver catálogo (8 itens)</summary>
+            <table class="tag-table">
+              <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Ofensiva</td></tr>
+              <tr><td>Tabela</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Dinâmica de 3º homem</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Ruptura</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Ultrapassagem</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Troca de posição</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Defensiva</td></tr>
+              <tr><td>Troca de marcação</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Fechar janela (setorial)</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Controle de profundidade (por setor)</td><td class="tag-fase">Defensiva</td></tr>
+            </table>
+          </details>
+        </div>
+
+        <div class="def-item">
+          <b>Tática coletiva</b>
+          <p>Ações técnico-táticas que dependem da interação de todos os atletas da equipe para sua correta aplicação.</p>
+          <details>
+            <summary>Ver catálogo (16 itens)</summary>
+            <table class="tag-table">
+              <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Ofensiva</td></tr>
+              <tr><td>Troca de corredor</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Atacar marcando</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Jogo por fora do bloco</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Jogo por dentro do bloco</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Jogo nas costas do bloco</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Ataque rápido</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Ataque posicional</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Contra-ataque</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Ampliar o espaço efetivo de jogo</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td>Retirar da zona de pressão</td><td class="tag-fase">Ofensiva</td></tr>
+              <tr><td colspan="2" style="font-weight:900;background:rgba(255,255,255,.03)">Defensiva</td></tr>
+              <tr><td>Proteção do corredor lateral</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Controle de profundidade (intersetores)</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Defender em bloco</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Proteção do corredor central</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Compactação</td><td class="tag-fase">Defensiva</td></tr>
+              <tr><td>Redução do espaço efetivo de jogo</td><td class="tag-fase">Defensiva</td></tr>
+            </table>
+          </details>
+        </div>
+      </div>
       <div class="metric-link">↳ é esse catálogo que alimenta os filtros e gráficos da página <b>Mapa de Conteúdos</b> no dashboard.</div>
     </div>
   </section>
@@ -252,12 +300,28 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
   <section>
     <h2><span class="n">1</span>O continuum de tarefas de treino</h2>
     <p class="section-sub">Toda tarefa de treino se encaixa numa escala — do mais fechado e sem oposição até o jogo formal completo. Quanto mais à direita, mais "parecido com o jogo real" (representatividade):</p>
-    <div class="continuum-bar">
-      <span style="background:#f97066"></span><span style="background:#fdb022"></span><span style="background:#fde047"></span><span style="background:#a3e635"></span><span style="background:#4ade80"></span><span style="background:#22d3ee"></span><span style="background:#60a5fa"></span>
+    <div class="card" style="margin-bottom:18px">
+      <div class="def-item" style="border:0;padding:0">
+        <b>O que é representatividade?</b>
+        <p>Ambientes de aprendizagem representativos são tarefas de treino que apresentam parâmetros, em sua execução, que refletem o ambiente competitivo. Nesse sentido, tarefas mais representativas geram maior retenção e transferência do que foi aprendido para o jogo. Assim, o treinador pode manipular tarefas que tenham maior ou menor representatividade para enfatizar determinado comportamento.</p>
+      </div>
     </div>
 
-    <div class="continuum">
-      <div class="task-card">
+    <div class="continuum-bar" id="continuumBar">
+      <button type="button" style="background:#f97066" data-idx="0" title="Analítico geral"></button><button type="button" style="background:#fdb022" data-idx="1" title="Analítico em contexto específico"></button><button type="button" style="background:#fde047" data-idx="2" title="Jogo fundamental"></button><button type="button" style="background:#a3e635" data-idx="3" title="Conceitual"></button><button type="button" style="background:#4ade80" data-idx="4" title="Situacional"></button><button type="button" style="background:#22d3ee" data-idx="5" title="Jogo condicionado"></button><button type="button" style="background:#60a5fa" data-idx="6" title="Jogo formal"></button>
+    </div>
+    <div class="continuum-tabs" id="continuumTabs">
+      <button type="button" data-idx="0">Analítico geral</button>
+      <button type="button" data-idx="1">Analítico específico</button>
+      <button type="button" data-idx="2">Jogo fundamental</button>
+      <button type="button" data-idx="3">Conceitual</button>
+      <button type="button" data-idx="4">Situacional</button>
+      <button type="button" data-idx="5">Jogo condicionado</button>
+      <button type="button" data-idx="6">Jogo formal</button>
+    </div>
+
+    <div class="continuum" id="continuumCards">
+      <div class="task-card" data-idx="0">
         <div class="head"><h3>Analítico geral</h3><span class="pill" style="background:#f97066">Representatividade muito baixa</span></div>
         <p>Tarefa fechada, sem oposição e sem bola em contexto decisório. Repetição de um padrão motor isolado, com baixa fidelidade de ação e referências funcionais ausentes/nulas.</p>
         <div class="meta">
@@ -267,7 +331,7 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
         </div>
       </div>
 
-      <div class="task-card">
+      <div class="task-card" data-idx="1" hidden>
         <div class="head"><h3>Analítico em contexto específico</h3><span class="pill" style="background:#fdb022">Representatividade baixa</span></div>
         <p>Tarefa fechada, sem oposição, mas com alta fidelidade de ação (distância, ângulo, trajetória e zona reais do campo). Refino fino de um gesto já estabelecido; funcionalidade ainda nula.</p>
         <div class="meta">
@@ -277,7 +341,7 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
         </div>
       </div>
 
-      <div class="task-card">
+      <div class="task-card" data-idx="2" hidden>
         <div class="head"><h3>Jogo fundamental</h3><span class="pill" style="background:#fde047;color:#3a2f00">Representatividade baixa–moderada</span></div>
         <p>Primeiro degrau do continuum de jogo: oposição mínima ou passiva (manequim, defensor estático). Introduz decisão real contra oposição mantendo o problema tático simples.</p>
         <div class="meta">
@@ -287,7 +351,7 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
         </div>
       </div>
 
-      <div class="task-card">
+      <div class="task-card" data-idx="3" hidden>
         <div class="head"><h3>Conceitual</h3><span class="pill" style="background:#a3e635;color:#1a2e05">Representatividade moderada</span></div>
         <p>Jogos reduzidos com oposição presente, porém em configuração desproporcional ao jogo formal. Contexto informacional presente, mas distorcido; foco em princípios gerais de jogo.</p>
         <div class="meta">
@@ -297,7 +361,7 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
         </div>
       </div>
 
-      <div class="task-card">
+      <div class="task-card" data-idx="4" hidden>
         <div class="head"><h3>Situacional</h3><span class="pill" style="background:#4ade80;color:#052e12">Representatividade moderada–alta</span></div>
         <p>Oposição presente com recorte de uma subfase específica do jogo. Informação funcional focal, mantendo oposição real sobre o problema tático-alvo.</p>
         <div class="meta">
@@ -307,7 +371,7 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
         </div>
       </div>
 
-      <div class="task-card">
+      <div class="task-card" data-idx="5" hidden>
         <div class="head"><h3>Jogo condicionado</h3><span class="pill" style="background:#22d3ee;color:#06101b">Representatividade alta</span></div>
         <p>Oposição presente e proporcional ao jogo formal. Máxima especificidade ao modelo de jogo sem abrir mão da proporcionalidade estrutural.</p>
         <div class="meta">
@@ -317,7 +381,7 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
         </div>
       </div>
 
-      <div class="task-card">
+      <div class="task-card" data-idx="6" hidden>
         <div class="head"><h3>Jogo formal</h3><span class="pill" style="background:#60a5fa;color:#06101b">Representatividade máxima</span></div>
         <p>Oposição completa e fidelidade total. Reproduz integralmente a configuração do jogo.</p>
         <div class="meta">
@@ -379,6 +443,20 @@ document.getElementById('themeToggle').onclick = () => {
   document.body.classList.toggle('light');
   document.getElementById('themeToggle').textContent = document.body.classList.contains('light') ? '🌙 Modo escuro' : '☀️ Modo claro';
 };
+document.getElementById('exportPdfBtn').onclick = () => {
+  const openDetails = [...document.querySelectorAll('details')].filter(d => !d.open);
+  const hiddenPanels = [...document.querySelectorAll('.topic-panel[hidden]')];
+  const hiddenTasks = [...document.querySelectorAll('.task-card[hidden]')];
+  openDetails.forEach(d => d.open = true);
+  hiddenPanels.forEach(p => p.hidden = false);
+  hiddenTasks.forEach(c => c.hidden = false);
+  window.addEventListener('afterprint', () => {
+    openDetails.forEach(d => d.open = false);
+    hiddenPanels.forEach(p => p.hidden = true);
+    hiddenTasks.forEach(c => c.hidden = true);
+  }, {once:true});
+  window.print();
+};
 
 function selectTopic(topic){
   document.querySelectorAll('.topic-btn').forEach(b => b.classList.toggle('active', b.dataset.topic === topic));
@@ -390,6 +468,16 @@ document.querySelectorAll('.topic-btn').forEach(btn => {
 });
 const initialTopic = ['oque','como','avaliar'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'oque';
 selectTopic(initialTopic);
+
+function selectTask(idx){
+  document.querySelectorAll('#continuumBar button').forEach(b => b.classList.toggle('active', b.dataset.idx === idx));
+  document.querySelectorAll('#continuumTabs button').forEach(b => b.classList.toggle('active', b.dataset.idx === idx));
+  document.querySelectorAll('#continuumCards .task-card').forEach(c => { c.hidden = c.dataset.idx !== idx; });
+}
+document.querySelectorAll('#continuumBar button, #continuumTabs button').forEach(btn => {
+  btn.addEventListener('click', () => selectTask(btn.dataset.idx));
+});
+selectTask('0');
 </script>
 </body>
 </html>
