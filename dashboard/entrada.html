@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Preenchimento · Sistema do treinador</title>
+<title>Preenchimento · QG do Treinador</title>
 <style>
 :root{
   color-scheme: dark;
@@ -85,7 +85,7 @@ body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%
 <div class="topbar">
   <div>
     <h1>Preenchimento da planilha</h1>
-    <div class="sub">Sistema do treinador · Sub-10</div>
+    <div class="sub">QG do Treinador · Sub-10</div>
   </div>
   <div style="display:flex;gap:8px">
     <a class="btn" href="./index.html">← Capa</a>
@@ -115,13 +115,18 @@ body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%
 // apps-script.gs neste mesmo repositório para as instruções de instalação).
 // =====================================================================
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyazQGCdsQR_iyh1e_lX1rDZAy792z_eLbqHYfplFW45fqHqozRd_8DVscrD2B7_ww/exec';
-// Login de acesso a esta página (comparação sem diferenciar maiúsculas/minúsculas).
-const LOGIN = 'pedrohenrique';
-// Hash SHA-256 da senha de acesso a esta página (não é a senha em texto puro).
-// Para trocar a senha: gere um novo hash (ex.: no console do navegador rode
-// `crypto.subtle.digest('SHA-256', new TextEncoder().encode('sua-senha')).then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))`)
-// e cole o resultado abaixo.
-const PASSWORD_HASH = '4d4f5a5396cf10094e055d1df2d4d6b09d36e5f1d9552b810c0260e2c5c4b282'; // senha padrão: sub10cruzeiro
+// Contas de acesso a esta página (login comparado sem diferenciar maiúsculas/
+// minúsculas; senha guardada como hash SHA-256, não em texto puro).
+// Para adicionar/trocar uma conta: gere o hash da senha (ex.: no console do
+// navegador rode `crypto.subtle.digest('SHA-256', new TextEncoder().encode('sua-senha')).then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))`)
+// e adicione um par {login, hash} na lista abaixo.
+const ACCOUNTS = [
+  { login: 'pedrohenrique', hash: '4d4f5a5396cf10094e055d1df2d4d6b09d36e5f1d9552b810c0260e2c5c4b282' }, // sub10cruzeiro
+  { login: 'victorlenine', hash: '51ac9b3c7f66ee23e5549e7b65d58921a8ab0f50b22873c068cdb82b58a1ec4b' }, // sub13cruzeiro
+  { login: 'matheusteixeira', hash: 'cb78566e94a8ac4cb3cb58b61b957e669c3d016b946a0c5601cb28c4f301e746' }, // sub12cruzeiro
+  { login: 'raphaelbatista', hash: '1f7532d789a4a28a94cc3697c57fe3267ca878d779feb4f9369458f56e78a698' }, // prepgoleiros
+  { login: 'douglascarvalho', hash: '9b8370e2d6248d005834e852248faa6f665e8c21f50a3cdf66053136d342bbe6' }, // escolascruzeiro
+];
 
 const QUARTIS = ['Q1','Q2','Q3','Q4'];
 const POSICOES = ['Goleiro','Lateral','Defensor','Meia','Atacante'];
@@ -151,12 +156,9 @@ async function sha256Hex(text){
 async function checkGate(){
   const login = $('gateLogin').value.trim().toLowerCase();
   const pass = $('gatePassword').value;
-  if(PASSWORD_HASH === 'TROQUE_ESTE_HASH'){
-    $('gateMsg').textContent = 'Senha ainda não configurada em entrada.html (PASSWORD_HASH).';
-    return;
-  }
   const hash = await sha256Hex(pass);
-  if(login === LOGIN.toLowerCase() && hash === PASSWORD_HASH){
+  const match = ACCOUNTS.find(a => a.login.toLowerCase() === login && a.hash === hash);
+  if(match){
     sessionStorage.setItem('entradaAuth','1');
     $('gate').style.display='none';
   } else {

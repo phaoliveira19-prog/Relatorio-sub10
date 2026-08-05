@@ -1,4 +1,6 @@
-# Sistema de Gestão — Sub-10
+# QG do Treinador — Sub-10
+
+**[Acessar o QG do Treinador](https://phaoliveira19-prog.github.io/Relatorio-sub10/dashboard/index.html)**
 
 Dashboard de planejamento e monitoramento da categoria, construído a partir do
 "Sistema de gestão.xlsx" (Banco de atletas, Banco de treinos, Avaliação
@@ -50,10 +52,9 @@ arquivo pras instruções de instalação).
 
 Configurações em `entrada.html` antes de funcionar:
 - `SCRIPT_URL`: a URL do Apps Script implantado (veja `apps-script.gs`).
-- `LOGIN`: usuário de acesso à página (padrão atual: `pedrohenrique`).
-- `PASSWORD_HASH`: hash SHA-256 da senha de acesso à página (senha padrão
-  atual: `sub10cruzeiro` — troque assim que possível, veja o comentário no
-  arquivo pra gerar um novo hash).
+- `ACCOUNTS`: lista de contas de acesso à página (login + hash SHA-256 da
+  senha, nunca a senha em texto puro). Pra adicionar ou trocar uma conta,
+  veja o comentário no arquivo pra gerar um novo hash.
 
 Esse login é uma barreira simples contra acesso casual, não segurança de
 verdade (fica visível em quem souber ler o código-fonte da página). Proteção
