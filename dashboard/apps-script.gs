@@ -197,9 +197,10 @@ function addTraining(d) {
   var col = headerMap(sheet, headerRow);
   var lastRow = sheet.getLastRow();
   var newRow = lastRow + 1;
+  var idSessao = d.idSessao || nextNumber(sheet, headerRow + 1, col['ID da sessão'], Math.max(lastRow - headerRow, 0));
 
   var fields = {
-    'ID da sessão': d.idSessao, 'Categoria': d.categoria || 'Sub-10',
+    'ID da sessão': idSessao, 'Categoria': d.categoria || 'Sub-10',
     'Nota geral da sessão\n(0 a 10)': d.notaGeral, 'Nº de atletas': d.numAtletas,
     'Atletas em avaliação': d.atletasAvaliacao, 'Observações': d.observacoes,
   };
@@ -230,7 +231,7 @@ function addTraining(d) {
   var formulaCols = ['TAA - preparatória', 'TAA - conceitual', 'TAA - conexão',
     'Minutagem efetiva', 'Total TAA', '% de minutagem', '% de TAA'];
   copyFormulasFromAbove(sheet, lastRow, newRow, col, formulaCols);
-  return { row: newRow };
+  return { row: newRow, idSessao: idSessao };
 }
 
 // ---------- Avaliação individual do treino ----------

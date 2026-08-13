@@ -136,6 +136,9 @@ const QUARTIS = ['Q1','Q2','Q3','Q4'];
 const POSICOES = ['Goleiro','Lateral','Defensor','Meia','Atacante'];
 const PES = ['Direito','Esquerdo','Ambidestro'];
 const TASK_ORDER = ['Analítico geral','Analítico em contexto específico','Jogo fundamental','Conceitual','Situacional','Jogo condicionado','Jogo formal'];
+// Catálogo completo da aba "Caderno de conteúdos" — usado como sugestão nos
+// campos de conteúdo do pós-treino, independente de já ter sido usado antes.
+const CONTENT_CATALOG=["Abordagem","Ajuste corporal","Ajuste corporal defensivo","Ampliar o espaço efetivo de jogo","Antecipar a posição do adversário","Atacar marcando","Ataque posicional","Ataque rápido","Bloqueio (frontal e lateral)","Cabeceio","Cobertura","Compactação","Condução","Contra-ataque","Controle de profundidade (intersetores)","Controle de profundidade (por setor)","Cruzamento de canal","Cruzamento de quina","Cruzamento de retorno","Defender em bloco","Defesa de tabela","Desmarque de apoio","Desmarque de ruptura","Determinar momento do passe","Dinâmica de 3º homem","Domínio orientado","Drible (1x1 ofensivo)","Equilíbrio defensivo","Escaneamento","Fechar janela (setorial)","Finalização curta","Finalização de 1ª","Finalização média/longa","Fixação com bola","Ganho de intervalo","Jogo nas costas do bloco","Jogo por dentro do bloco","Jogo por fora do bloco","Manejo de bola","Mudança de direção","Organizar ângulos","Passe de apoio","Passe de ruptura","Perseguição","Pressão","Proteção de bola (pivô)","Proteção do corredor central","Proteção do corredor lateral","Rebatida","Recomposição","Reconhecer voo da bola","Redução do espaço efetivo de jogo","Regular força","Retirar da zona de pressão","Ruptura","Tabela","Temporização","Troca de corredor","Troca de marcação","Troca de posição","Ultrapassagem"];
 const COMPLEX_ORDER = ['Baixa','Média','Alta'];
 const LOCAIS = ['Casa','Fora'];
 const PERIODOS = ['Manhã','Tarde','Noite'];
@@ -179,6 +182,7 @@ function initGate(){
 
 async function fetchRosterAndLists(){
   const warn = [];
+  DATALISTS.contents = [...CONTENT_CATALOG];
   if(SCRIPT_URL.indexOf('COLE_AQUI') === 0 || !SCRIPT_URL){
     warn.push('A URL do Apps Script ainda não foi configurada (SCRIPT_URL) — os formulários não conseguem enviar dados ainda.');
   } else {
@@ -198,7 +202,7 @@ async function fetchRosterAndLists(){
       peDominante:a.foot, chegadaAoClube:a.joined, categoria:a.category, foto:a.photo,
       caracteristica:a.characteristic, pontosAMelhorar:a.improvement,
     }));
-    DATALISTS.contents = (d.meta && d.meta.contents) || [];
+    DATALISTS.contents = [...new Set([...CONTENT_CATALOG, ...((d.meta && d.meta.contents) || [])])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
     DATALISTS.contentTypes = [...new Set((d.blocks||[]).map(b=>b.contentType).filter(Boolean))].sort();
     DATALISTS.opponents = [...new Set((d.games||[]).map(g=>g.opponent).filter(Boolean))].sort();
     DATALISTS.competitions = (d.meta && d.meta.competitions) || [];
@@ -381,12 +385,11 @@ function partSection(suf, label){
 function panelTreino(){
   return `<div class="card">
     <h2>Sessão de treino</h2>
-    <div class="hint">Preenche uma linha em "Banco de treinos". As colunas calculadas (TAA, % de minutagem etc.) são preenchidas automaticamente pela planilha.</div>
+    <div class="hint">Preenche uma linha em "Banco de treinos". ID da sessão, TAA, % de minutagem etc. são preenchidos automaticamente.</div>
     <div id="msgTreino"></div>
     <div class="grid3">
       <div class="field"><label>Data</label><input type="date" id="t_data" value="${todayIso()}"></div>
       <div class="field"><label>Categoria</label><input id="t_categoria" value="Sub-10"></div>
-      <div class="field"><label>ID da sessão (opcional)</label><input id="t_sessao"></div>
       <div class="field"><label>Nota geral da sessão (0 a 10)</label><input type="number" min="0" max="10" step="0.5" id="t_nota"></div>
       <div class="field"><label>Nº de atletas presentes</label><input type="number" min="0" id="t_numatletas"></div>
       <div class="field"><label>Atletas em avaliação</label><input type="number" min="0" id="t_avaliacao"></div>
@@ -411,7 +414,7 @@ function wireTreino(){
     });
     $('btnTreino').disabled = true;
     const r = await sendToScript({action:'addTraining', data:{
-      data:$('t_data').value, categoria:$('t_categoria').value, idSessao:txt('t_sessao'),
+      data:$('t_data').value, categoria:$('t_categoria').value,
       notaGeral:num('t_nota'), numAtletas:num('t_numatletas'), atletasAvaliacao:num('t_avaliacao'),
       observacoes:txt('t_obs'),
       preparatoria: part('preparatoria'), conceitual: part('conceitual'),
@@ -420,7 +423,7 @@ function wireTreino(){
         jogadoresAtivos: num('t_conexao_ativos'), desempenho: num('t_conexao_desemp') },
     }});
     $('btnTreino').disabled = false;
-    if(r.ok) showMsg(msg,true,'Treino salvo com sucesso.');
+    if(r.ok) showMsg(msg,true,`Treino salvo (ID da sessão ${r.result.idSessao}) com sucesso.`);
     else showMsg(msg,false,'Erro: '+r.error);
   };
 }
