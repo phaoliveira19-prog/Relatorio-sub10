@@ -50,9 +50,9 @@ table.roster{width:100%;border-collapse:collapse;font-size:13px}
 table.roster th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--stroke2);white-space:nowrap}
 table.roster td{padding:6px 8px;border-bottom:1px solid var(--stroke2);vertical-align:middle}
 table.roster input,table.roster select{padding:7px 8px;font-size:13px;min-width:64px}
-table.roster .name-cell{font-weight:800;white-space:nowrap;min-width:120px}
+table.roster .name-cell{font-weight:800;white-space:nowrap;min-width:150px}
 .name-cell{display:flex;align-items:center;gap:9px}
-.name-cell img{width:30px;height:30px;border-radius:9px;object-fit:cover;flex:none;border:1px solid var(--stroke2)}
+.name-cell img{width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;border:1px solid var(--stroke2)}
 .roster-scroll{overflow-x:auto;margin:0 -4px;padding:0 4px}
 .msg{border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;margin-bottom:14px}
 .msg.ok{background:rgba(50,213,131,.12);border:1px solid rgba(50,213,131,.4);color:#32d583}
@@ -136,6 +136,9 @@ const QUARTIS = ['Q1','Q2','Q3','Q4'];
 const POSICOES = ['Goleiro','Lateral','Defensor','Meia','Atacante'];
 const PES = ['Direito','Esquerdo','Ambidestro'];
 const TASK_ORDER = ['Analítico geral','Analítico em contexto específico','Jogo fundamental','Conceitual','Situacional','Jogo condicionado','Jogo formal'];
+// Tipos de conteúdo, exatamente como aparecem na coluna "Tipo de conteúdo"
+// da aba "Caderno de conteúdos" (não é a mesma lista de título de seção).
+const CONTENT_TYPE_CATALOG=["Técnico-tático individual","Tática de grupo","Tática coletiva","Familia de habilidade esportiva"];
 // Catálogo completo da aba "Caderno de conteúdos" — usado como sugestão nos
 // campos de conteúdo do pós-treino, independente de já ter sido usado antes.
 const CONTENT_CATALOG=["Abordagem","Ajuste corporal","Ajuste corporal defensivo","Ampliar o espaço efetivo de jogo","Antecipar a posição do adversário","Atacar marcando","Ataque posicional","Ataque rápido","Bloqueio (frontal e lateral)","Cabeceio","Cobertura","Compactação","Condução","Contra-ataque","Controle de profundidade (intersetores)","Controle de profundidade (por setor)","Cruzamento de canal","Cruzamento de quina","Cruzamento de retorno","Defender em bloco","Defesa de tabela","Desmarque de apoio","Desmarque de ruptura","Determinar momento do passe","Dinâmica de 3º homem","Domínio orientado","Drible (1x1 ofensivo)","Equilíbrio defensivo","Escaneamento","Fechar janela (setorial)","Finalização curta","Finalização de 1ª","Finalização média/longa","Fixação com bola","Ganho de intervalo","Jogo nas costas do bloco","Jogo por dentro do bloco","Jogo por fora do bloco","Manejo de bola","Mudança de direção","Organizar ângulos","Passe de apoio","Passe de ruptura","Perseguição","Pressão","Proteção de bola (pivô)","Proteção do corredor central","Proteção do corredor lateral","Rebatida","Recomposição","Reconhecer voo da bola","Redução do espaço efetivo de jogo","Regular força","Retirar da zona de pressão","Ruptura","Tabela","Temporização","Troca de corredor","Troca de marcação","Troca de posição","Ultrapassagem"];
@@ -146,7 +149,7 @@ const RANKS = ['A','B','C'];
 const TITULARIDADES = ['Não-relacionado','Titular','Reserva'];
 
 let ROSTER = [];
-let DATALISTS = { contents: [], contentTypes: [], opponents: [], competitions: [], platforms: [] };
+let DATALISTS = { contents: [], contentTypes: [], opponents: [], competitions: [], platforms: [], taskTypes: [], complexity: [] };
 
 function $(id){ return document.getElementById(id); }
 function opts(arr){ return arr.map(v=>`<option value="${v}">${v}</option>`).join(''); }
@@ -183,6 +186,9 @@ function initGate(){
 async function fetchRosterAndLists(){
   const warn = [];
   DATALISTS.contents = [...CONTENT_CATALOG];
+  DATALISTS.contentTypes = [...CONTENT_TYPE_CATALOG];
+  DATALISTS.taskTypes = [...TASK_ORDER];
+  DATALISTS.complexity = [...COMPLEX_ORDER];
   if(SCRIPT_URL.indexOf('COLE_AQUI') === 0 || !SCRIPT_URL){
     warn.push('A URL do Apps Script ainda não foi configurada (SCRIPT_URL) — os formulários não conseguem enviar dados ainda.');
   } else {
@@ -203,7 +209,6 @@ async function fetchRosterAndLists(){
       caracteristica:a.characteristic, pontosAMelhorar:a.improvement,
     }));
     DATALISTS.contents = [...new Set([...CONTENT_CATALOG, ...((d.meta && d.meta.contents) || [])])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    DATALISTS.contentTypes = [...new Set((d.blocks||[]).map(b=>b.contentType).filter(Boolean))].sort();
     DATALISTS.opponents = [...new Set((d.games||[]).map(g=>g.opponent).filter(Boolean))].sort();
     DATALISTS.competitions = (d.meta && d.meta.competitions) || [];
     DATALISTS.platforms = [...new Set((d.games||[]).map(g=>g.platform).filter(Boolean))].sort();
@@ -230,7 +235,8 @@ function renderDatalists(){
   let el = document.getElementById('datalistsHost');
   if(!el){ el = document.createElement('div'); el.id = 'datalistsHost'; document.body.appendChild(el); }
   el.innerHTML = dl('dlContents',DATALISTS.contents) + dl('dlContentTypes',DATALISTS.contentTypes) +
-    dl('dlOpponents',DATALISTS.opponents) + dl('dlCompetitions',DATALISTS.competitions) + dl('dlPlatforms',DATALISTS.platforms);
+    dl('dlOpponents',DATALISTS.opponents) + dl('dlCompetitions',DATALISTS.competitions) + dl('dlPlatforms',DATALISTS.platforms) +
+    dl('dlTaskTypes',DATALISTS.taskTypes) + dl('dlComplexity',DATALISTS.complexity);
 }
 
 async function sendToScript(payload){
@@ -375,8 +381,8 @@ function partSection(suf, label){
       <div class="field"><label>Conteúdo concorrente</label><input id="t_${suf}_conc" list="dlContents"></div>
       <div class="field"><label>Tipo de conteúdo</label><input id="t_${suf}_tipo" list="dlContentTypes"></div>
       `}
-      <div class="field"><label>Tipo de tarefa</label><select id="t_${suf}_tarefa"><option value="">—</option>${opts(TASK_ORDER)}</select></div>
-      <div class="field"><label>Complexidade</label><select id="t_${suf}_complex"><option value="">—</option>${opts(COMPLEX_ORDER)}</select></div>
+      <div class="field"><label>Tipo de tarefa</label><input id="t_${suf}_tarefa" list="dlTaskTypes"></div>
+      <div class="field"><label>Complexidade</label><input id="t_${suf}_complex" list="dlComplexity"></div>
       <div class="field"><label>Minutagem (min)</label><input type="number" min="0" id="t_${suf}_min"></div>
       <div class="field"><label>Jogadores ativos</label><input type="number" min="0" id="t_${suf}_ativos"></div>
       <div class="field"><label>Desempenho (0 a 10)</label><input type="number" min="0" max="10" step="0.5" id="t_${suf}_desemp"></div>
