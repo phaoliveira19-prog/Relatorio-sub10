@@ -119,9 +119,33 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
   .task-card{margin-bottom:14px}
   details{break-inside:avoid}
 }
+.field label{display:block;color:var(--muted);font-size:11px;margin:0 0 6px 2px}
+.field input{width:100%;border:1px solid var(--stroke);background:#090f1bdd;color:var(--text);border-radius:14px;padding:10px 11px;outline:none;font-size:13px;font-family:inherit}
+body.light .field input{background:#fff}
+.field input:focus{border-color:rgba(34,211,238,.6);box-shadow:0 0 0 3px rgba(34,211,238,.10)}
+.btn{border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.055);color:var(--text);padding:10px 12px;cursor:pointer;font-weight:800;font-family:inherit;font-size:13px}
+.btn.primary{background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;border:0}
+.gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
+  background-image:linear-gradient(160deg,rgba(5,7,12,.45) 0%,rgba(5,7,12,.86) 62%,var(--bg) 100%),url('./photos/pedro-capa-web.jpg');
+  background-size:cover;background-position:center 15%;background-repeat:no-repeat}
+body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%,rgba(243,247,251,.92) 62%,var(--bg) 100%),url('./photos/pedro-capa-web.jpg')}
+.gate-box{width:min(360px,92vw);text-align:center;background:var(--card);border:1px solid var(--stroke);border-radius:22px;padding:34px 28px;box-shadow:0 30px 80px rgba(0,0,0,.4);backdrop-filter:blur(8px)}
+.gate-box h2{margin-bottom:6px}
+.gate-box p{color:var(--muted);font-size:13px;margin:0 0 18px}
+@media print{.gate{display:none!important}}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <h2>Acesso ao sistema</h2>
+    <p>Login do treinador</p>
+    <div class="field" style="text-align:left"><label>Usuário</label><input type="text" id="gateLogin" autocomplete="username" /></div>
+    <div class="field" style="text-align:left"><label>Senha</label><input type="password" id="gatePassword" autocomplete="current-password" /></div>
+    <button class="btn primary" id="gateBtn" style="width:100%">Entrar</button>
+    <div id="gateMsg" style="margin-top:10px;font-size:12.5px;color:var(--red)"></div>
+  </div>
+</div>
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:10px">
     <img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador" class="brand-logo">
@@ -439,6 +463,38 @@ body.light .formula{color:#0e7490;background:rgba(14,116,144,.06)}
 
 <button class="theme-toggle" id="themeToggle">☀️ Modo claro</button>
 <script>
+// ---------- Acesso (mesmo login da área de preenchimento) ----------
+const ACCOUNTS = [
+  { login: 'pedrohenrique', hash: '4d4f5a5396cf10094e055d1df2d4d6b09d36e5f1d9552b810c0260e2c5c4b282' },
+  { login: 'victorlenine', hash: '51ac9b3c7f66ee23e5549e7b65d58921a8ab0f50b22873c068cdb82b58a1ec4b' },
+  { login: 'matheusteixeira', hash: 'cb78566e94a8ac4cb3cb58b61b957e669c3d016b946a0c5601cb28c4f301e746' },
+  { login: 'raphaelbatista', hash: '1f7532d789a4a28a94cc3697c57fe3267ca878d779feb4f9369458f56e78a698' },
+  { login: 'douglascarvalho', hash: '9b8370e2d6248d005834e852248faa6f665e8c21f50a3cdf66053136d342bbe6' },
+];
+async function sha256Hex(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function checkGate(){
+  const login = document.getElementById('gateLogin').value.trim().toLowerCase();
+  const pass = document.getElementById('gatePassword').value;
+  const hash = await sha256Hex(pass);
+  const match = ACCOUNTS.find(a => a.login.toLowerCase() === login && a.hash === hash);
+  if(match){
+    sessionStorage.setItem('entradaAuth','1');
+    document.getElementById('gate').style.display='none';
+  } else {
+    document.getElementById('gateMsg').textContent = 'Usuário ou senha incorretos.';
+  }
+}
+function initGate(){
+  if(sessionStorage.getItem('entradaAuth')==='1'){ document.getElementById('gate').style.display='none'; }
+  document.getElementById('gateBtn').onclick = checkGate;
+  document.getElementById('gateLogin').addEventListener('keydown', e=>{ if(e.key==='Enter') checkGate(); });
+  document.getElementById('gatePassword').addEventListener('keydown', e=>{ if(e.key==='Enter') checkGate(); });
+}
+initGate();
+
 document.getElementById('themeToggle').onclick = () => {
   document.body.classList.toggle('light');
   document.getElementById('themeToggle').textContent = document.body.classList.contains('light') ? '🌙 Modo escuro' : '☀️ Modo claro';
