@@ -214,6 +214,45 @@ body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%
 .gate-box h2{margin-bottom:6px}
 .gate-box p{color:var(--muted);font-size:13px;margin:0 0 18px}
 @media print{.gate{display:none!important}}
+
+/* === Centro de Treino + Microciclo === */
+.modal-overlay{position:fixed;inset:0;z-index:300;background:rgba(3,6,12,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto}
+.modal-box{width:min(760px,96vw);background:var(--panel);border:1px solid var(--stroke);border-radius:22px;box-shadow:0 30px 90px rgba(0,0,0,.5)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--stroke2)}
+.modal-head h3{margin:0;font-size:18px}
+.modal-close{border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1}
+.modal-close:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.modal-body{padding:20px 22px;max-height:70vh;overflow:auto}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--stroke2)}
+.field-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+.field textarea{width:100%;border:1px solid var(--stroke);background:#090f1bdd;color:var(--text);border-radius:14px;padding:10px 11px;outline:none;font-size:12px;font-family:inherit;min-height:60px;resize:vertical}
+body.light .field textarea{background:#fff}
+.activity-block{border:1px solid var(--stroke2);border-radius:16px;padding:14px;margin:10px 0;background:rgba(255,255,255,.02)}
+.activity-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.a-img-preview img{max-width:140px;max-height:100px;border-radius:10px;margin-top:8px;object-fit:cover}
+.session-month-head{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--soft);margin:18px 0 10px}
+.session-month-head:first-child{margin-top:0}
+.session-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.session-tile{flex:0 0 auto;min-width:112px;border:1px solid var(--stroke);border-radius:14px;padding:10px 12px;cursor:pointer;background:rgba(255,255,255,.03);text-align:center}
+.session-tile:hover{background:rgba(255,255,255,.06)}
+.session-tile.active{border-color:rgba(34,211,238,.6);background:rgba(34,211,238,.12)}
+.session-tile .d{font-weight:900;font-size:14px}
+.session-tile .s{font-size:10.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-tile .tag{display:inline-block;margin-top:5px;font-size:9.5px;padding:2px 6px;border-radius:999px;background:rgba(34,211,238,.15);color:#8feeff;font-weight:800}
+.session-tile.local .tag{background:rgba(50,213,131,.15);color:#8af0b5}
+.mc-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:980px}
+.mc-table th,.mc-table td{border:1px solid var(--stroke2);padding:6px;vertical-align:top;text-align:center}
+.mc-table thead th{background:#0d1524;color:#b8d6ef;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 6px}
+body.light .mc-table thead th{background:#eff5fb;color:#334155}
+.mc-table .row-label{background:rgba(255,255,255,.03);font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);text-align:left;padding:8px 10px;white-space:nowrap}
+.mc-table .dur-row td{background:rgba(255,255,255,.02)}
+.mc-table .dur-row input{width:56px;text-align:center;border:1px solid var(--stroke2);background:transparent;color:var(--text);border-radius:8px;padding:4px;font-size:11px}
+.mc-table textarea.mc-cell{width:100%;min-height:64px;border:0;background:transparent;color:var(--text);resize:vertical;font-size:12px;font-family:inherit;text-align:left;outline:none}
+.mc-table td.folga{background:rgba(148,163,184,.08);color:var(--muted);font-weight:800}
+.mc-table .day-head{display:flex;flex-direction:column;align-items:center;gap:4px}
+.mc-table .folga-toggle{font-size:9px;border:1px solid var(--stroke2);border-radius:999px;padding:2px 7px;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit}
+.mc-table .folga-toggle.on{background:rgba(249,112,102,.15);color:#ffb5ae;border-color:rgba(249,112,102,.4)}
+@media print{.modal-overlay{display:none!important}}
 </style>
 </head>
 <body>
@@ -372,8 +411,58 @@ body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%
         </div>
       </div>
     </section>
+
+    <section class="page" id="page-centro">
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-head">
+          <div><h3>Sessões de treino</h3><div class="desc">Treinos já aplicados no sistema e sessões construídas manualmente. Use o botão para subir a próxima sessão.</div></div>
+          <button class="btn primary" id="centroUploadBtn" type="button">+ Subir sessão</button>
+        </div>
+        <div id="centroMonthGroups" style="margin-top:14px"></div>
+      </div>
+      <div id="centroDetail"></div>
+    </section>
+
+    <section class="page" id="page-microciclo">
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-head">
+          <div><h3>Microciclo <span id="mcNumber"></span></h3><div class="desc" id="mcWeekDesc"></div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn small" id="mcPrevWeek" type="button">← Semana anterior</button>
+            <button class="btn small" id="mcThisWeek" type="button">Semana atual</button>
+            <button class="btn small" id="mcNextWeek" type="button">Próxima semana →</button>
+          </div>
+        </div>
+        <div class="field" style="max-width:220px;margin-top:14px"><label>Número do microciclo (opcional)</label><input type="number" min="0" id="mcNumberInput"></div>
+      </div>
+      <div class="card">
+        <div class="table-wrap" style="max-height:none">
+          <table class="mc-table" id="mcTable"></table>
+        </div>
+      </div>
+    </section>
+
     <div class="section-foot"><span>Dados gerados por build_data.py a partir da planilha "Sistema de gestão".</span><span id="dataFoot"></span></div>
   </main>
+</div>
+
+<datalist id="dlCentroContents"></datalist>
+<div class="modal-overlay" id="centroModal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-head"><h3>Nova sessão de treino</h3><button type="button" class="modal-close" id="centroModalClose">✕</button></div>
+    <div class="modal-body">
+      <div class="field-grid3">
+        <div class="field"><label>Data da sessão</label><input type="date" id="cs_data"></div>
+        <div class="field"><label>Nº de atletas previsto</label><input type="number" min="0" id="cs_numAtletas"></div>
+        <div class="field"><label>Duração do treino (min)</label><input type="number" min="0" id="cs_duracao"></div>
+      </div>
+      <div class="field"><label>Objetivo da sessão</label><textarea id="cs_objetivo"></textarea></div>
+      <div class="sidebar-divider"></div>
+      <div class="card-head"><h3 style="font-size:15px;margin:0">Atividades</h3><button type="button" class="btn small" id="cs_addAtividade">+ Adicionar atividade</button></div>
+      <div id="cs_atividades"></div>
+    </div>
+    <div class="modal-foot"><button type="button" class="btn" id="centroModalCancel">Cancelar</button><button type="button" class="btn primary" id="cs_save">Salvar sessão</button></div>
+  </div>
 </div>
 
 <script>
@@ -763,15 +852,17 @@ const PAGES = [
   ['avaliacao','Avaliação Individual · Panorama do Grupo','Comparação entre atletas, tendência recente, regularidade e diferenças por perfil.','Avaliação individual'],
   ['jogos','Desempenho em Jogos','Análise coletiva de resultados, desempenho, gols e contexto competitivo.','Desempenho em jogos'],
   ['posjogo','Pós-jogo Individual · Gestão de Minutagem','Oportunidades, titularidade, produção ofensiva e coerência com avaliação de treino.','Pós-jogo individual'],
-  ['card','Card Individual do Atleta','Página de detalhe com perfil, treino, jogo, evolução, oportunidades e conteúdos associados.','Card do atleta']
+  ['card','Card Individual do Atleta','Página de detalhe com perfil, treino, jogo, evolução, oportunidades e conteúdos associados.','Card do atleta'],
+  ['centro','Centro de Treino','Sessões já aplicadas e opção de subir manualmente as próximas — organização da sessão, conteúdos e atividades.','Centro de treino'],
+  ['microciclo','Microciclo Semanal','Planejamento semanal dos conteúdos técnico/táticos por parte da sessão.','Microciclo semanal']
 ];
 const NAV_GROUPS = [
   {group:'Geral', pages:['geral']},
-  {group:'Treinos', pages:['controle','conteudos']},
+  {group:'Treinos', pages:['controle','conteudos','centro','microciclo']},
   {group:'Jogos', pages:['jogos','posjogo']},
   {group:'Elenco', pages:['avaliacao','card']}
 ];
-const PAGE_ICONS = {geral:'📊', controle:'🗂️', conteudos:'🗺️', jogos:'⚽', posjogo:'🎯', avaliacao:'📈', card:'🪪'};
+const PAGE_ICONS = {geral:'📊', controle:'🗂️', conteudos:'🗺️', jogos:'⚽', posjogo:'🎯', avaliacao:'📈', card:'🪪', centro:'🏟️', microciclo:'📅'};
 const FILTERS_BY_PAGE = {
   geral:['start','end','month'],
   controle:['start','end','month','task','complexity','part'],
@@ -779,7 +870,9 @@ const FILTERS_BY_PAGE = {
   avaliacao:['start','end','month','athlete','position','quartile','tenure'],
   jogos:['start','end','month','competition','rank','format','result'],
   posjogo:['start','end','month','competition','rank','format','result'],
-  card:['athlete','start','end','month']
+  card:['athlete','start','end','month'],
+  centro:[],
+  microciclo:[]
 };
 const filterState = {start:DATA.meta.minDate||'', end:DATA.meta.maxDate||'', month:'', athlete:'', position:'', quartile:'', tenure:'', competition:'', rank:'', format:'', result:'', task:'', complexity:'', part:'', content:'', contentType:''};
 let activePage = 'geral';
@@ -795,6 +888,15 @@ let controlePartMonth = '';
 let cmpAthleteA = '';
 let cmpAthleteB = '';
 let heatAvalMonthView = '';
+const LS_CENTRO_KEY = 'qgCentroSessions';
+const LS_MICRO_KEY = 'qgMicrociclos';
+let centroSelectedId = null;
+let centroActivityCount = 0;
+function isoToday(){ return new Date().toISOString().slice(0,10); }
+function mondayOf(dateStr){ const d=new Date(dateStr+'T00:00:00'); const day=d.getDay(); const diff=(day===0?-6:1-day); d.setDate(d.getDate()+diff); return d.toISOString().slice(0,10); }
+function addDaysIso(dateStr,n){ const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+let mcCurrentWeek = mondayOf(isoToday());
+const DOW_LABELS = ['SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO','DOMINGO'];
 
 function $(id){return document.getElementById(id)}
 function fmt(n,dec=1){ if(n===null||n===undefined||isNaN(n)) return '—'; return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:dec,minimumFractionDigits:dec}); }
@@ -932,6 +1034,17 @@ function init(){
   $('clearDonuts').onclick=()=>{donutState={tenureBand:null,quartile:null,position:null}; renderGeral(activeFilters());};
   populateCardAthletes(); $('openCardBtn').onclick=()=>renderCard(); $('cardAthlete').onchange=()=>{filterState.athlete=$('cardAthlete').value; renderCard();};
   $('dataFoot').textContent=`Período: ${DATA.meta.minDate} a ${DATA.meta.maxDate}`;
+  const dlc=$('dlCentroContents'); if(dlc) dlc.innerHTML=DATA.meta.contents.map(c=>`<option value="${escAttr(c)}">`).join('');
+  const centroUploadBtn=$('centroUploadBtn'); if(centroUploadBtn) centroUploadBtn.onclick=openCentroModal;
+  const centroModalClose=$('centroModalClose'); if(centroModalClose) centroModalClose.onclick=closeCentroModal;
+  const centroModalCancel=$('centroModalCancel'); if(centroModalCancel) centroModalCancel.onclick=closeCentroModal;
+  const csAdd=$('cs_addAtividade'); if(csAdd) csAdd.onclick=addCentroActivity;
+  const csSave=$('cs_save'); if(csSave) csSave.onclick=saveCentroSession;
+  const centroModal=$('centroModal'); if(centroModal) centroModal.onclick=(e)=>{ if(e.target===centroModal) closeCentroModal(); };
+  const mcPrev=$('mcPrevWeek'); if(mcPrev) mcPrev.onclick=()=>{ mcCurrentWeek=addDaysIso(mcCurrentWeek,-7); renderMicrociclo(); };
+  const mcNext=$('mcNextWeek'); if(mcNext) mcNext.onclick=()=>{ mcCurrentWeek=addDaysIso(mcCurrentWeek,7); renderMicrociclo(); };
+  const mcThis=$('mcThisWeek'); if(mcThis) mcThis.onclick=()=>{ mcCurrentWeek=mondayOf(isoToday()); renderMicrociclo(); };
+  const mcNumInput=$('mcNumberInput'); if(mcNumInput) mcNumInput.onchange=()=>{ const all=getMcState(); if(!all[mcCurrentWeek]) all[mcCurrentWeek]={number:null,days:{}}; all[mcCurrentWeek].number=mcNumInput.value?Number(mcNumInput.value):null; saveMicrociclos(all); $('mcNumber').textContent = all[mcCurrentWeek].number ? '· '+all[mcCurrentWeek].number : ''; };
   go('geral');
 }
 function populateCardAthletes(){const sel=$('cardAthlete'); sel.innerHTML=DATA.meta.athletes.map(a=>`<option value="${a}">${a}</option>`).join('');}
@@ -942,7 +1055,198 @@ function filteredContents(f){return DATA.contents.filter(d=>dateOK(d.date,f)&&(!
 function filteredNotes(f){let rows=enrichRowsWithAthlete(DATA.notes); return rows.filter(d=>dateOK(d.date,f)&&(!f.month||d.month===f.month)&&(!f.athlete||d.athlete===f.athlete)&&(!f.position||d.position===f.position)&&(!f.quartile||d.quartile===f.quartile)&&(!f.tenure||d.tenureBand===f.tenure));}
 function filteredGames(f){return DATA.games.filter(d=>dateOK(d.date,f)&&(!f.month||d.month===f.month)&&(!f.competition||d.competition===f.competition)&&(!f.rank||d.rank===f.rank)&&(!f.format||d.format===f.format)&&(!f.result||d.result===f.result));}
 function filteredGameInd(f){let rows=enrichRowsWithAthlete(DATA.gameInd); return rows.filter(d=>dateOK(d.date,f)&&(!f.month||d.month===f.month)&&(!f.athlete||d.athlete===f.athlete)&&(!f.position||d.position===f.position)&&(!f.quartile||d.quartile===f.quartile)&&(!f.competition||d.competition===f.competition)&&(!f.rank||d.rank===f.rank)&&(!f.format||d.format===f.format)&&(!f.result||d.result===f.result));}
-function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard();}
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return String(s||'').replace(/"/g,'&quot;'); }
+function loadCentroSessions(){ try{ return JSON.parse(localStorage.getItem(LS_CENTRO_KEY)||'[]'); } catch(e){ return []; } }
+function saveCentroSessions(arr){ try{ localStorage.setItem(LS_CENTRO_KEY, JSON.stringify(arr)); } catch(e){ alert('Não foi possível salvar no armazenamento local do navegador (pode estar cheio). A sessão pode não persistir.'); } }
+function unifiedSessions(){
+  const local = loadCentroSessions().map(s=>({...s, source:'local', date:s.data}));
+  const historical = DATA.trainings.map(t=>({id:'hist-'+t.date+'-'+(t.sessionId||''), source:'historical', date:t.date, sessionId:t.sessionId, categoria:t.category, nota:t.note, numAtletas:t.numAthletes, effectiveMinutes:t.effectiveMinutes}));
+  return [...local, ...historical].sort((a,b)=>b.date.localeCompare(a.date));
+}
+function renderCentro(){
+  const all = unifiedSessions();
+  const groups = {};
+  all.forEach(s=>{ const m = monthLabelFromDate(s.date); (groups[m]=groups[m]||[]).push(s); });
+  const monthsOrdered = Object.keys(groups).sort((a,b)=> groups[b][0].date.localeCompare(groups[a][0].date));
+  const el = $('centroMonthGroups'); el.innerHTML='';
+  if(!all.length){ el.innerHTML = '<div class="empty">Nenhuma sessão registrada ainda. Use "+ Subir sessão" para começar.</div>'; }
+  monthsOrdered.forEach(m=>{
+    const items = [...groups[m]].sort((a,b)=>a.date.localeCompare(b.date));
+    const head = document.createElement('div'); head.className='session-month-head'; head.textContent = `${m.toUpperCase()} · ${items.length} ${items.length===1?'SESSÃO':'SESSÕES'}`;
+    el.appendChild(head);
+    const strip = document.createElement('div'); strip.className='session-strip';
+    items.forEach(s=>{
+      const tile = document.createElement('div');
+      tile.className = 'session-tile' + (s.source==='local'?' local':'') + (centroSelectedId===s.id?' active':'');
+      const sub = s.source==='local' ? (s.objetivo?truncate(s.objetivo,16):'Sessão manual') : ('Sessão '+(s.sessionId||'—'));
+      tile.innerHTML = `<div class="d">${dayLabelFromDate(s.date)}</div><div class="s">${sub}</div><div class="tag">${s.source==='local'?'Manual':'Aplicada'}</div>`;
+      tile.onclick = ()=>{ centroSelectedId = s.id; renderCentro(); };
+      strip.appendChild(tile);
+    });
+    el.appendChild(strip);
+  });
+  if((!centroSelectedId || !all.find(x=>x.id===centroSelectedId)) && all.length) centroSelectedId = all[0].id;
+  renderCentroDetail(all.find(x=>x.id===centroSelectedId));
+}
+function renderCentroDetail(s){
+  const el = $('centroDetail');
+  if(!s){ el.innerHTML = ''; return; }
+  if(s.source==='local'){
+    const atividades = s.atividades||[];
+    el.innerHTML = `<div class="card">
+      <div class="card-head"><div><h3>Sessão manual · ${s.data}</h3><div class="desc">${escHtml(s.objetivo)||'Sem objetivo registrado.'}</div></div>
+      <button type="button" class="btn small" id="centroDeleteBtn">Excluir sessão</button></div>
+      <div class="chips" style="margin:12px 0 4px">
+        <span class="chip">Nº de atletas previsto<b>${s.numAtletasPrevisto ?? '—'}</b></span>
+        <span class="chip">Duração<b>${s.duracaoTreino?s.duracaoTreino+' min':'—'}</b></span>
+        <span class="chip">Atividades<b>${atividades.length}</b></span>
+      </div>
+      <div class="grid" style="margin-top:16px">
+        ${atividades.map((a,i)=>`
+          <div class="card span-6">
+            <h3>${escHtml(a.nome)||('Atividade '+(i+1))}</h3>
+            <div class="desc">${a.duracao?a.duracao+' min':''}${a.tamanhoCampo?' · Campo '+escHtml(a.tamanhoCampo):''}</div>
+            ${a.imagem?`<img src="${a.imagem}" style="width:100%;border-radius:14px;margin:8px 0;object-fit:cover;max-height:220px">`:''}
+            ${a.descricao?`<p style="font-size:13px;color:var(--text);margin:8px 0"><b>Descrição:</b> ${escHtml(a.descricao)}</p>`:''}
+            ${a.variacoes?`<p style="font-size:13px;color:var(--muted);margin:8px 0"><b>Variações previstas:</b> ${escHtml(a.variacoes)}</p>`:''}
+            ${a.feedback?`<p style="font-size:13px;color:var(--muted);margin:8px 0"><b>Comportamento chave / feedbacks:</b> ${escHtml(a.feedback)}</p>`:''}
+            <div class="chips">
+              ${a.conteudoPrincipal?`<span class="chip">Principal<b>${escHtml(a.conteudoPrincipal)}</b></span>`:''}
+              ${a.conteudoSecundario?`<span class="chip">Secundário<b>${escHtml(a.conteudoSecundario)}</b></span>`:''}
+              ${a.conteudoConcorrente?`<span class="chip">Concorrente<b>${escHtml(a.conteudoConcorrente)}</b></span>`:''}
+            </div>
+          </div>`).join('') || '<div class="card span-12"><div class="empty">Sem atividades cadastradas nesta sessão.</div></div>'}
+      </div>
+    </div>`;
+    const delBtn = $('centroDeleteBtn');
+    if(delBtn) delBtn.onclick = ()=>{ if(confirm('Excluir esta sessão manual?')){ saveCentroSessions(loadCentroSessions().filter(x=>x.id!==s.id)); centroSelectedId=null; renderCentro(); } };
+  } else {
+    const blocks = DATA.blocks.filter(b=>b.date===s.date);
+    el.innerHTML = `<div class="card">
+      <h3>Sessão ${s.sessionId||''} · ${s.date}</h3>
+      <div class="desc">${s.categoria||''} · Nota geral ${fmt(s.nota)} · ${fmtInt(s.numAtletas)} atletas · ${fmtInt(s.effectiveMinutes)} min efetivos</div>
+      <div class="grid" style="margin-top:16px">
+        ${PART_ORDER.map(part=>{
+          const arr = blocks.filter(b=>b.part===part);
+          if(!arr.length) return '';
+          return `<div class="card span-4"><h3>${part}</h3>${arr.map(b=>`<div style="margin-bottom:10px;font-size:13px"><b>${escHtml(b.content)||escHtml(b.contentType)||'—'}</b><br><span class="mini">${b.taskType||''}${b.complexity?' · '+b.complexity:''}${b.minutes?' · '+fmtInt(b.minutes)+' min':''}${b.performance!=null?' · nota '+fmt(b.performance):''}</span></div>`).join('')}</div>`;
+        }).join('') || '<div class="card span-12"><div class="empty">Sem blocos detalhados para esta sessão.</div></div>'}
+      </div>
+    </div>`;
+  }
+}
+function openCentroModal(){
+  $('cs_data').value = isoToday();
+  $('cs_numAtletas').value=''; $('cs_duracao').value=''; $('cs_objetivo').value='';
+  $('cs_atividades').innerHTML=''; centroActivityCount=0;
+  addCentroActivity();
+  $('centroModal').style.display='flex';
+}
+function closeCentroModal(){ $('centroModal').style.display='none'; }
+function addCentroActivity(){
+  centroActivityCount++;
+  const idx = centroActivityCount;
+  const div = document.createElement('div'); div.className='activity-block'; div.dataset.idx=idx;
+  div.innerHTML = `
+    <div class="activity-block-head"><b>Atividade ${idx}</b><button type="button" class="btn small" data-remove>Remover</button></div>
+    <div class="field-grid3">
+      <div class="field"><label>Nome da atividade</label><input class="a-nome"></div>
+      <div class="field"><label>Duração (min)</label><input type="number" min="0" class="a-duracao"></div>
+      <div class="field"><label>Tamanho do campo</label><input class="a-campo" placeholder="ex.: 25x30"></div>
+    </div>
+    <div class="field"><label>Descrição da atividade</label><textarea class="a-descricao"></textarea></div>
+    <div class="field"><label>Variações previstas</label><textarea class="a-variacoes"></textarea></div>
+    <div class="field"><label>Comportamento chave / feedbacks</label><textarea class="a-feedback"></textarea></div>
+    <div class="field-grid3">
+      <div class="field"><label>Conteúdo principal</label><input class="a-princ" list="dlCentroContents"></div>
+      <div class="field"><label>Conteúdo secundário</label><input class="a-sec" list="dlCentroContents"></div>
+      <div class="field"><label>Conteúdo concorrente</label><input class="a-conc" list="dlCentroContents"></div>
+    </div>
+    <div class="field"><label>Imagem ilustrativa</label><input type="file" accept="image/*" class="a-imagem"><div class="a-img-preview"></div></div>
+  `;
+  div.querySelector('[data-remove]').onclick = ()=>div.remove();
+  div.querySelector('.a-imagem').onchange = (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ div.dataset.imagem = reader.result; div.querySelector('.a-img-preview').innerHTML = `<img src="${reader.result}">`; };
+    reader.readAsDataURL(file);
+  };
+  $('cs_atividades').appendChild(div);
+}
+function saveCentroSession(){
+  const data = $('cs_data').value;
+  if(!data){ alert('Informe a data da sessão.'); return; }
+  const atividades = [...$('cs_atividades').querySelectorAll('.activity-block')].map(div=>({
+    nome: div.querySelector('.a-nome').value.trim(),
+    duracao: Number(div.querySelector('.a-duracao').value)||null,
+    tamanhoCampo: div.querySelector('.a-campo').value.trim(),
+    descricao: div.querySelector('.a-descricao').value.trim(),
+    variacoes: div.querySelector('.a-variacoes').value.trim(),
+    feedback: div.querySelector('.a-feedback').value.trim(),
+    conteudoPrincipal: div.querySelector('.a-princ').value.trim(),
+    conteudoSecundario: div.querySelector('.a-sec').value.trim(),
+    conteudoConcorrente: div.querySelector('.a-conc').value.trim(),
+    imagem: div.dataset.imagem || null,
+  })).filter(a=>a.nome||a.descricao);
+  const session = {
+    id: 'local-'+Date.now(),
+    data, numAtletasPrevisto: Number($('cs_numAtletas').value)||null,
+    duracaoTreino: Number($('cs_duracao').value)||null,
+    objetivo: $('cs_objetivo').value.trim(),
+    atividades, createdAt: new Date().toISOString(),
+  };
+  const arr = loadCentroSessions(); arr.push(session); saveCentroSessions(arr);
+  centroSelectedId = session.id;
+  closeCentroModal();
+  renderCentro();
+}
+function loadMicrociclos(){ try{ return JSON.parse(localStorage.getItem(LS_MICRO_KEY)||'{}'); } catch(e){ return {}; } }
+function saveMicrociclos(obj){ try{ localStorage.setItem(LS_MICRO_KEY, JSON.stringify(obj)); } catch(e){ alert('Não foi possível salvar no armazenamento local do navegador (pode estar cheio).'); } }
+let mcState = null;
+function getMcState(){ if(!mcState) mcState = loadMicrociclos(); return mcState; }
+function emptyMcDay(){ return {folga:false, pre:'', p1dur:'', p1:'', p2dur:'', p2:'', p3dur:'', p3:'', comp:''}; }
+function mcCellTd(week,d,key){
+  if(week.days[d].folga) return `<td class="folga">FOLGA</td>`;
+  return `<td><textarea class="mc-cell" data-day="${d}" data-key="${key}">${escHtml(week.days[d][key])}</textarea></td>`;
+}
+function renderMicrociclo(){
+  const all = getMcState();
+  const weekKey = mcCurrentWeek;
+  if(!all[weekKey]) all[weekKey] = {number:null, days:{}};
+  const week = all[weekKey];
+  const dayDates = [0,1,2,3,4,5,6].map(i=>addDaysIso(weekKey,i));
+  dayDates.forEach(d=>{ if(!week.days[d]) week.days[d] = emptyMcDay(); });
+
+  $('mcNumber').textContent = week.number ? '· '+week.number : '';
+  $('mcWeekDesc').textContent = `Semana de ${dayLabelFromDate(dayDates[0])} a ${dayLabelFromDate(dayDates[6])} de ${monthLabelFromDate(dayDates[0])}`;
+  const mcNumInput = $('mcNumberInput');
+  if(mcNumInput && document.activeElement!==mcNumInput) mcNumInput.value = week.number ?? '';
+
+  const monthName = monthLabelFromDate(dayDates[0]).split('/')[0];
+  const head = `<thead><tr><th style="min-width:150px">${monthName.toUpperCase()}</th>${dayDates.map((d,i)=>`<th><div class="day-head"><span>${DOW_LABELS[i]} (${dayLabelFromDate(d)})</span><button type="button" class="folga-toggle ${week.days[d].folga?'on':''}" data-day="${d}">${week.days[d].folga?'Folga':'Marcar folga'}</button></div></th>`).join('')}</tr></thead>`;
+
+  const rows = [];
+  rows.push(`<tr><td class="row-label">Pré-treino</td>${dayDates.map(d=>mcCellTd(week,d,'pre')).join('')}</tr>`);
+  ['p1','p2','p3'].forEach((key,i)=>{
+    rows.push(`<tr class="dur-row"><td class="row-label">Duração parte ${i+1}</td>${dayDates.map(d=>week.days[d].folga?'<td></td>':`<td><input class="mc-dur" data-day="${d}" data-key="${key}dur" value="${escAttr(week.days[d][key+'dur'])}" placeholder="min"></td>`).join('')}</tr>`);
+    rows.push(`<tr><td class="row-label">Parte ${i+1}</td>${dayDates.map(d=>mcCellTd(week,d,key)).join('')}</tr>`);
+  });
+  rows.push(`<tr><td class="row-label">Complemento</td>${dayDates.map(d=>mcCellTd(week,d,'comp')).join('')}</tr>`);
+
+  const table = $('mcTable');
+  table.innerHTML = head + '<tbody>' + rows.join('') + '</tbody>';
+  table.querySelectorAll('.folga-toggle').forEach(btn=>{
+    btn.onclick = ()=>{ const d=btn.dataset.day; week.days[d].folga=!week.days[d].folga; saveMicrociclos(all); renderMicrociclo(); };
+  });
+  table.querySelectorAll('textarea.mc-cell').forEach(ta=>{
+    ta.oninput = ()=>{ week.days[ta.dataset.day][ta.dataset.key]=ta.value; saveMicrociclos(all); };
+  });
+  table.querySelectorAll('input.mc-dur').forEach(inp=>{
+    inp.oninput = ()=>{ week.days[inp.dataset.day][inp.dataset.key]=inp.value; saveMicrociclos(all); };
+  });
+}
+function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard(); if(activePage==='centro') renderCentro(); if(activePage==='microciclo') renderMicrociclo();}
 
 function monthlyAgg(rows, valueFn, agg='avg'){return MONTHS.map(m=>{const arr=rows.filter(x=>x.month===m); return {month:m, value:agg==='sum'?sum(arr.map(valueFn)):avg(arr.map(valueFn)), count:arr.length, items:arr};}).filter(x=>x.count>0)}
 function renderGeral(f){const t=filteredTrainings(f), g=filteredGames(f); const effectiveAvg=avg(t.map(x=>x.effectiveMinutes)); const trainPct=effectiveAvg?effectiveAvg/80*100:null; const wins=g.filter(x=>x.result==='Vitória').length, draws=g.filter(x=>x.result==='Empate').length, losses=g.filter(x=>x.result==='Derrota').length; const totalMinutesGeral=sum(t.map(x=>x.effectiveMinutes)); const totalTAAGeral=sum(t.map(x=>x.totalTAA)); const avgTAAGeral=avg(t.map(x=>x.totalTAA)); kpi('kpisGeral',[
