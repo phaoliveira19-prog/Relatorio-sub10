@@ -158,6 +158,10 @@ body.light .eyebrow{color:#0e7490}
 .sidebar-head .brand-mini p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sidebar-collapse{flex:0 0 auto;width:28px;height:28px;border-radius:9px;border:1px solid var(--stroke);background:rgba(255,255,255,.05);color:var(--muted);cursor:pointer;font-weight:900;font-size:13px;line-height:1}
 .sidebar-collapse:hover{color:var(--text);filter:brightness(1.1)}
+.sidebar-categoria{flex:0 0 auto;margin:0 18px 14px}
+.sidebar-categoria label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 5px 2px}
+.sidebar-categoria select{width:100%;border:1px solid var(--stroke);background:#090f1bdd;color:var(--text);border-radius:13px;padding:9px 11px;font-size:12px}
+.sidebar.collapsed .sidebar-categoria{display:none!important}
 .sidebar-search{flex:0 0 auto;display:flex;align-items:center;gap:8px;margin:0 18px 14px;padding:9px 11px;border:1px solid var(--stroke);border-radius:13px;background:#090f1bdd}
 .sidebar-search .search-ico{font-size:12px;opacity:.7}
 .sidebar-search input{border:0;background:transparent;padding:0;width:auto;flex:1 1 auto;font-size:12.5px}
@@ -271,8 +275,12 @@ body.light .mc-table thead th{background:#eff5fb;color:#334155}
 <div class="app" id="appShell">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-head">
-      <div class="brand-mini"><div class="logo"><img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador"></div><div><h1>QG do Treinador</h1><p>Dashboard interativo · Sub-10 · premium</p></div></div>
+      <div class="brand-mini"><div class="logo"><img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador"></div><div><h1>QG do Treinador</h1><p id="sidebarSubtitle">Dashboard interativo · Sub-10 · premium</p></div></div>
       <button class="sidebar-collapse" id="sidebarCollapse" type="button" title="Recolher menu">«</button>
+    </div>
+    <div class="sidebar-categoria" id="sidebarCategoria" style="display:none">
+      <label>Categoria em exibição</label>
+      <select id="categoriaSwitcher"></select>
     </div>
     <div class="sidebar-search">
       <span class="search-ico">🔎</span>
@@ -468,15 +476,22 @@ body.light .mc-table thead th{background:#eff5fb;color:#334155}
 <script>
 // ---------- Acesso (mesmo login da área de preenchimento) ----------
 const ACCOUNTS = [
-  { login: 'pedrohenrique', hash: '4d4f5a5396cf10094e055d1df2d4d6b09d36e5f1d9552b810c0260e2c5c4b282' },
-  { login: 'victorlenine', hash: '51ac9b3c7f66ee23e5549e7b65d58921a8ab0f50b22873c068cdb82b58a1ec4b' },
-  { login: 'matheusteixeira', hash: 'cb78566e94a8ac4cb3cb58b61b957e669c3d016b946a0c5601cb28c4f301e746' },
-  { login: 'raphaelbatista', hash: '1f7532d789a4a28a94cc3697c57fe3267ca878d779feb4f9369458f56e78a698' },
-  { login: 'douglascarvalho', hash: '9b8370e2d6248d005834e852248faa6f665e8c21f50a3cdf66053136d342bbe6' },
+  { login: 'pedrohenrique', hash: '4d4f5a5396cf10094e055d1df2d4d6b09d36e5f1d9552b810c0260e2c5c4b282', nome: 'Pedro Henrique', categoria: 'Sub-10', allCategories: true },
+  { login: 'victorlenine', hash: '51ac9b3c7f66ee23e5549e7b65d58921a8ab0f50b22873c068cdb82b58a1ec4b', nome: 'Victor Lenine', categoria: 'Sub-13' },
+  { login: 'matheusteixeira', hash: 'cb78566e94a8ac4cb3cb58b61b957e669c3d016b946a0c5601cb28c4f301e746', nome: 'Matheus Teixeira', categoria: 'Sub-12' },
+  { login: 'raphaelbatista', hash: '1f7532d789a4a28a94cc3697c57fe3267ca878d779feb4f9369458f56e78a698', nome: 'Raphael Batista', categoria: 'Prep. Goleiros' },
+  { login: 'douglascarvalho', hash: '9b8370e2d6248d005834e852248faa6f665e8c21f50a3cdf66053136d342bbe6', nome: 'Douglas Carvalho', categoria: 'Escolinhas' },
 ];
+const CATEGORIAS_LIST = [...new Set(ACCOUNTS.map(a=>a.categoria))];
 async function sha256Hex(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function getAccount(){ try{ return JSON.parse(sessionStorage.getItem('qgAccount')||'null'); } catch(e){ return null; } }
+function getActiveCategoria(){
+  const acc = getAccount(); if(!acc) return null;
+  if(acc.allCategories){ return sessionStorage.getItem('qgActiveCategoria') || acc.categoria; }
+  return acc.categoria;
 }
 async function checkGate(){
   const login = document.getElementById('gateLogin').value.trim().toLowerCase();
@@ -485,7 +500,8 @@ async function checkGate(){
   const match = ACCOUNTS.find(a => a.login.toLowerCase() === login && a.hash === hash);
   if(match){
     sessionStorage.setItem('entradaAuth','1');
-    document.getElementById('gate').style.display='none';
+    sessionStorage.setItem('qgAccount', JSON.stringify({login:match.login, nome:match.nome, categoria:match.categoria, allCategories:!!match.allCategories}));
+    location.reload();
   } else {
     document.getElementById('gateMsg').textContent = 'Usuário ou senha incorretos.';
   }
@@ -797,6 +813,20 @@ function buildSheetsMeta({athletes,trainings,blocks,contents,games}){
     complexityOrder:['Baixa','M\u00e9dia','Alta'], partOrder:['Preparat\u00f3ria','Conceitual','Conex\u00e3o'],
   };
 }
+function applyCategoriaFilter(data, categoria){
+  if(!categoria || categoria==='__ALL__') return data;
+  const athletes = (data.athletes||[]).filter(a=>a.category===categoria);
+  const allowedNicknames = new Set(athletes.map(a=>normLowerText(a.nickname)));
+  const trainings = (data.trainings||[]).filter(t=>t.category===categoria);
+  const allowedDates = new Set(trainings.map(t=>t.date));
+  const blocks = (data.blocks||[]).filter(b=>allowedDates.has(b.date));
+  const contents = (data.contents||[]).filter(c=>allowedDates.has(c.date));
+  const games = (data.games||[]).filter(g=>g.category===categoria);
+  const gameInd = (data.gameInd||[]).filter(g=>g.category===categoria);
+  const notes = (data.notes||[]).filter(n=>allowedNicknames.has(normLowerText(n.athlete)));
+  const meta = buildSheetsMeta({athletes,trainings,blocks,contents,games});
+  return {...data, athletes, trainings, blocks, contents, games, gameInd, notes, meta};
+}
 
 async function fetchSheetCSV(sheetId, sheetName){
   const url=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -841,6 +871,7 @@ try{
   console.warn('[dashboard] Google Sheets indispon\u00edvel, usando data.json local.', sheetsErr);
   try{DATA = await (await fetch('./data.json',{cache:'no-store'})).json();}catch(e){document.body.innerHTML='<div style="padding:40px;color:#eef4ff;font-family:sans-serif">N\u00e3o foi poss\u00edvel carregar dados do Google Sheets nem do data.json local. Verifique a conex\u00e3o e o compartilhamento da planilha.</div>';return;}
 }
+DATA = applyCategoriaFilter(DATA, getActiveCategoria());
 const COLORS = ['#22d3ee','#60a5fa','#a78bfa','#32d583','#fdb022','#f97066','#f472b6','#38bdf8','#c4b5fd','#86efac'];
 const DISTINCT_COLORS = [COLORS[0],COLORS[4],COLORS[2],COLORS[3],COLORS[5],COLORS[6],COLORS[1]];
 const RESULT_COLORS = {'Vitória':'#32d583','Empate':'#fdb022','Derrota':'#f97066'};
@@ -988,6 +1019,19 @@ function activeFilterPills(f){const div=$('activeFilters'); div.innerHTML=''; Ob
 function resetActiveFilters(){(FILTERS_BY_PAGE[activePage]||[]).forEach(k=>{filterState[k]=(k==='start'?DATA.meta.minDate:(k==='end'?DATA.meta.maxDate:''));}); renderFilters(); renderActive();}
 function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive();}
 function init(){
+  const account = getAccount();
+  const activeCategoria = getActiveCategoria();
+  const subtitleEl = $('sidebarSubtitle');
+  if(subtitleEl) subtitleEl.textContent = `Dashboard interativo · ${activeCategoria==='__ALL__'?'Todas as categorias':(activeCategoria||'Sub-10')} · premium`;
+  if(account && account.allCategories){
+    const catBox=$('sidebarCategoria'), catSel=$('categoriaSwitcher');
+    if(catBox && catSel){
+      catBox.style.display='';
+      catSel.innerHTML = CATEGORIAS_LIST.map(c=>`<option value="${c}">${c}</option>`).join('') + `<option value="__ALL__">Todas as categorias</option>`;
+      catSel.value = activeCategoria || account.categoria;
+      catSel.onchange = ()=>{ sessionStorage.setItem('qgActiveCategoria', catSel.value); location.reload(); };
+    }
+  }
   const themeBtn=$('themeToggle');
   if(themeBtn){themeBtn.onclick=()=>{document.body.classList.toggle('light'); themeBtn.textContent=document.body.classList.contains('light')?'🌙':'☀️'; renderActive();};}
   const exportBtn=$('exportPdfBtn'); if(exportBtn) exportBtn.onclick=()=>window.print();
@@ -1438,7 +1482,14 @@ function renderPosJogo(f){
 function renderOpportunityStrip(opp){const wanted=['Referência do grupo','Monitorar coerência','Plano de desenvolvimento']; const arr=opp.filter(x=>wanted.includes(x.status)).sort((a,b)=>wanted.indexOf(a.status)-wanted.indexOf(b.status)||b.minutes-a.minutes); const el=$('oppStrip'); if(!el)return; if(!arr.length){el.innerHTML='<div class="empty">Sem atletas classificados nesses status no filtro atual</div>';return} const tile=x=>{const a=athleteObj(x.athlete)||{}; return `<div class="opp-tile"><img src="${safePhoto(a)||fallbackPhoto()}" onerror="photoErr(this,'${(a.photoExternal||'').replace(/'/g,"&#39;")}')"><div><b>${x.athlete}</b><br><span class="status ${x.cls}">${x.status}</span><br><span>${fmtInt(x.minutes)} min · ${fmt(x.pct,1)}% min.</span></div></div>`}; const tiles=arr.map(tile).join(''); el.innerHTML=`<div class="mini" style="margin:0 0 10px 4px;text-transform:uppercase;letter-spacing:.12em;font-weight:900">Atletas em status de decisão</div><div class="marquee-track">${tiles}${tiles}</div>`;}
 function opportunityRows(s,nMap){const avgMin=avg(s.map(x=>x.minutes))||0, avgNote=avg(Object.values(nMap).filter(Boolean))||0; return s.map(x=>{const note=nMap[x.athlete]||0; let status='Equilibrado',cls='neutral'; if(note>=avgNote+.3 && x.minutes<avgMin*.75){status='Merece mais oportunidade';cls='good'} else if(note<avgNote-.3 && x.minutes>avgMin*1.15){status='Monitorar coerência';cls='warn'} else if(note<avgNote-.3 && x.minutes<avgMin*.75){status='Plano de desenvolvimento';cls='bad'} else if(note>=avgNote+.3 && x.minutes>=avgMin*1.15){status='Referência do grupo';cls='good'} return {...x,note,pct:x.pctMinutes,status,cls};}).sort((a,b)=>b.note-a.note);}
 function tenureFull(joined){if(!joined)return 'Sem data de chegada'; let start=new Date(joined+'T00:00:00'), end=new Date(DATA.meta.asOf+'T00:00:00'); if(isNaN(start))return 'Sem data de chegada'; let y=end.getFullYear()-start.getFullYear(), m=end.getMonth()-start.getMonth(), d=end.getDate()-start.getDate(); if(d<0){m--; const prev=new Date(end.getFullYear(),end.getMonth(),0).getDate(); d+=prev;} if(m<0){y--; m+=12;} return `${y} ano(s), ${m} mês(es) e ${d} dia(s)`;}
-function renderCard(){const selected=$('cardAthlete').value || filterState.athlete || DATA.meta.athletes[0]; const a=athleteObj(selected)||DATA.athletes[0]; $('cardAthlete').value=a.nickname; const name=a.nickname; const notes=DATA.notes.filter(x=>x.athlete===name).sort((a,b)=>a.date.localeCompare(b.date)); const gi=DATA.gameInd.filter(x=>x.athlete===name).sort((a,b)=>a.date.localeCompare(b.date)); const games=DATA.games; const gsum=gameSummary(gi,games)[0]||{minutes:0,pctMinutes:0,related:0,titular:0,reserva:0,nao:0,goals:0,assists:0,ga:0,minPerGA:null,avgPerf:null}; const ns=notes.map(x=>x.note); const recent=avg(notes.slice(-5).map(x=>x.note)); const gamePerf=gi.filter(x=>x.performance!=null); const recentGame=avg(gamePerf.slice(-5).map(x=>x.performance)); const trainDates=uniq(notes.map(x=>x.date)); const trainMinutes=sum(trainDates.map(d=>(DATA.trainings.find(t=>t.date===d)||{}).effectiveMinutes||0)); const possibleTrain=sum(DATA.trainings.map(t=>t.effectiveMinutes||0)); const trainingParticipation=pct(trainMinutes,possibleTrain); const nMap=Object.fromEntries(noteSummary({start:DATA.meta.minDate,end:DATA.meta.maxDate}).map(x=>[x.athlete,x.avg])); const opp=opportunityRows(gameSummary(DATA.gameInd,DATA.games),nMap).find(x=>x.athlete===name)||{}; const trendDiff=(recent||0)-(avg(ns)||0); const trendStatus=trendDiff>=.5?'Em evolução':trendDiff<=-.5?'Em queda':'Estável';
+function renderCard(){
+  if(!DATA.athletes.length){
+    $('profileBox').innerHTML='<div class="empty">Nenhum atleta cadastrado nesta categoria ainda.</div>';
+    $('kpisCard').innerHTML='';
+    ['chCardEvolution','chCardCompare','chCardBestContents','chCardWorstContents','chCardStatusDonut','chCardGAMonth'].forEach(id=>drawEmpty(id));
+    return;
+  }
+  const selected=$('cardAthlete').value || filterState.athlete || DATA.meta.athletes[0]; const a=athleteObj(selected)||DATA.athletes[0]; $('cardAthlete').value=a.nickname; const name=a.nickname; const notes=DATA.notes.filter(x=>x.athlete===name).sort((a,b)=>a.date.localeCompare(b.date)); const gi=DATA.gameInd.filter(x=>x.athlete===name).sort((a,b)=>a.date.localeCompare(b.date)); const games=DATA.games; const gsum=gameSummary(gi,games)[0]||{minutes:0,pctMinutes:0,related:0,titular:0,reserva:0,nao:0,goals:0,assists:0,ga:0,minPerGA:null,avgPerf:null}; const ns=notes.map(x=>x.note); const recent=avg(notes.slice(-5).map(x=>x.note)); const gamePerf=gi.filter(x=>x.performance!=null); const recentGame=avg(gamePerf.slice(-5).map(x=>x.performance)); const trainDates=uniq(notes.map(x=>x.date)); const trainMinutes=sum(trainDates.map(d=>(DATA.trainings.find(t=>t.date===d)||{}).effectiveMinutes||0)); const possibleTrain=sum(DATA.trainings.map(t=>t.effectiveMinutes||0)); const trainingParticipation=pct(trainMinutes,possibleTrain); const nMap=Object.fromEntries(noteSummary({start:DATA.meta.minDate,end:DATA.meta.maxDate}).map(x=>[x.athlete,x.avg])); const opp=opportunityRows(gameSummary(DATA.gameInd,DATA.games),nMap).find(x=>x.athlete===name)||{}; const trendDiff=(recent||0)-(avg(ns)||0); const trendStatus=trendDiff>=.5?'Em evolução':trendDiff<=-.5?'Em queda':'Estável';
   $('profileBox').innerHTML=`<img class="photo" src="${safePhoto(a)||fallbackPhoto()}" onerror="photoErr(this,'${(a.photoExternal||'').replace(/'/g,"&#39;")}')"><h2>${a.nickname}</h2><div class="meta">${a.name||''}<br>${a.position||'—'} · ${a.quartile||'—'} · Pé ${a.foot||'—'}<br>Nascimento: ${a.dob||'—'}<br>Chegada: ${a.joined||'—'}<br>Tempo de clube: <b>${tenureFull(a.joined)}</b></div><div class="text-block"><b>Características</b><p>${a.characteristic||'Sem registro.'}</p></div><div class="text-block"><b>Pontos a melhorar</b><p>${a.improvement||'Sem registro.'}</p></div>`;
   metricCards('kpisCard',[{label:'Nota de treino',value:fmt(avg(ns)),sub:`${notes.length} avaliações`},{label:'Nota últimos 5 treinos',value:fmt(recent),sub:`Δ ${fmt(trendDiff)}`},{label:'Nota de jogo',value:fmt(gsum.avgPerf),sub:`${gamePerf.length} avaliações`},{label:'Nota últimos 5 jogos',value:fmt(recentGame),sub:'desempenho recente'},{label:'Minutagem treino',value:fmtInt(trainMinutes)+' min',sub:`${fmt(trainingParticipation,1)}% da minutagem possível`},{label:'Minutagem jogo',value:fmtInt(gsum.minutes)+' min',sub:`${fmt(gsum.pctMinutes,1)}% da minutagem possível`},{label:'Status oportunidade',value:opp.status||'—',sub:`Nota ref.: ${fmt(opp.note)}`},{label:'Tendência recente',value:trendStatus,sub:`Δ ${fmt(trendDiff)}`}],true);
   const groupByDate=Object.entries(by(DATA.notes,'date')).map(([date,rows])=>({date,grupo:avg(rows.map(x=>x.note)),month:rows[0].month})); const athleteByDate=Object.fromEntries(notes.map(x=>[x.date,x.note])); const sessionData=groupByDate.filter(x=>athleteByDate[x.date]!=null).map(x=>({date:x.date,month:x.month,atleta:athleteByDate[x.date],grupo:x.grupo})).sort((a,b)=>a.date.localeCompare(b.date)); lineChartSessionTicks('chCardEvolution',sessionData,'date',[{key:'atleta',label:a.nickname,color:COLORS[0]},{key:'grupo',label:'Grupo',color:COLORS[3]}],{yMin:3,yMax:10});
