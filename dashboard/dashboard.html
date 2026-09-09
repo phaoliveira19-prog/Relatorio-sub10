@@ -516,6 +516,7 @@ const ACCOUNTS = [
   { login: 'matheusteixeira', hash: 'cb78566e94a8ac4cb3cb58b61b957e669c3d016b946a0c5601cb28c4f301e746', nome: 'Matheus Teixeira', categoria: 'Sub-12' },
   { login: 'raphaelbatista', hash: '1f7532d789a4a28a94cc3697c57fe3267ca878d779feb4f9369458f56e78a698', nome: 'Raphael Batista', categoria: 'Prep. Goleiros' },
   { login: 'douglascarvalho', hash: '9b8370e2d6248d005834e852248faa6f665e8c21f50a3cdf66053136d342bbe6', nome: 'Douglas Carvalho', categoria: 'Escolinhas' },
+  { login: 'joaofortes', hash: 'e2f5a6e0ee3009367db913b0a16aeb1f288a65de781618c82153f5b6e1c3c560', nome: 'João Fortes', categoria: 'Sub-09' },
 ];
 const CATEGORIAS_LIST = [...new Set(ACCOUNTS.map(a=>a.categoria))];
 async function sha256Hex(text){
@@ -731,7 +732,7 @@ function extractTrainingsFromCSV(csvText){
       partsOut.push({part:partLabel, content, contentType, taskType, complexity, minutes, numAthletesActive:jogAtivos, taa, performance:desemp});
       if(suffix!=='conex\u00e3o'){
         for(const [role,c] of [['principal',cPrin],['secundario',cSec],['concorrente',cConc]]){
-          if(c) contents.push({date:dt, month, part:partLabel, role, content:c, contentType, category});
+          if(c) contents.push({date:dt, month, sessionId, part:partLabel, role, content:c, contentType, category});
         }
       }
     }
@@ -856,15 +857,28 @@ function buildSheetsMeta({athletes,trainings,blocks,contents,games}){
     complexityOrder:['Baixa','M\u00e9dia','Alta'], partOrder:['Preparat\u00f3ria','Conceitual','Conex\u00e3o'],
   };
 }
+// tolera "Sub-12", "sub 12", "SUB12", com espaços sobrando etc. — mesma categoria digitada de formas
+// diferentes na planilha não pode virar categorias diferentes (nem sumir, nem vazar pra outras)
+function normalizeCategoria(c){
+  let s=String(c||'').trim().toLowerCase();
+  s=s.replace(/[-_]+/g,' ');
+  s=s.replace(/([a-zà-ÿ])(\d)/g,'$1 $2');
+  return s.replace(/\s+/g,' ').trim();
+}
 function applyCategoriaFilter(data, categoria){
   if(!categoria || categoria==='__ALL__') return data;
-  const athletes = (data.athletes||[]).filter(a=>a.category===categoria);
+  const norm=normalizeCategoria(categoria);
+  const athletes = (data.athletes||[]).filter(a=>normalizeCategoria(a.category)===norm);
   const allowedNicknames = new Set(athletes.map(a=>normLowerText(a.nickname)));
-  const trainings = (data.trainings||[]).filter(t=>t.category===categoria);
-  const blocks = (data.blocks||[]).filter(b=>b.category===categoria||!b.category);
-  const contents = (data.contents||[]).filter(c=>c.category===categoria||!c.category);
-  const games = (data.games||[]).filter(g=>g.category===categoria);
-  const gameInd = (data.gameInd||[]).filter(g=>g.category===categoria);
+  const trainings = (data.trainings||[]).filter(t=>normalizeCategoria(t.category)===norm);
+  // blocks/contents não têm categoria própria confiável em todas as linhas: em vez de arriscar vazar
+  // registros sem categoria pra todo mundo, eles herdam a categoria da sessão de treino (já filtrada
+  // acima) via sessionId+data — assim cada sessão só aparece na categoria a que ela realmente pertence
+  const sessionKeys = new Set(trainings.map(t=>(t.sessionId||'')+'@'+t.date));
+  const blocks = (data.blocks||[]).filter(b=>sessionKeys.has((b.sessionId||'')+'@'+b.date));
+  const contents = (data.contents||[]).filter(c=>sessionKeys.has((c.sessionId||'')+'@'+c.date));
+  const games = (data.games||[]).filter(g=>normalizeCategoria(g.category)===norm);
+  const gameInd = (data.gameInd||[]).filter(g=>normalizeCategoria(g.category)===norm);
   const notes = (data.notes||[]).filter(n=>allowedNicknames.has(normLowerText(n.athlete)));
   const meta = buildSheetsMeta({athletes,trainings,blocks,contents,games});
   return {...data, athletes, trainings, blocks, contents, games, gameInd, notes, meta};
