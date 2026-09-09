@@ -27,7 +27,7 @@ body.light .topnav{background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(
 .tooltip{position:fixed;pointer-events:none;z-index:1000;background:#09111f;border:1px solid rgba(148,163,184,.35);box-shadow:0 18px 48px rgba(0,0,0,.45);border-radius:14px;padding:10px 12px;color:#edf4ff;font-size:12px;opacity:0;transform:translate(-50%,-112%);max-width:340px}.tooltip .tip-ath{display:flex;gap:10px;align-items:center;white-space:normal}.tooltip img,.ath-mini{width:42px;height:42px;border-radius:12px;object-fit:cover;background:#111b2e;border:1px solid var(--stroke)}.tooltip b{color:inherit}.tooltip .muted{color:var(--muted)}.tip-list{white-space:normal;max-width:300px;line-height:1.35;color:inherit}.ath-cell{display:flex;align-items:center;gap:8px}.ath-cell img{width:32px;height:32px;border-radius:10px;object-fit:cover;background:#111b2e;border:1px solid var(--stroke)}
 svg text{font-family:inherit}.axis{fill:var(--muted);font-size:12px}.value-on-shape{font-size:12px;font-weight:800;pointer-events:none}.gridline{stroke:var(--stroke2);stroke-width:1}.axisline{stroke:var(--stroke);stroke-width:1}.bar,.arc,.point{transition:opacity .12s,filter .12s}.bar:hover,.point:hover,.arc:hover{opacity:.78;filter:brightness(1.12)}.line{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.area{opacity:.13}
 .athlete-marquee{overflow:hidden;border:1px solid var(--stroke);border-radius:24px;background:linear-gradient(180deg,rgba(16,24,39,.82),rgba(8,13,24,.78));padding:13px;margin-top:16px}.marquee-track{display:flex;gap:12px;width:max-content;animation:marquee 55s linear infinite}.athlete-marquee:hover .marquee-track{animation-play-state:paused}@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.ath-tile{display:flex;align-items:center;gap:9px;min-width:160px;padding:9px 10px;border:1px solid rgba(148,163,184,.18);border-radius:18px;background:rgba(255,255,255,.04)}.ath-tile img{width:46px;height:46px;border-radius:15px;object-fit:cover;background:#111b2e}.ath-tile b{font-size:12px}.ath-tile span{display:block;color:var(--muted);font-size:10.5px;margin-top:2px}.metric-strip{display:flex;gap:14px;overflow-x:auto;scrollbar-width:thin;margin:18px 0;padding-bottom:4px}.metric-strip.auto .metric-inner{display:flex;gap:14px;width:max-content;animation:marquee 40s linear infinite}.metric-strip.auto:hover .metric-inner{animation-play-state:paused}.metric-card{min-width:205px;position:relative;overflow:hidden;padding:15px;border:1px solid var(--stroke);border-radius:22px;background:linear-gradient(180deg,rgba(18,27,43,.82),rgba(10,16,28,.78));box-shadow:0 16px 50px rgba(0,0,0,.16)}.metric-card .top{display:flex;align-items:center;gap:10px}.metric-card img{width:48px;height:48px;border-radius:15px;object-fit:cover;background:#111b2e;border:1px solid var(--stroke)}.metric-card .label{font-size:10px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.1em}.metric-card .value{font-size:20px;font-weight:950;margin-top:4px}.metric-card .value.small{font-size:15px;line-height:1.2}.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.3}.profile-wrap{display:grid;grid-template-columns:300px 1fr;gap:18px}.profile{padding:18px;border-radius:24px;border:1px solid var(--stroke);background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025))}.photo{width:128px;height:128px;border-radius:30px;object-fit:cover;background:#111b2e;border:1px solid var(--stroke);box-shadow:0 18px 45px rgba(0,0,0,.25)}.profile h2{margin:12px 0 4px;font-size:24px}.profile .meta{color:var(--muted);font-size:13px;line-height:1.55}.profile .text-block{margin-top:14px}.profile .text-block b{display:block;font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}.profile .text-block p{margin:0;color:var(--text);font-size:13px;line-height:1.45}.select-row{display:flex;align-items:center;gap:12px;margin:0 0 18px}.select-row select{max-width:360px}.donut-tools{display:flex;gap:10px;align-items:center;margin-top:10px;color:var(--muted);font-size:12px}
-@media (max-width:1220px){.topnav{align-items:flex-start;flex-direction:column}.brand-mini{min-width:0}.app{grid-template-columns:1fr}.sidebar{position:relative;top:0;height:auto}.main{padding:22px}.kpi-grid{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.span-3,.span-4,.span-5,.span-6,.span-7,.span-8,.span-9,.span-12{grid-column:span 1}.profile-wrap{grid-template-columns:1fr}.topbar{flex-direction:column}.pill-row{justify-content:flex-start}}
+@media (max-width:1220px){.topnav{align-items:flex-start;flex-direction:column}.brand-mini{min-width:0}.app{grid-template-columns:1fr}.sidebar{position:relative;top:0;height:auto}.main{padding:22px}.kpi-grid{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.span-3,.span-4,.span-5,.span-6,.span-7,.span-8,.span-9,.span-12{grid-column:span 1}.profile-wrap{grid-template-columns:minmax(0,1fr)}.topbar{flex-direction:column}.pill-row{justify-content:flex-start}}
 @media print{
   :root{--text:#0b1220!important;--muted:#526276!important;--soft:#314156!important;--stroke:#cbd7e6!important;--stroke2:#d9e3ef!important}
   .sidebar,.topnav-actions,.theme-toggle,.floating-theme,#themeToggle,.signature,.tooltip,.donut-tools{display:none!important}
@@ -292,6 +292,70 @@ body.light .mc-table thead th{background:#eff5fb;color:#334155}
   .card-head > div:last-child, .card-head > button{width:100%}
   .card-head{gap:8px}
 }
+
+/* === Ajustes v8 (contraste no modo claro) ===
+   Vários textos/fundos foram pensados só pro modo escuro (cor pastel clara sobre fundo escuro,
+   ou um "verniz" branco quase transparente pra clarear um cartão escuro). No modo claro isso vira
+   texto claro sobre fundo claro (quase ilegível) ou um verniz branco que some contra o próprio
+   branco do cartão. Aqui cada um ganha uma versão específica pro claro, escura o suficiente pra
+   manter contraste, sem mudar a aparência no escuro. */
+body.light .nav-groups button.active, body.light .nav-tabs button.active{color:#0e6f8e}
+body.light .good{background:rgba(21,128,61,.12);color:#15803d}
+body.light .warn{background:rgba(180,83,9,.14);color:#b45309}
+body.light .bad{background:rgba(185,28,28,.12);color:#b91c1c}
+body.light .neutral{background:rgba(51,65,85,.10);color:#334155}
+body.light .insight{background:rgba(14,111,142,.08);color:#0e6f8e}
+body.light .alert-neg{color:#b91c1c}
+body.light .alert-pos{color:#15803d}
+body.light .session-tile .tag{background:rgba(14,111,142,.12);color:#0e6f8e}
+body.light .mc-table .folga-toggle.on{background:rgba(185,28,28,.10);color:#b91c1c;border-color:rgba(185,28,28,.35)}
+body.light .chip{background:rgba(15,23,42,.045);border-color:rgba(15,23,42,.16)}
+body.light .ath-tile, body.light .opp-tile{background:rgba(15,23,42,.03);border-color:rgba(15,23,42,.12)}
+body.light .btn{background:rgba(15,23,42,.045)}
+body.light .pill{background:rgba(15,23,42,.04);border-color:rgba(15,23,42,.16)}
+body.light .status{border:1px solid transparent}
+
+/* === Ajustes v9 (tablet/celular: menu como gaveta, em vez de empurrar o conteúdo) ===
+   Até aqui, em telas ≤1220px o menu lateral inteiro (busca, categorias, todas as páginas,
+   filtros, rodapé) ficava embutido ANTES do conteúdo, ocupando uma tela inteira de rolagem só
+   pra chegar no dashboard. Agora ele vira uma gaveta (off-canvas): fica escondida por padrão,
+   abre por cima do conteúdo com o botão ☰, e fecha sozinha ao escolher uma página. */
+.mobile-topbar{display:none}
+.mobile-backdrop{display:none}
+@media (max-width:1220px){
+  .mobile-topbar{
+    display:flex; align-items:center; gap:12px; padding:12px 16px;
+    position:sticky; top:0; z-index:120;
+    background:linear-gradient(180deg,rgba(8,13,24,.94),rgba(5,7,12,.9));
+    border-bottom:1px solid var(--stroke2); backdrop-filter:blur(14px);
+  }
+  body.light .mobile-topbar{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(242,247,253,.9))}
+  .mobile-menu-btn{all:unset;cursor:pointer;font-size:20px;line-height:1;padding:6px 8px;border-radius:12px;border:1px solid var(--stroke);color:var(--text)}
+  .mobile-menu-btn:hover{background:rgba(255,255,255,.06)}
+  .mobile-topbar-brand{display:flex;align-items:center;gap:9px;font-weight:850;color:var(--text);font-size:14px}
+  .mobile-topbar-brand img{width:28px;height:28px;border-radius:9px;background:#fff;padding:2px}
+  .app{grid-template-columns:1fr}
+  .app.sidebar-collapsed{grid-template-columns:1fr}
+  .sidebar-collapse{display:none}
+  .sidebar{
+    position:fixed!important; top:0; left:0; height:100vh!important; width:300px; max-width:85vw;
+    z-index:250; transform:translateX(-104%); transition:transform .25s ease;
+    box-shadow:0 24px 70px rgba(0,0,0,.4); display:flex!important; flex-direction:column;
+  }
+  .sidebar-scroll{flex:1 1 auto; overflow:auto}
+  #appShell.mobile-nav-open .sidebar{transform:translateX(0)}
+  #appShell.mobile-nav-open .mobile-backdrop{display:block;position:fixed;inset:0;z-index:240;background:rgba(5,8,15,.55);backdrop-filter:blur(2px)}
+  .main{padding-top:18px}
+}
+/* a página de card do atleta força 2 colunas com especificidade maior que o .profile-wrap
+   genérico — sem isso ela nunca empilhava no celular, ficando espremida em ~80px de largura */
+@media (max-width:1220px){
+  #page-card .profile-wrap{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  #page-card .photo{width:96px;height:96px}
+  #page-card .profile h2{font-size:19px}
+}
 </style>
 </head>
 <body>
@@ -307,6 +371,11 @@ body.light .mc-table thead th{background:#eff5fb;color:#334155}
 </div>
 <div class="tooltip" id="tooltip"></div>
 <div class="signature">Prof. Ms. Pedro Henrique</div>
+<div class="mobile-topbar" id="mobileTopbar">
+  <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Abrir menu">☰</button>
+  <div class="mobile-topbar-brand"><img src="./photos/logo_sistema_do_treinador-transparent.png" alt=""><span>QG do Treinador</span></div>
+</div>
+<div class="mobile-backdrop" id="mobileBackdrop"></div>
 <div class="app" id="appShell">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-head">
@@ -1102,7 +1171,8 @@ function renderFilters(){const keys=FILTERS_BY_PAGE[activePage]||[]; $('filterTo
 function activeFilters(){const keys=FILTERS_BY_PAGE[activePage]||[]; const f={}; keys.forEach(k=>f[k]=filterState[k]||''); if(!('start'in f)) f.start=filterState.start; if(!('end'in f)) f.end=filterState.end; return f;}
 function activeFilterPills(f){const div=$('activeFilters'); div.innerHTML=''; Object.keys(f).forEach(k=>{if(k==='start'||k==='end') return; if(f[k]){let s=document.createElement('span'); s.className='pill'; s.textContent=`${filterLabels[k]||k}: ${f[k]}`; div.appendChild(s)}});}
 function resetActiveFilters(){(FILTERS_BY_PAGE[activePage]||[]).forEach(k=>{filterState[k]=(k==='start'?DATA.meta.minDate:(k==='end'?DATA.meta.maxDate:''));}); renderFilters(); renderActive();}
-function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive();}
+function closeMobileNav(){ $('appShell').classList.remove('mobile-nav-open'); }
+function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive(); if(window.innerWidth<=1220){ closeMobileNav(); window.scrollTo(0,0); }}
 function init(){
   const account = getAccount();
   const activeCategoria = getActiveCategoria();
@@ -1158,6 +1228,9 @@ function init(){
       collapseBtn.textContent = $('sidebar').classList.contains('collapsed') ? '»' : '«';
     };
   }
+  const mobileMenuBtn=$('mobileMenuBtn'), mobileBackdrop=$('mobileBackdrop');
+  if(mobileMenuBtn) mobileMenuBtn.onclick=()=>{$('appShell').classList.toggle('mobile-nav-open');};
+  if(mobileBackdrop) mobileBackdrop.onclick=closeMobileNav;
   $('filterToggle').onclick=()=>{const p=$('filterPanel'); const open=p.classList.toggle('open'); $('filterToggle').setAttribute('aria-expanded', open?'true':'false');};
   $('applyBtn').onclick=()=>renderActive(); $('resetBtn').onclick=resetActiveFilters;
   $('clearDonuts').onclick=()=>{donutState={tenureBand:null,quartile:null,position:null}; renderGeral(activeFilters());};
