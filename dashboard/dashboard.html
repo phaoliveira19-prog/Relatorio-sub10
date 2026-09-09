@@ -918,6 +918,9 @@ async function loadFromGoogleSheets(sheetId){
 function fallbackPhoto(){return 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" rx="24" fill="#111b2e"/><circle cx="60" cy="48" r="22" fill="#253047"/><rect x="26" y="76" width="68" height="28" rx="14" fill="#253047"/></svg>')}
 function photoErr(img,ext){if(ext&&img.dataset.step!=='2'){img.dataset.step='2';img.src=ext;return;}img.src=fallbackPhoto();}
 
+// precisa estar fora do boot() (escopo global, junto com as outras funções de extração de CSV):
+// extractTrainingsFromCSV roda antes/fora do corpo de boot() e não enxerga funções declaradas lá dentro
+function avg(arr){const v=arr.filter(x=>x!==null&&x!==undefined&&!isNaN(x)); return v.length? v.reduce((a,b)=>a+Number(b),0)/v.length:null;}
 let DATA=null;
 async function boot(){
 try{
@@ -990,7 +993,6 @@ const DOW_LABELS = ['SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO','DOMI
 function $(id){return document.getElementById(id)}
 function fmt(n,dec=1){ if(n===null||n===undefined||isNaN(n)) return '—'; return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:dec,minimumFractionDigits:dec}); }
 function fmtInt(n){ if(n===null||n===undefined||isNaN(n)) return '—'; return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:0}); }
-function avg(arr){const v=arr.filter(x=>x!==null&&x!==undefined&&!isNaN(x)); return v.length? v.reduce((a,b)=>a+Number(b),0)/v.length:null;}
 function sum(arr){return arr.reduce((a,b)=>a+(Number(b)||0),0)}
 function sd(arr){const v=arr.filter(x=>x!==null&&x!==undefined&&!isNaN(x)); if(v.length<2) return 0; const m=avg(v); return Math.sqrt(v.reduce((a,b)=>a+(b-m)*(b-m),0)/(v.length-1));}
 function median(arr){const v=arr.filter(x=>x!==null&&x!==undefined&&!isNaN(x)).sort((a,b)=>a-b); if(!v.length)return null; const m=Math.floor(v.length/2); return v.length%2?v[m]:(v[m-1]+v[m])/2}
