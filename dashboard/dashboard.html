@@ -1021,7 +1021,7 @@ function normalizeContentType(type){
   if(!s) return 'Sem tipo';
   // mesmo conceito escrito com hífen/ordem/espaçamento diferentes vira uma única forma antes de comparar
   s=s.replace(/t[ée]cnico[\s-]*t[áa]tico/gi,'Técnico-tático').replace(/t[áa]tico[\s-]*t[ée]cnico/gi,'Técnico-tático');
-  s=s.replace(/t[áa]tica\s+de\s+grupo/gi,'Tática grupal').replace(/t[áa]tica\s+grupal/gi,'Tática grupal');
+  s=s.replace(/t[áa]tica\s+de\s+grupo/gi,'Tática de grupo').replace(/t[áa]tica\s+grupal/gi,'Tática de grupo');
   if(s.toLowerCase()==='sem tipo') return 'Sem tipo';
   // maiúscula/minúscula não deve criar categorias duplicadas: agrupa por chave case-insensitive e mantém a
   // primeira grafia encontrada como forma canônica de exibição
@@ -1029,6 +1029,18 @@ function normalizeContentType(type){
   if(!normalizeContentType._canon) normalizeContentType._canon={};
   if(!(key in normalizeContentType._canon)) normalizeContentType._canon[key]=s.charAt(0).toUpperCase()+s.slice(1);
   return normalizeContentType._canon[key];
+}
+// "Tipo de conteúdo" é texto livre na planilha: o catálogo oficial (ver CONTENT_TYPE_CATALOG em
+// entrada.html) tem só 4 famílias, mas nada impede o treinador de digitar "... ofensivo"/"...
+// defensivo" no final. Pros gráficos agrupados por tipo, isso deve voltar a cair na família — quem
+// quiser o detalhe ofensivo/defensivo já tem isso no nome do conteúdo em si.
+const CONTENT_TYPE_FAMILIES=['Técnico-tático individual','Tática de grupo','Tática coletiva','Familia de habilidade esportiva'];
+function contentTypeFamily(type){
+  const norm=normalizeContentType(type);
+  if(norm==='Sem tipo') return norm;
+  const low=norm.toLowerCase();
+  const fam=CONTENT_TYPE_FAMILIES.find(f=>low.startsWith(f.toLowerCase()));
+  return fam||norm;
 }
 function contentTypeMatches(rowType,filterType){return !filterType || normalizeContentType(rowType)===normalizeContentType(filterType)}
 function contentLevel(type){type=String(normalizeContentType(type)||'').toLowerCase(); if(type.includes('individual')) return 'Individual'; if(type.includes('grupo')||type.includes('grupal')) return 'Grupo'; if(type.includes('coletiv')) return 'Coletivo'; return 'Outro'}
@@ -1415,31 +1427,40 @@ function renderControle(f){const t0=filteredTrainings(f), b0=filteredBlocks(f);
   {label:'% de TAA',value:fmt(avgPctTAA?avgPctTAA*100:null,0)+'%',sub:'TAA sobre minutagem efetiva'}
 ],true);
   const {b:bPartTask}=ctrlWindowed(t0,b0,'winPartTask');
-  const heatTaskTotal=sum(bPartTask.filter(x=>TASK_ORDER.includes(x.taskType)).map(x=>x.minutes));
-  heatmap('chPartTask',PART_ORDER,TASK_ORDER,(part,task)=>{const v=sum(bPartTask.filter(x=>x.part===part&&x.taskType===task).map(x=>x.minutes)); return v?{value:v,label:`${fmtInt(v)}<br><span class="mini">${fmt(heatTaskTotal?v/heatTaskTotal*100:0,0)}%</span>`}:0;},{rowLabel:'Parte',maxHeight:'260px',tooltipFn:(part,task,raw)=>{const v=raw&&typeof raw==='object'?raw.value:num(raw); return `<b>${part}</b><br>${task}: ${fmtInt(v)} min (${fmt(heatTaskTotal?v/heatTaskTotal*100:0,0)}%)`;}});
+  // "Tipo de tarefa" é texto livre na planilha (autocomplete, não select travado): uma lista fixa de
+  // valores "esperados" descartava silenciosamente qualquer tarefa digitada fora dela. Agora os tipos
+  // vêm dos dados de verdade, com os nomes conhecidos (TASK_ORDER) na frente e o resto ordenado atrás.
+  const taskTypesHeat=ordered(uniq(bPartTask.map(x=>x.taskType)),TASK_ORDER);
+  const heatTaskTotal=sum(bPartTask.filter(x=>x.taskType).map(x=>x.minutes));
+  heatmap('chPartTask',PART_ORDER,taskTypesHeat,(part,task)=>{const v=sum(bPartTask.filter(x=>x.part===part&&x.taskType===task).map(x=>x.minutes)); return v?{value:v,label:`${fmtInt(v)}<br><span class="mini">${fmt(heatTaskTotal?v/heatTaskTotal*100:0,0)}%</span>`}:0;},{rowLabel:'Parte',maxHeight:'260px',tooltipFn:(part,task,raw)=>{const v=raw&&typeof raw==='object'?raw.value:num(raw); return `<b>${part}</b><br>${task}: ${fmtInt(v)} min (${fmt(heatTaskTotal?v/heatTaskTotal*100:0,0)}%)`;}});
   const {b:bMinPart}=ctrlWindowed(t0,b0,'winMinutesPart');
   const partDonut=PART_ORDER.map(p=>({key:p,value:sum(bMinPart.filter(x=>x.part===p).map(x=>x.minutes))})).filter(d=>d.value>0);
   donutChart('chMinutesPartDonut',partDonut,{colors:[COLORS[0],COLORS[2],COLORS[3]],unit:'min',showNames:false});
   const {b:bTaskDonut}=ctrlWindowed(t0,b0,'winTaskDonut');
-  const ttDonut=TASK_ORDER.map(key=>{const arr=bTaskDonut.filter(x=>x.taskType===key); return {task:key,minutes:sum(arr.map(x=>x.minutes))};}).filter(x=>x.minutes>0); donutChart('chTaskDonut',ttDonut.map(x=>({key:x.task,value:x.minutes,items:[]})),{unit:'min',showNames:false,colors:DISTINCT_COLORS});
+  const taskTypesDonut=ordered(uniq(bTaskDonut.map(x=>x.taskType)),TASK_ORDER);
+  const ttDonut=taskTypesDonut.map(key=>{const arr=bTaskDonut.filter(x=>x.taskType===key); return {task:key,minutes:sum(arr.map(x=>x.minutes))};}).filter(x=>x.minutes>0); donutChart('chTaskDonut',ttDonut.map(x=>({key:x.task,value:x.minutes,items:[]})),{unit:'min',showNames:false,colors:DISTINCT_COLORS});
   const {b:bTaskCombo}=ctrlWindowed(t0,b0,'winTaskCombo');
+  const taskTypesCombo=ordered(uniq(bTaskCombo.map(x=>x.taskType)),TASK_ORDER);
   const sessionsInWindow=uniq(bTaskCombo.map(x=>x.sessionId||x.date)).length;
-  const tt=TASK_ORDER.map(key=>{const arr=bTaskCombo.filter(x=>x.taskType===key); const sessionsWithTask=uniq(arr.map(x=>x.sessionId||x.date)).length; return {task:key,minutes:sum(arr.map(x=>x.minutes)),performance:avg(arr.map(x=>x.performance)),repIndex:sessionsInWindow?Math.round(sessionsWithTask/sessionsInWindow*100):null};}).filter(x=>x.minutes>0);
+  const tt=taskTypesCombo.map(key=>{const arr=bTaskCombo.filter(x=>x.taskType===key); const sessionsWithTask=uniq(arr.map(x=>x.sessionId||x.date)).length; return {task:key,minutes:sum(arr.map(x=>x.minutes)),performance:avg(arr.map(x=>x.performance)),repIndex:sessionsInWindow?Math.round(sessionsWithTask/sessionsInWindow*100):null};}).filter(x=>x.minutes>0);
   comboChart('chTaskCombo',tt,'task','minutes','performance',{barLabel:'Minutagem',lineLabel:'Desempenho',yMin:3,yMax:10,barColor:COLORS[1],lineColor:COLORS[4],truncate:20,extraKey:'repIndex',extraLabel:'Representatividade'});
   const complexityMonthSel=$('complexityMonthFilter');
   if(complexityMonthSel && !complexityMonthSel.dataset.ready){ complexityMonthSel.onchange=()=>{complexityMonth=complexityMonthSel.value; renderControle(activeFilters());}; complexityMonthSel.dataset.ready='1'; }
   if(!MONTHS.includes(complexityMonth)) complexityMonth='';
   if(complexityMonthSel){ complexityMonthSel.innerHTML='<option value="">Todos os meses</option>'+MONTHS.map(m=>`<option value="${m}">${m}</option>`).join(''); complexityMonthSel.value=complexityMonth; }
   const bComplex=complexityMonth?b0.filter(x=>x.month===complexityMonth):b0;
-  const cp=PART_ORDER.map(part=>{const arr=bComplex.filter(x=>x.part===part&&COMPLEX_ORDER.includes(x.complexity)); const o={part}; COMPLEX_ORDER.forEach(c=>o[c]=sum(arr.filter(x=>x.complexity===c).map(x=>x.minutes))); return o;}); horizontalBar('chComplexityPart',cp,'part',COMPLEX_ORDER,{stacked:true,colors:[COLORS[3],COLORS[4],COLORS[5]],labels:COMPLEX_ORDER,left:100});
+  // mesmo caso do tipo de tarefa: "Complexidade" também é texto livre, então a lista de colunas
+  // do gráfico vem do que os treinos realmente têm, não de uma lista fixa que pode ficar desatualizada
+  const complexitiesInData=ordered(uniq(bComplex.map(x=>x.complexity)),COMPLEX_ORDER);
+  const cp=PART_ORDER.map(part=>{const arr=bComplex.filter(x=>x.part===part&&complexitiesInData.includes(x.complexity)); const o={part}; complexitiesInData.forEach(c=>o[c]=sum(arr.filter(x=>x.complexity===c).map(x=>x.minutes))); return o;}); horizontalBar('chComplexityPart',cp,'part',complexitiesInData,{stacked:true,colors:[COLORS[3],COLORS[4],COLORS[5],COLORS[6],COLORS[7]],labels:complexitiesInData,left:100});
   const {b:bRelation}=ctrlWindowed(t0,b0,'winRelation');
   const relMap={}; bRelation.filter(x=>x.part==='Conexão').forEach(x=>{const m=String(x.content||'').match(/(\d+)\s*(?:vs|x|×)\s*(\d+)/i); if(m){const k=`${m[1]} vs ${m[2]}`; if(!relMap[k])relMap[k]=[]; relMap[k].push(x);}}); const rel=Object.entries(relMap).map(([k,arr])=>({relation:k,ord:Number(k.split(' ')[0]),minutes:sum(arr.map(x=>x.minutes)),performance:avg(arr.map(x=>x.performance))})).sort((a,b)=>a.ord-b.ord); comboChart('chRelationCombo',rel,'relation','minutes','performance',{barLabel:'Minutagem',lineLabel:'Desempenho',yMin:3,yMax:10,barColor:COLORS[1],lineColor:COLORS[4]});
   const {b:bContentCombo}=ctrlWindowed(t0,b0,'winContentCombo');
-  const typeCombo=Object.entries(by(bContentCombo.filter(x=>x.contentType&&x.contentType!=='Sem tipo'&&x.part!=='Conexão'),x=>normalizeContentType(x.contentType))).map(([k,arr])=>({type:k,minutes:sum(arr.map(x=>x.minutes)),performance:avg(arr.filter(x=>x.performance!=null).map(x=>x.performance))})).sort((a,b)=>b.minutes-a.minutes).slice(0,8); comboChart('chContentTypeCombo',typeCombo,'type','minutes','performance',{barLabel:'Minutagem',lineLabel:'Desempenho',yMin:3,yMax:10,barColor:COLORS[1],lineColor:COLORS[4],truncate:16});
+  const typeCombo=Object.entries(by(bContentCombo.filter(x=>x.contentType&&x.contentType!=='Sem tipo'&&x.part!=='Conexão'),x=>contentTypeFamily(x.contentType))).map(([k,arr])=>({type:k,minutes:sum(arr.map(x=>x.minutes)),performance:avg(arr.filter(x=>x.performance!=null).map(x=>x.performance))})).sort((a,b)=>b.minutes-a.minutes).slice(0,8); comboChart('chContentTypeCombo',typeCombo,'type','minutes','performance',{barLabel:'Minutagem',lineLabel:'Desempenho',yMin:3,yMax:10,barColor:COLORS[1],lineColor:COLORS[4],truncate:16});
   const {b:bContentDonut}=ctrlWindowed(t0,b0,'winContentDonut');
-  const typeDonut=Object.entries(by(bContentDonut.filter(x=>x.contentType&&x.contentType!=='Sem tipo'&&x.part!=='Conexão'),x=>normalizeContentType(x.contentType))).map(([k,arr])=>({key:k,value:sum(arr.map(x=>x.minutes))})).filter(d=>d.value>0).sort((a,b)=>b.value-a.value); donutChart('chContentTypeDonut',typeDonut,{unit:'min',showNames:false,colors:DISTINCT_COLORS});}
+  const typeDonut=Object.entries(by(bContentDonut.filter(x=>x.contentType&&x.contentType!=='Sem tipo'&&x.part!=='Conexão'),x=>contentTypeFamily(x.contentType))).map(([k,arr])=>({key:k,value:sum(arr.map(x=>x.minutes))})).filter(d=>d.value>0).sort((a,b)=>b.value-a.value); donutChart('chContentTypeDonut',typeDonut,{unit:'min',showNames:false,colors:DISTINCT_COLORS});}
 
-function renderConteudos(f){const c=filteredContents(f), b=filteredBlocks(f); const cRole=role=>c.filter(x=>x.role===role); const allTypes=ordered(uniq(DATA.contents.map(d=>normalizeContentType(d.contentType))),[]); const mostType=Object.entries(by(c,x=>normalizeContentType(x.contentType))).map(([k,v])=>({k,count:v.length})).sort((a,b)=>b.count-a.count)[0]; const topBy=role=>Object.entries(by(cRole(role),'content')).map(([k,v])=>({k,count:v.length})).sort((a,b)=>b.count-a.count)[0]; const topPrincipal=topBy('principal'), topSecundario=topBy('secundario'), topConcorrente=topBy('concorrente'); const contentsByType=Object.entries(by(c.filter(x=>x.contentType&&x.contentType!=='Sem tipo'),x=>normalizeContentType(x.contentType))).map(([k,arr])=>({type:k,count:uniq(arr.map(x=>x.content)).length})).sort((a,b)=>b.count-a.count); metricCards('kpisConteudos',[{label:'Nº de conteúdos por tipo',value:fmtInt(uniq(c.map(x=>x.content)).length),sub:'distintos no filtro',chips:contentsByType.map(x=>({label:x.type,value:x.count}))}, {label:'Tipo mais trabalhado',value:mostType?truncate(mostType.k,28):'—',small:true,sub:mostType?`${mostType.count} ocorrências`:''}, {label:'Sem foco (princ./sec.) >30d',value:fmtInt(contentGapRows().filter(x=>x.days>30).length),sub:'conteúdos em alerta'}, {label:'Top principal',value:topPrincipal?truncate(topPrincipal.k,16):'—',small:true,sub:topPrincipal?`${topPrincipal.count} ocorrências`:'sem registro no período'}, {label:'Top secundário',value:topSecundario?truncate(topSecundario.k,16):'—',small:true,sub:topSecundario?`${topSecundario.count} ocorrências`:'sem registro no período'}, {label:'Top concorrente',value:topConcorrente?truncate(topConcorrente.k,16):'—',small:true,sub:topConcorrente?`${topConcorrente.count} ocorrências`:'sem registro no período'}],true);
+function renderConteudos(f){const c=filteredContents(f), b=filteredBlocks(f); const cRole=role=>c.filter(x=>x.role===role); const allTypes=ordered(uniq(DATA.contents.map(d=>normalizeContentType(d.contentType))),[]); const mostType=Object.entries(by(c,x=>contentTypeFamily(x.contentType))).map(([k,v])=>({k,count:v.length})).sort((a,b)=>b.count-a.count)[0]; const topBy=role=>Object.entries(by(cRole(role),'content')).map(([k,v])=>({k,count:v.length})).sort((a,b)=>b.count-a.count)[0]; const topPrincipal=topBy('principal'), topSecundario=topBy('secundario'), topConcorrente=topBy('concorrente'); const contentsByType=Object.entries(by(c.filter(x=>x.contentType&&x.contentType!=='Sem tipo'),x=>contentTypeFamily(x.contentType))).map(([k,arr])=>({type:k,count:uniq(arr.map(x=>x.content)).length})).sort((a,b)=>b.count-a.count); metricCards('kpisConteudos',[{label:'Nº de conteúdos por tipo',value:fmtInt(uniq(c.map(x=>x.content)).length),sub:'distintos no filtro',chips:contentsByType.map(x=>({label:x.type,value:x.count}))}, {label:'Tipo mais trabalhado',value:mostType?truncate(mostType.k,28):'—',small:true,sub:mostType?`${mostType.count} ocorrências`:''}, {label:'Sem foco (princ./sec.) >30d',value:fmtInt(contentGapRows().filter(x=>x.days>30).length),sub:'conteúdos em alerta'}, {label:'Top principal',value:topPrincipal?truncate(topPrincipal.k,16):'—',small:true,sub:topPrincipal?`${topPrincipal.count} ocorrências`:'sem registro no período'}, {label:'Top secundário',value:topSecundario?truncate(topSecundario.k,16):'—',small:true,sub:topSecundario?`${topSecundario.count} ocorrências`:'sem registro no período'}, {label:'Top concorrente',value:topConcorrente?truncate(topConcorrente.k,16):'—',small:true,sub:topConcorrente?`${topConcorrente.count} ocorrências`:'sem registro no período'}],true);
   const heatSel=$('heatContentType'), heatMonthSel=$('heatMonthFilter'), heatSortSel=$('heatSort'), heatRoleSel=$('heatRole');
   const heatMonthsAvailable=MONTHS.filter(m=>Number((monthFirstDate[m]||'0000-00').split('-')[1])>=8);
   if(heatSel && !heatSel.dataset.ready){heatSel.innerHTML='<option value="">Todos os tipos</option>'+allTypes.map(x=>`<option value="${x}">${x}</option>`).join(''); heatSel.onchange=()=>{heatContentType=heatSel.value; renderConteudos(activeFilters());}; heatSel.dataset.ready='1';}
@@ -1468,7 +1489,7 @@ function renderConteudos(f){const c=filteredContents(f), b=filteredBlocks(f); co
   horizontalBar('chWorstContentPerf',[...perfContent].sort((a,b)=>a.performance-b.performance).slice(0,8),'content',['performance'],{xMin:3,xMax:10,left:185,dataLabel:true,decimals:1,truncate:26});
   renderTable('tblContentGaps',['Conteúdo','Tipo','Última vez como foco','Dias sem foco','Total (princ.+sec.)','Status'],contentGapRows().filter(x=>x.days>30).map(x=>[x.content,x.type,x.last||'—',x.days===999?'—':x.days,x.total,`<span class="status ${x.cls}">${x.status}</span>`]));}
 function mostCommonContentType(name){
-  const all=DATA.contents.filter(x=>x.content===name).map(x=>normalizeContentType(x.contentType)).filter(x=>x&&x!=='Sem tipo');
+  const all=DATA.contents.filter(x=>x.content===name).map(x=>contentTypeFamily(x.contentType)).filter(x=>x&&x!=='Sem tipo');
   if(!all.length) return 'Sem tipo';
   const counts={}; all.forEach(t=>counts[t]=(counts[t]||0)+1);
   return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];

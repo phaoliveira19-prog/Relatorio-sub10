@@ -151,7 +151,7 @@ const RANKS = ['A','B','C'];
 const TITULARIDADES = ['Não-relacionado','Titular','Reserva'];
 
 let ROSTER = [];
-let DATALISTS = { contents: [], contentTypes: [], opponents: [], competitions: [], platforms: [], taskTypes: [], complexity: [] };
+let DATALISTS = { contents: [], opponents: [], competitions: [], platforms: [], taskTypes: [], complexity: [] };
 
 function $(id){ return document.getElementById(id); }
 function opts(arr){ return arr.map(v=>`<option value="${v}">${v}</option>`).join(''); }
@@ -167,6 +167,14 @@ async function sha256Hex(text){
 
 function getAccount(){ try{ return JSON.parse(sessionStorage.getItem('qgAccount')||'null'); } catch(e){ return null; } }
 function myCategoria(){ const acc=getAccount(); return (acc && acc.categoria) || 'Sub-10'; }
+// tolera "Sub-12"/"sub 12"/"SUB12" etc. ao comparar categoria — mesmo critério usado no dashboard,
+// pra uma célula digitada de forma diferente na planilha não sumir da lista de atletas/jogos do treinador
+function normCategoria(c){
+  let s=String(c||'').trim().toLowerCase();
+  s=s.replace(/[-_]+/g,' ');
+  s=s.replace(/([a-zà-ÿ])(\d)/g,'$1 $2');
+  return s.replace(/\s+/g,' ').trim();
+}
 async function checkGate(){
   const login = $('gateLogin').value.trim().toLowerCase();
   const pass = $('gatePassword').value;
@@ -191,7 +199,6 @@ function initGate(){
 async function fetchRosterAndLists(){
   const warn = [];
   DATALISTS.contents = [...CONTENT_CATALOG];
-  DATALISTS.contentTypes = [...CONTENT_TYPE_CATALOG];
   DATALISTS.taskTypes = [...TASK_ORDER];
   DATALISTS.complexity = [...COMPLEX_ORDER];
   if(SCRIPT_URL.indexOf('COLE_AQUI') === 0 || !SCRIPT_URL){
@@ -214,12 +221,17 @@ async function fetchRosterAndLists(){
       caracteristica:a.characteristic, pontosAMelhorar:a.improvement,
     }));
     DATALISTS.contents = [...new Set([...CONTENT_CATALOG, ...((d.meta && d.meta.contents) || [])])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    const myGames = (d.games||[]).filter(g=>g.category===myCategoria());
+    // "Tipo de tarefa" e "Complexidade" continuam texto livre (autocomplete) — a lista de sugestões
+    // aprende com o que já foi digitado de verdade na planilha, em vez de ficar presa a um catálogo
+    // fixo que pode não bater com o que os treinadores realmente usam
+    DATALISTS.taskTypes = [...new Set([...TASK_ORDER, ...((d.meta && d.meta.taskTypes) || [])])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    DATALISTS.complexity = [...new Set([...COMPLEX_ORDER, ...((d.meta && d.meta.complexities) || [])])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const myGames = (d.games||[]).filter(g=>normCategoria(g.category)===normCategoria(myCategoria()));
     DATALISTS.opponents = [...new Set(myGames.map(g=>g.opponent).filter(Boolean))].sort();
     DATALISTS.competitions = [...new Set(myGames.map(g=>g.competition).filter(Boolean))].sort();
     DATALISTS.platforms = [...new Set(myGames.map(g=>g.platform).filter(Boolean))].sort();
   }catch(e){ /* segue sem sugestões, formulário ainda funciona */ }
-  ROSTER = ROSTER.filter(a=>a.categoria===myCategoria());
+  ROSTER = ROSTER.filter(a=>normCategoria(a.categoria)===normCategoria(myCategoria()));
 
   if(warn.length){
     $('setupWarning').innerHTML = warn.map(w=>`<div class="msg warn">${w}</div>`).join('');
@@ -241,7 +253,7 @@ function renderDatalists(){
   const dl = (id, arr) => `<datalist id="${id}">${arr.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('')}</datalist>`;
   let el = document.getElementById('datalistsHost');
   if(!el){ el = document.createElement('div'); el.id = 'datalistsHost'; document.body.appendChild(el); }
-  el.innerHTML = dl('dlContents',DATALISTS.contents) + dl('dlContentTypes',DATALISTS.contentTypes) +
+  el.innerHTML = dl('dlContents',DATALISTS.contents) +
     dl('dlOpponents',DATALISTS.opponents) + dl('dlCompetitions',DATALISTS.competitions) + dl('dlPlatforms',DATALISTS.platforms) +
     dl('dlTaskTypes',DATALISTS.taskTypes) + dl('dlComplexity',DATALISTS.complexity);
 }
@@ -386,7 +398,7 @@ function partSection(suf, label){
       <div class="field"><label>Conteúdo principal</label><input id="t_${suf}_prin" list="dlContents"></div>
       <div class="field"><label>Conteúdo secundário</label><input id="t_${suf}_sec" list="dlContents"></div>
       <div class="field"><label>Conteúdo concorrente</label><input id="t_${suf}_conc" list="dlContents"></div>
-      <div class="field"><label>Tipo de conteúdo</label><input id="t_${suf}_tipo" list="dlContentTypes"></div>
+      <div class="field"><label>Tipo de conteúdo</label><select id="t_${suf}_tipo"><option value="">Selecione…</option>${CONTENT_TYPE_CATALOG.map(v=>`<option value="${v}">${v}</option>`).join('')}</select></div>
       `}
       <div class="field"><label>Tipo de tarefa</label><input id="t_${suf}_tarefa" list="dlTaskTypes"></div>
       <div class="field"><label>Complexidade</label><input id="t_${suf}_complex" list="dlComplexity"></div>

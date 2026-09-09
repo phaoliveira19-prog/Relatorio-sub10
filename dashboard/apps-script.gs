@@ -161,6 +161,7 @@ function addAthlete(d) {
   setByHeader(sheet, newRow, col, 'Link foto', d.linkFoto);
   setByHeader(sheet, newRow, col, 'Característica', d.caracteristica);
   setByHeader(sheet, newRow, col, 'Pontos a melhorar', d.pontosAMelhorar);
+  ensureAvaliacaoRow(d.apelido);
   return { id: nextId, row: newRow };
 }
 
@@ -235,6 +236,48 @@ function addTraining(d) {
 }
 
 // ---------- Avaliação individual do treino ----------
+// Essa aba é uma matriz: coluna A = apelido do atleta (uma linha por atleta), cada data vira uma
+// coluna nova, e a nota fica no cruzamento. addAthlete() já chama ensureAvaliacaoRow() pra todo
+// atleta novo ganhar sua linha automaticamente — mas se algum atleta cadastrado antes dessa
+// automação existir (ou tiver sido colado direto na planilha) e ainda não tiver linha aqui, essa
+// função também cria a linha na hora em vez de simplesmente descartar a nota em silêncio.
+function ensureAvaliacaoRow(apelido) {
+  if (!apelido) return -1;
+  var sheet = getSS().getSheetByName('Avaliação individual do treino');
+  var lastRow = sheet.getLastRow();
+  var nicknames = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
+  var rowIdx = nicknames.indexOf(apelido);
+  if (rowIdx !== -1) return rowIdx;
+  var newRow = lastRow + 1;
+  sheet.getRange(newRow, 1).setValue(apelido);
+  return newRow - 2;
+}
+
+// Roda uma vez, manualmente: Extensões -> Apps Script -> escolher "backfillAvaliacaoRoster" no
+// menu suspenso ao lado de "Executar" -> Executar. Adiciona em "Avaliação individual do treino"
+// (todas as categorias) qualquer atleta que já está em "Banco de atletas" mas ainda não tem linha
+// lá — cobre quem foi cadastrado antes desse automatismo existir.
+function backfillAvaliacaoRoster() {
+  var atletasSheet = getSS().getSheetByName('Banco de atletas');
+  var col = headerMap(atletasSheet, 1);
+  var lastRowA = atletasSheet.getLastRow();
+  var apelidos = lastRowA > 1
+    ? atletasSheet.getRange(2, col['Apelido'], lastRowA - 1, 1).getValues().flat().filter(function (v) { return v; })
+    : [];
+
+  var avalSheet = getSS().getSheetByName('Avaliação individual do treino');
+  var lastRowV = avalSheet.getLastRow();
+  var existing = lastRowV > 1 ? avalSheet.getRange(2, 1, lastRowV - 1, 1).getValues().flat() : [];
+  var existingSet = {};
+  existing.forEach(function (n) { existingSet[n] = true; });
+
+  var toAdd = apelidos.filter(function (ap) { return !existingSet[ap]; });
+  if (toAdd.length) {
+    avalSheet.getRange(lastRowV + 1, 1, toAdd.length, 1).setValues(toAdd.map(function (ap) { return [ap]; }));
+  }
+  return { adicionados: toAdd.length, nomes: toAdd };
+}
+
 function addAvaliacoes(dateStr, entries) {
   var sheet = getSS().getSheetByName('Avaliação individual do treino');
   var lastCol = sheet.getLastColumn();
@@ -247,13 +290,11 @@ function addAvaliacoes(dateStr, entries) {
     dateCol = lastCol + 1;
     sheet.getRange(1, dateCol).setValue(dateStr);
   }
-  var lastRow = sheet.getLastRow();
-  var nicknames = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
   var written = 0;
   (entries || []).forEach(function (en) {
-    var rowIdx = nicknames.indexOf(en.apelido);
-    if (rowIdx === -1) return;
     if (en.nota === '' || en.nota === null || en.nota === undefined) return;
+    var rowIdx = ensureAvaliacaoRow(en.apelido);
+    if (rowIdx === -1) return;
     sheet.getRange(rowIdx + 2, dateCol).setValue(Number(en.nota));
     written++;
   });
