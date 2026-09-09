@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard Sub-10 | QG do Treinador</title>
+<title>QG do Treinador | Central do treino</title>
 <style>
 :root{
   --bg:#05070c; --panel:#0a101c; --panel2:#0f1726; --card:#101827dd; --stroke:#253047; --stroke2:#1b2538;
@@ -56,13 +56,17 @@ svg text{font-family:inherit}.axis{fill:var(--muted);font-size:12px}.value-on-sh
 
 /* === Ajustes v3 === */
 body.light{
-  --bg:#f3f7fb; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffffee; --stroke:#cbd7e6; --stroke2:#d9e3ef;
-  --text:#0b1220; --muted:#526276; --soft:#314156; --shadow:0 20px 70px rgba(20,35,60,.12);
+  --bg:#f5f7fa; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffff; --stroke:#e1e6ee; --stroke2:#ebeef3;
+  --text:#0f1720; --muted:#5b6778; --soft:#33404f; --shadow:0 1px 2px rgba(15,23,42,.04), 0 10px 28px rgba(15,23,42,.06);
 }
-body.light:before{background:radial-gradient(1000px 650px at 10% 0%,rgba(34,211,238,.20),transparent 55%),radial-gradient(900px 580px at 80% 8%,rgba(59,130,246,.16),transparent 50%),linear-gradient(135deg,#f7fbff 0%,#edf5ff 48%,#f8fbff 100%)}
-body.light:after{opacity:.32;background-image:linear-gradient(rgba(15,23,42,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,.045) 1px,transparent 1px)}
-body.light .topnav, body.light .sidebar{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(242,247,253,.78))}
-body.light .card, body.light .kpi, body.light .athlete-marquee, body.light .metric-card{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,250,255,.92));box-shadow:0 18px 55px rgba(15,23,42,.10)}
+/* modo claro em "dashboard de SaaS": fundo liso, cartão branco chapado com borda fina e sombra discreta —
+   em vez do fundo com brilhos coloridos e cartões translúcidos que fazem sentido no escuro mas ficam
+   com aparência "suja"/sem definição quando aplicados sobre branco */
+body.light:before{background:var(--bg)}
+body.light:after{display:none}
+body.light .topnav, body.light .sidebar, body.light .mobile-topbar{background:#fff}
+body.light .card, body.light .kpi, body.light .athlete-marquee, body.light .metric-card{background:#fff;box-shadow:var(--shadow)}
+body.light .card:before, body.light .kpi:before{display:none}
 body.light select, body.light input{background:#fff;color:var(--text)} body.light th{background:#eff5fb;color:#334155} body.light td{color:#1e293b} body.light .tooltip{background:#fff;color:#0f172a}.logo{background:#fff!important;border:1px solid rgba(255,255,255,.32);padding:6px;box-shadow:0 12px 40px rgba(37,99,235,.22)}.logo img{width:100%;height:100%;object-fit:contain;display:block}.theme-toggle{margin-left:auto;white-space:nowrap;border:1px solid var(--stroke);border-radius:15px;background:rgba(255,255,255,.06);color:var(--text);padding:10px 12px;font-weight:850;cursor:pointer}.theme-toggle:hover{filter:brightness(1.08)}.signature{position:fixed;right:16px;bottom:12px;z-index:80;color:var(--muted);font-size:11px;background:rgba(5,7,12,.55);border:1px solid var(--stroke2);border-radius:999px;padding:6px 10px;backdrop-filter:blur(12px)}body.light .signature{background:rgba(255,255,255,.75)}html,body{overflow-x:hidden}.main,.grid,.card{min-width:0}.kpi .value.small{font-size:16px;line-height:1.08}.athlete-marquee{padding:16px}.marquee-track{animation-duration:105s;will-change:transform;transform:translateZ(0);backface-visibility:hidden}.ath-tile{min-width:230px;padding:12px 13px}.ath-tile img{width:66px!important;height:66px!important;border-radius:18px;image-rendering:auto;transform:translateZ(0);filter:saturate(1.04) contrast(1.02)}.ath-tile b{font-size:13px}.ath-tile span{font-size:11px}.tooltip img,.ath-mini{width:58px;height:58px;border-radius:16px}.profile .photo{image-rendering:auto;filter:saturate(1.04) contrast(1.02)}.scrollchart{height:430px;overflow-y:auto;overflow-x:hidden;padding-right:4px}.metric-strip{max-width:100%;overflow:hidden}.metric-inner{max-width:max-content}.card-head .heat-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.card-head .heat-controls select{width:auto;min-width:170px}.opportunity-strip{margin-top:16px;overflow:hidden;border:1px solid var(--stroke);border-radius:24px;background:linear-gradient(180deg,rgba(16,24,39,.82),rgba(8,13,24,.78));padding:13px}body.light .opportunity-strip{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,250,255,.92))}.opp-tile{display:flex;align-items:center;gap:10px;min-width:260px;padding:10px;border:1px solid rgba(148,163,184,.18);border-radius:18px;background:rgba(255,255,255,.04)}.opp-tile img{width:54px;height:54px;border-radius:16px;object-fit:cover}.opp-tile b{font-size:13px}.opp-tile span{font-size:11px;color:var(--muted)}.alert-neg{color:#ffb5ae;font-weight:950}.alert-pos{color:#8af0b5;font-weight:950}
 
 
@@ -344,7 +348,7 @@ body.light .status{border:1px solid transparent}
   }
   .sidebar-scroll{flex:1 1 auto; overflow:auto}
   #appShell.mobile-nav-open .sidebar{transform:translateX(0)}
-  #appShell.mobile-nav-open .mobile-backdrop{display:block;position:fixed;inset:0;z-index:240;background:rgba(5,8,15,.55);backdrop-filter:blur(2px)}
+  .mobile-backdrop.show{display:block;position:fixed;inset:0;z-index:240;background:rgba(5,8,15,.55);backdrop-filter:blur(2px)}
   .main{padding-top:18px}
 }
 /* a página de card do atleta força 2 colunas com especificidade maior que o .profile-wrap
@@ -1171,7 +1175,7 @@ function renderFilters(){const keys=FILTERS_BY_PAGE[activePage]||[]; $('filterTo
 function activeFilters(){const keys=FILTERS_BY_PAGE[activePage]||[]; const f={}; keys.forEach(k=>f[k]=filterState[k]||''); if(!('start'in f)) f.start=filterState.start; if(!('end'in f)) f.end=filterState.end; return f;}
 function activeFilterPills(f){const div=$('activeFilters'); div.innerHTML=''; Object.keys(f).forEach(k=>{if(k==='start'||k==='end') return; if(f[k]){let s=document.createElement('span'); s.className='pill'; s.textContent=`${filterLabels[k]||k}: ${f[k]}`; div.appendChild(s)}});}
 function resetActiveFilters(){(FILTERS_BY_PAGE[activePage]||[]).forEach(k=>{filterState[k]=(k==='start'?DATA.meta.minDate:(k==='end'?DATA.meta.maxDate:''));}); renderFilters(); renderActive();}
-function closeMobileNav(){ $('appShell').classList.remove('mobile-nav-open'); }
+function closeMobileNav(){ $('appShell').classList.remove('mobile-nav-open'); const bd=$('mobileBackdrop'); if(bd) bd.classList.remove('show'); }
 function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive(); if(window.innerWidth<=1220){ closeMobileNav(); window.scrollTo(0,0); }}
 function init(){
   const account = getAccount();
@@ -1229,7 +1233,7 @@ function init(){
     };
   }
   const mobileMenuBtn=$('mobileMenuBtn'), mobileBackdrop=$('mobileBackdrop');
-  if(mobileMenuBtn) mobileMenuBtn.onclick=()=>{$('appShell').classList.toggle('mobile-nav-open');};
+  if(mobileMenuBtn) mobileMenuBtn.onclick=()=>{const open=$('appShell').classList.toggle('mobile-nav-open'); if(mobileBackdrop) mobileBackdrop.classList.toggle('show',open);};
   if(mobileBackdrop) mobileBackdrop.onclick=closeMobileNav;
   $('filterToggle').onclick=()=>{const p=$('filterPanel'); const open=p.classList.toggle('open'); $('filterToggle').setAttribute('aria-expanded', open?'true':'false');};
   $('applyBtn').onclick=()=>renderActive(); $('resetBtn').onclick=resetActiveFilters;
