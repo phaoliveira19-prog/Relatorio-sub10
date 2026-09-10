@@ -269,7 +269,17 @@ async function sendToScript(payload){
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(payload),
     });
-    return await res.json();
+    const text = await res.text();
+    try{
+      return JSON.parse(text);
+    }catch(parseErr){
+      // o Apps Script respondeu, mas não com JSON — normalmente sinal de que a implantação
+      // pede login/permissão (ficou "Somente eu" em vez de "Qualquer pessoa"), ou a URL da
+      // implantação mudou depois de uma atualização do apps-script.gs. Mostra um pedaço da
+      // resposta real pra dar pra identificar a causa sem precisar abrir o DevTools.
+      const preview = text.replace(/\s+/g,' ').trim().slice(0,220);
+      return {ok:false, error:`resposta do Apps Script não veio em JSON (HTTP ${res.status}). Provável causa: a implantação está pedindo login/permissão, ou a URL da implantação mudou. Início da resposta: "${preview}"`};
+    }
   }catch(e){
     return {ok:false, error:String(e)};
   }
