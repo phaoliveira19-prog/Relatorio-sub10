@@ -25,6 +25,9 @@ body.light input,body.light select,body.light textarea{background:#fff}
 textarea{resize:vertical;min-height:64px}
 label{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin:0 0 6px}
 .field{margin-bottom:14px}
+.photo-upload-row{display:flex;align-items:center;gap:14px}
+.photo-preview{width:64px;height:64px;border-radius:16px;object-fit:cover;background:#111b2e;border:1px solid var(--stroke);flex:0 0 auto}
+.photo-upload-row input[type=file]{padding:9px}
 .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.055);color:var(--text);padding:11px 16px;cursor:pointer;font-weight:800;font-size:14px;text-decoration:none}
 .btn .ico{font-size:15px;line-height:1}
 .btn.primary{background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;border:0}
@@ -298,7 +301,7 @@ function panelAtleta(){
       <button type="button" data-mode="novo" class="active" id="modeNovoBtn">Novo atleta</button>
       <button type="button" data-mode="editar" id="modeEditarBtn">Editar atleta existente</button>
     </div>
-    <div class="hint" id="atletaHint">Preenche a linha em "Banco de atletas". O ID do atleta é gerado automaticamente. Foto continua sendo enviada à parte pelo GitHub.</div>
+    <div class="hint" id="atletaHint">Preenche a linha em "Banco de atletas". O ID do atleta é gerado automaticamente.</div>
     <div id="msgAtleta"></div>
     <div class="field" id="editSelectField" style="display:none">
       <label>Selecione o atleta</label>
@@ -313,7 +316,17 @@ function panelAtleta(){
       <div class="field"><label>Pé dominante</label><select id="a_pe"><option value="">—</option>${opts(PES)}</select></div>
       <div class="field"><label>Categoria</label><input id="a_categoria" value="${myCategoria()}" readonly></div>
     </div>
-    <div class="field"><label>Link da foto (opcional, se ainda não subiu o arquivo)</label><input id="a_foto"></div>
+    <div class="field">
+      <label>Foto do atleta</label>
+      <div class="photo-upload-row">
+        <img id="a_fotoPreview" class="photo-preview" src="${fallbackPhoto()}" alt="">
+        <div style="flex:1;min-width:0">
+          <input type="file" id="a_fotoFile" accept="image/*">
+          <div class="hint" id="a_fotoStatus" style="margin-top:6px">Escolha uma foto do celular ou computador — é enviada pro seu Google Drive automaticamente ao salvar.</div>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label>Link da foto (avançado — só preencha se já tiver um link pronto de outro lugar)</label><input id="a_foto"></div>
     <div class="field"><label>Características</label><textarea id="a_carac"></textarea></div>
     <div class="field"><label>Pontos a melhorar</label><textarea id="a_melhorar"></textarea></div>
     <div class="foot-actions"><button class="btn primary" id="btnAtleta">Salvar atleta</button></div>
@@ -333,14 +346,20 @@ function clearAtletaForm(){
   $('a_joined').value = todayIso();
   $('a_posicao').value = ''; $('a_pe').value = ''; $('a_categoria').value = myCategoria();
   $('a_quartilHint').textContent = 'Quartil: —';
+  const fileInput = $('a_fotoFile'); if(fileInput) fileInput.value = '';
+  $('a_fotoPreview').src = fallbackPhoto();
+  $('a_fotoStatus').textContent = 'Escolha uma foto do celular ou computador — é enviada pro seu Google Drive automaticamente ao salvar.';
 }
 function fillAtletaForm(a){
   $('a_nome').value = a.nome || ''; $('a_apelido').value = a.apelido || '';
   $('a_dob').value = a.dataNascimento || ''; $('a_joined').value = a.chegadaAoClube || '';
   $('a_posicao').value = a.posicao || ''; $('a_pe').value = a.peDominante || '';
-  $('a_categoria').value = a.categoria || 'Sub-10'; $('a_foto').value = a.foto || '';
+  $('a_categoria').value = a.categoria || 'Sub-10'; $('a_foto').value = '';
   $('a_carac').value = a.caracteristica || ''; $('a_melhorar').value = a.pontosAMelhorar || '';
   $('a_quartilHint').textContent = 'Quartil: ' + (quartilFromDob(a.dataNascimento) || a.quartil || '—');
+  const fileInput = $('a_fotoFile'); if(fileInput) fileInput.value = '';
+  $('a_fotoPreview').src = a.foto || fallbackPhoto();
+  $('a_fotoStatus').textContent = 'Escolha uma foto do celular ou computador — é enviada pro seu Google Drive automaticamente ao salvar.';
 }
 function setAtletaMode(mode){
   atletaMode = mode;
@@ -350,8 +369,40 @@ function setAtletaMode(mode){
   $('btnAtleta').textContent = mode==='editar' ? 'Atualizar atleta' : 'Salvar atleta';
   $('atletaHint').textContent = mode==='editar'
     ? 'Escolha um atleta e ajuste os campos que quiser — o que ficar em branco não apaga o que já está na planilha.'
-    : 'Preenche a linha em "Banco de atletas". O ID do atleta é gerado automaticamente. Foto continua sendo enviada à parte pelo GitHub.';
+    : 'Preenche a linha em "Banco de atletas". O ID do atleta é gerado automaticamente.';
   if(mode==='novo'){ $('a_editSelect').value=''; clearAtletaForm(); }
+}
+// Reduz a foto (a maioria das fotos de celular tem vários MB) antes de mandar pro Apps Script —
+// deixa o envio bem mais rápido e evita esbarrar em limite de tamanho de requisição.
+function resizeImageFile(file, maxDim, quality){
+  maxDim = maxDim || 720; quality = quality || 0.82;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Arquivo selecionado não é uma imagem válida.'));
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          if(w >= h){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadAthletePhoto(apelido, file){
+  const dataUrl = await resizeImageFile(file);
+  const r = await sendToScript({action:'uploadPhoto', apelido, imageBase64: dataUrl.split(',')[1], mimeType:'image/jpeg'});
+  if(!r.ok) throw new Error(r.error || 'Falha ao enviar a foto.');
+  return r.result.url;
 }
 function wireAtleta(){
   setAtletaMode('novo');
@@ -366,12 +417,21 @@ function wireAtleta(){
     const q = quartilFromDob($('a_dob').value);
     $('a_quartilHint').textContent = 'Quartil: ' + (q || '—');
   });
+  $('a_fotoFile').addEventListener('change', () => {
+    const file = $('a_fotoFile').files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { $('a_fotoPreview').src = reader.result; };
+    reader.readAsDataURL(file);
+    $('a_fotoStatus').textContent = `"${file.name}" selecionada — enviada ao clicar em salvar.`;
+  });
   $('btnAtleta').onclick = async () => {
     const nome = $('a_nome').value.trim(), apelido = $('a_apelido').value.trim();
     const msg = $('msgAtleta');
     if(!nome || !apelido){ showMsg(msg,false,'Preencha nome e apelido.'); return; }
     const editId = $('a_editSelect').value;
     if(atletaMode==='editar' && !editId){ showMsg(msg,false,'Escolha um atleta pra editar.'); return; }
+    const photoFile = $('a_fotoFile').files[0] || null;
     $('btnAtleta').disabled = true;
     const data = {
       nome, apelido, dataNascimento:$('a_dob').value, chegadaAoClube:$('a_joined').value,
@@ -379,22 +439,38 @@ function wireAtleta(){
       categoria:$('a_categoria').value, linkFoto:$('a_foto').value, caracteristica:$('a_carac').value,
       pontosAMelhorar:$('a_melhorar').value,
     };
-    const r = atletaMode==='editar'
-      ? await sendToScript({action:'updateAthlete', id:editId, data})
-      : await sendToScript({action:'addAthlete', data});
-    $('btnAtleta').disabled = false;
-    if(r.ok){
+    try{
+      if(photoFile && atletaMode==='editar'){
+        showMsg(msg,true,'Enviando foto...');
+        data.linkFoto = await uploadAthletePhoto(apelido, photoFile);
+      }
+      const r = atletaMode==='editar'
+        ? await sendToScript({action:'updateAthlete', id:editId, data})
+        : await sendToScript({action:'addAthlete', data});
+      if(!r.ok){ showMsg(msg,false,'Erro: '+r.error); $('btnAtleta').disabled=false; return; }
       if(atletaMode==='editar'){
         showMsg(msg,true,'Atleta atualizado. Lista de atletas atualizada nas outras abas.');
-        await refreshRoster();
+      } else if(photoFile){
+        showMsg(msg,true,`Atleta salvo (ID ${r.result.id}). Enviando foto...`);
+        try{
+          const url = await uploadAthletePhoto(apelido, photoFile);
+          await sendToScript({action:'updateAthlete', id:r.result.id, data:{linkFoto:url}});
+          showMsg(msg,true,`Atleta e foto salvos (ID ${r.result.id}). Lista de atletas atualizada nas outras abas.`);
+        }catch(photoErr){
+          showMsg(msg,false,`Atleta salvo (ID ${r.result.id}), mas a foto falhou: ${photoErr.message}. Pode reenviar editando o atleta.`);
+        }
+        clearAtletaForm();
       } else {
         showMsg(msg,true,`Atleta salvo (ID ${r.result.id}). Lista de atletas atualizada nas outras abas.`);
         clearAtletaForm();
-        await refreshRoster();
       }
+      await refreshRoster();
       const sel = $('a_editSelect');
       if(sel) sel.innerHTML = '<option value="">— escolha —</option>'+ROSTER.map(a=>`<option value="${a.id||''}">${a.apelido}</option>`).join('');
-    } else showMsg(msg,false,'Erro: '+r.error);
+    }catch(e){
+      showMsg(msg,false,'Erro: '+String(e));
+    }
+    $('btnAtleta').disabled = false;
   };
 }
 

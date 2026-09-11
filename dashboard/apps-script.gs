@@ -15,6 +15,12 @@
  * "Implantar -> Gerenciar implantações -> Editar -> Nova versão" para as
  * mudanças valerem (só salvar o arquivo não atualiza a URL já publicada).
  *
+ * A partir da versão com upload de foto, o script também usa o Google Drive
+ * (pra salvar as fotos enviadas pelo formulário). Na primeira vez que uma
+ * foto for enviada depois de atualizar o script, o Google pode pedir pra
+ * autorizar essa permissão nova — é normal, só aceitar (é a sua própria
+ * conta acessando o seu próprio Drive).
+ *
  * Funciona tanto colado dentro da planilha (Extensões -> Apps Script) quanto
  * num projeto avulso do Apps Script — nos dois casos ele abre a planilha
  * pelo ID abaixo em vez de depender de "planilha ativa".
@@ -73,6 +79,7 @@ function doPost(e) {
     else if (action === 'addAvaliacoes') result = addAvaliacoes(body.date, body.entries);
     else if (action === 'addGame') result = addGame(body.data);
     else if (action === 'addGameInd') result = addGameInd(body.gameNo, body.date, body.category, body.entries);
+    else if (action === 'uploadPhoto') result = uploadPhoto(body.apelido, body.imageBase64, body.mimeType);
     else throw new Error('Ação desconhecida: ' + action);
     return jsonOut({ ok: true, result: result });
   } catch (err) {
@@ -189,6 +196,29 @@ function updateAthlete(id, d) {
   setByHeader(sheet, row, col, 'Característica', d.caracteristica);
   setByHeader(sheet, row, col, 'Pontos a melhorar', d.pontosAMelhorar);
   return { id: id, row: row };
+}
+
+// ---------- Foto do atleta (Google Drive) ----------
+// Sobe a foto pro Google Drive da própria conta (mesma conta que já roda o script) em vez de
+// depender de mexer no GitHub. O link gerado (lh3.googleusercontent.com) é o formato que o Google
+// usa pra servir miniaturas de arquivos do Drive direto como imagem — diferente do link de
+// compartilhamento normal (drive.google.com/file/d/.../view), que abre um visualizador em vez da
+// imagem crua e por isso não funciona dentro de uma tag <img>.
+var PHOTOS_FOLDER_NAME = 'Fotos dos atletas - QG do Treinador';
+function getPhotosFolder() {
+  var it = DriveApp.getFoldersByName(PHOTOS_FOLDER_NAME);
+  if (it.hasNext()) return it.next();
+  return DriveApp.createFolder(PHOTOS_FOLDER_NAME);
+}
+function uploadPhoto(apelido, base64Data, mimeType) {
+  if (!base64Data) throw new Error('Nenhuma imagem recebida.');
+  var folder = getPhotosFolder();
+  var bytes = Utilities.base64Decode(base64Data);
+  var safeName = String(apelido || 'atleta').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase();
+  var blob = Utilities.newBlob(bytes, mimeType || 'image/jpeg', safeName + '-' + new Date().getTime() + '.jpg');
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { url: 'https://lh3.googleusercontent.com/d/' + file.getId() + '=w500', fileId: file.getId() };
 }
 
 // ---------- Banco de treinos ----------
