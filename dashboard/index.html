@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QG do Treinador · Sub-10</title>
+<meta property="og:type" content="website" />
+<meta property="og:title" content="QG do Treinador" />
+<meta property="og:description" content="Planejamento e monitoramento do Sub-10 — treinos, jogos, avaliações e evolução do elenco." />
+<meta property="og:image" content="https://phaoliveira19-prog.github.io/Relatorio-sub10/dashboard/photos/pedro-capa2-web.jpg" />
+<meta property="og:url" content="https://phaoliveira19-prog.github.io/Relatorio-sub10/dashboard/index.html" />
+<meta name="twitter:card" content="summary_large_image" />
+<style>
+:root{
+  --bg:#05070c; --panel:#0a101c; --panel2:#0f1726; --card:#101827dd; --stroke:#253047; --stroke2:#1b2538;
+  --text:#edf4ff; --muted:#8fa1bd; --soft:#b8c8df; --cyan:#22d3ee; --blue:#60a5fa; --purple:#a78bfa; --green:#32d583;
+  --radius:22px;
+  color-scheme: dark;
+}
+body.light{
+  --bg:#f3f7fb; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffffee; --stroke:#cbd7e6; --stroke2:#d9e3ef;
+  --text:#0b1220; --muted:#526276; --soft:#314156;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+
+.hero{min-height:100%;display:flex}
+@media (max-width:880px){.hero{flex-direction:column}}
+
+.hero-photo{position:relative;flex:0 0 36%;min-height:100vh;background-size:cover;background-position:30% top;background-repeat:no-repeat}
+@media (max-width:880px){.hero-photo{flex:none;min-height:44vh}}
+.hero-photo:after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 55%,var(--bg) 100%),linear-gradient(0deg,rgba(5,7,12,.35),transparent 40%)}
+body.light .hero-photo:after{background:linear-gradient(90deg,transparent 55%,var(--bg) 100%),linear-gradient(0deg,rgba(5,7,12,.14),transparent 40%)}
+@media (max-width:880px){.hero-photo:after{background:linear-gradient(0deg,var(--bg) 0%,transparent 22%,transparent 78%,rgba(5,7,12,.3) 100%)}}
+
+.hero-content{position:relative;flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;overflow:hidden}
+@media (max-width:880px){.hero-content{padding-bottom:84px}}
+.hero-content-bg{position:absolute;inset:0;background-image:var(--hero-bg-img);background-size:cover;background-position:center;opacity:.16;z-index:0}
+body.light .hero-content-bg{opacity:.07}
+.hero-content:before{content:"";position:absolute;inset:0;z-index:0;
+  background:radial-gradient(900px 650px at 85% 0%,rgba(34,211,238,.14),transparent 55%),radial-gradient(800px 600px at 100% 100%,rgba(167,139,250,.12),transparent 55%)}
+.hero-inner{position:relative;z-index:1;width:100%;max-width:520px;text-align:center}
+
+.logo{width:100px;height:100px;border-radius:26px;background:#fff;border:1px solid rgba(255,255,255,.32);box-shadow:0 18px 50px rgba(37,99,235,.22);padding:9px;margin:0 auto 20px}
+.logo img{width:100%;height:100%;object-fit:contain;display:block}
+h1{font-size:clamp(26px,4.6vw,40px);font-weight:900;margin:0 0 8px;letter-spacing:-.5px}
+.subtitle{color:var(--muted);font-size:15px;margin:0 0 34px;font-weight:600}
+
+.cards{display:flex;flex-direction:column;gap:14px;width:100%}
+.card{border:1px solid var(--stroke);border-radius:var(--radius);background:linear-gradient(180deg,rgba(16,24,39,.78),rgba(10,16,28,.68));padding:20px 24px;text-decoration:none;color:var(--text);transition:.15s;display:flex;align-items:center;gap:16px;text-align:left}
+body.light .card{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,250,255,.9));box-shadow:0 18px 55px rgba(15,23,42,.08)}
+.card:hover{transform:translateY(-3px);filter:brightness(1.06);border-color:var(--cyan)}
+.card .icon{font-size:26px;flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06)}
+body.light .card .icon{background:rgba(15,23,42,.05)}
+.card h2{font-size:16px;margin:0 0 3px;font-weight:900}
+.card p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.45}
+.card.primary{background:linear-gradient(135deg,var(--cyan),#4f8cff);border:0;color:#06101b}
+.card.primary .icon{background:rgba(6,16,27,.14)}
+.card.primary p{color:rgba(6,16,27,.72)}
+.card.primary:hover{filter:brightness(1.08)}
+
+.theme-toggle{position:fixed;left:16px;bottom:16px;z-index:50;border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.06);color:var(--text);padding:9px 12px;font-weight:800;cursor:pointer;font-size:12px}
+.signature{position:fixed;right:16px;bottom:12px;z-index:50;color:var(--muted);font-size:11px;background:rgba(5,7,12,.55);border:1px solid var(--stroke2);border-radius:999px;padding:6px 10px;backdrop-filter:blur(12px)}
+body.light .signature{background:rgba(255,255,255,.75)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-photo" style="background-image:url('./photos/pedro-capa2-web.jpg')"></div>
+  <div class="hero-content">
+    <div class="hero-content-bg" style="--hero-bg-img:url('./photos/capa-bg.jpg')"></div>
+    <div class="hero-inner">
+      <div class="logo"><img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador"></div>
+      <h1>QG do Treinador</h1>
+      <p class="subtitle">Planejamento e Monitoramento</p>
+      <div class="cards">
+        <a class="card primary" href="./dashboard.html">
+          <div class="icon">📊</div>
+          <div><h2>Acesso ao sistema</h2><p>Dashboard com treinos, jogos, avaliações e evolução do elenco.</p></div>
+        </a>
+        <a class="card" href="./metodologia.html">
+          <div class="icon">📖</div>
+          <div><h2>Como funciona o sistema?</h2><p>A metodologia por trás dos números: conteúdos, tarefas e avaliação.</p></div>
+        </a>
+        <a class="card" href="./entrada.html">
+          <div class="icon">📝</div>
+          <div><h2>Área de preenchimento</h2><p>Cadastro de atletas, treinos, avaliações e jogos direto no celular.</p></div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+<button class="theme-toggle" id="themeToggle">☀️ Modo claro</button>
+<div class="signature">Prof. Ms. Pedro Henrique</div>
+<script>
+document.getElementById('themeToggle').onclick = () => {
+  document.body.classList.toggle('light');
+  document.getElementById('themeToggle').textContent = document.body.classList.contains('light') ? '🌙 Modo escuro' : '☀️ Modo claro';
+};
+</script>
+</body>
+</html>
