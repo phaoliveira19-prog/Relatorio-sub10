@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="./brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./brand/favicon-16.png">
+<link rel="apple-touch-icon" href="./brand/apple-touch-icon-180.png">
 <title>Como funciona o sistema · QG do Treinador</title>
 <style>
 :root{
@@ -39,8 +43,9 @@ body.light .topbar{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(
 .hero-bg{position:absolute;inset:0;z-index:0;background-image:url('./photos/capa-bg.jpg');background-size:cover;background-position:center;opacity:.16}
 body.light .hero-bg{opacity:.08}
 .hero-inner{position:relative;z-index:1;max-width:880px;margin:0 auto;display:flex;align-items:center;gap:28px}
-.hero-photo{flex:none;width:118px;height:118px;border-radius:50%;overflow:hidden;border:3px solid rgba(34,211,238,.55);box-shadow:0 14px 40px rgba(0,0,0,.35)}
-.hero-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-photo{flex:none;width:118px;height:118px;border-radius:50%;overflow:hidden;border:3px solid rgba(34,211,238,.55);box-shadow:0 14px 40px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120px 120px at 30% 20%,rgba(96,165,250,.35),transparent 60%),radial-gradient(120px 120px at 75% 90%,rgba(50,213,131,.28),transparent 60%),linear-gradient(160deg,#0b1220 0%,#05070c 100%)}
+.hero-photo img{width:62%;height:62%;object-fit:contain;display:block}
 .hero-text{flex:1;min-width:0}
 .eyebrow{color:var(--cyan);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.16em;margin-bottom:8px}
 body.light .eyebrow{color:#0e7490}
@@ -128,9 +133,9 @@ body.light .field input{background:#fff}
 .btn{border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.055);color:var(--text);padding:10px 12px;cursor:pointer;font-weight:800;font-family:inherit;font-size:13px}
 .btn.primary{background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;border:0}
 .gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
-  background-image:linear-gradient(160deg,rgba(5,7,12,.45) 0%,rgba(5,7,12,.86) 62%,var(--bg) 100%),url('./photos/pedro-capa-web.jpg');
-  background-size:cover;background-position:center 15%;background-repeat:no-repeat}
-body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%,rgba(243,247,251,.92) 62%,var(--bg) 100%),url('./photos/pedro-capa-web.jpg')}
+  background-image:radial-gradient(900px 650px at 80% 10%,rgba(96,165,250,.18),transparent 55%),radial-gradient(800px 600px at 10% 90%,rgba(50,213,131,.14),transparent 55%),linear-gradient(160deg,#0b1220 0%,#05070c 100%);
+  background-size:cover;background-position:center;background-repeat:no-repeat}
+body.light .gate{background-image:radial-gradient(900px 650px at 80% 10%,rgba(96,165,250,.14),transparent 55%),radial-gradient(800px 600px at 10% 90%,rgba(50,213,131,.10),transparent 55%),linear-gradient(160deg,#eef4fb 0%,#f3f7fb 100%)}
 .gate-box{width:min(360px,92vw);text-align:center;background:var(--card);border:1px solid var(--stroke);border-radius:22px;padding:34px 28px;box-shadow:0 30px 80px rgba(0,0,0,.4);backdrop-filter:blur(8px)}
 .gate-box h2{margin-bottom:6px}
 .gate-box p{color:var(--muted);font-size:13px;margin:0 0 18px}
@@ -150,7 +155,7 @@ body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%
 </div>
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:10px">
-    <img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador" class="brand-logo">
+    <img src="./brand/marca-1024.png" alt="QG do Treinador" class="brand-logo">
     <b style="font-size:13px">QG do Treinador</b>
   </div>
   <div class="links">
@@ -164,7 +169,7 @@ body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%
 <div class="hero">
   <div class="hero-bg"></div>
   <div class="hero-inner">
-    <div class="hero-photo"><img src="./photos/pedro-capa-web.jpg" alt="Prof. Ms. Pedro Henrique"></div>
+    <div class="hero-photo"><img src="./brand/icone-marca.svg" alt="QG do Treinador"></div>
     <div class="hero-text">
       <div class="eyebrow">Metodologia</div>
       <h1>Como funciona o sistema</h1>

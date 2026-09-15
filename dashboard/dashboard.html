@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="./brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./brand/favicon-16.png">
+<link rel="apple-touch-icon" href="./brand/apple-touch-icon-180.png">
 <title>QG do Treinador | Central do treino</title>
 <style>
 :root{
@@ -216,9 +220,9 @@ body.light .eyebrow{color:#0e7490}
   .sidebar-head,.sidebar-search,.sidebar-foot{flex:none}
 }
 .gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
-  background-image:linear-gradient(160deg,rgba(5,7,12,.45) 0%,rgba(5,7,12,.86) 62%,var(--bg) 100%),url('./photos/pedro-capa-web.jpg');
-  background-size:cover;background-position:center 15%;background-repeat:no-repeat}
-body.light .gate{background-image:linear-gradient(160deg,rgba(243,247,251,.5) 0%,rgba(243,247,251,.92) 62%,var(--bg) 100%),url('./photos/pedro-capa-web.jpg')}
+  background-image:radial-gradient(900px 650px at 80% 10%,rgba(96,165,250,.18),transparent 55%),radial-gradient(800px 600px at 10% 90%,rgba(50,213,131,.14),transparent 55%),linear-gradient(160deg,#0b1220 0%,#05070c 100%);
+  background-size:cover;background-position:center;background-repeat:no-repeat}
+body.light .gate{background-image:radial-gradient(900px 650px at 80% 10%,rgba(96,165,250,.14),transparent 55%),radial-gradient(800px 600px at 10% 90%,rgba(50,213,131,.10),transparent 55%),linear-gradient(160deg,#eef4fb 0%,#f3f7fb 100%)}
 .gate-box{width:min(360px,92vw);text-align:center;background:var(--card);border:1px solid var(--stroke);border-radius:22px;padding:34px 28px;box-shadow:0 30px 80px rgba(0,0,0,.4);backdrop-filter:blur(8px)}
 .gate-box h2{margin-bottom:6px}
 .gate-box p{color:var(--muted);font-size:13px;margin:0 0 18px}
@@ -377,13 +381,13 @@ body.light .status{border:1px solid transparent}
 <div class="signature">Prof. Ms. Pedro Henrique</div>
 <div class="mobile-topbar" id="mobileTopbar">
   <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Abrir menu">☰</button>
-  <div class="mobile-topbar-brand"><img src="./photos/logo_sistema_do_treinador-transparent.png" alt=""><span>QG do Treinador</span></div>
+  <div class="mobile-topbar-brand"><img src="./brand/marca-1024.png" alt=""><span>QG do Treinador</span></div>
 </div>
 <div class="mobile-backdrop" id="mobileBackdrop"></div>
 <div class="app" id="appShell">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-head">
-      <div class="brand-mini"><div class="logo"><img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador"></div><div><h1>QG do Treinador</h1><p id="sidebarSubtitle">Dashboard interativo · Sub-10 · premium</p></div></div>
+      <div class="brand-mini"><div class="logo"><img src="./brand/marca-1024.png" alt="QG do Treinador"></div><div><h1>QG do Treinador</h1><p id="sidebarSubtitle">Dashboard interativo · Sub-10 · premium</p></div></div>
       <button class="sidebar-collapse" id="sidebarCollapse" type="button" title="Recolher menu">«</button>
     </div>
     <div class="sidebar-categoria" id="sidebarCategoria" style="display:none">
@@ -419,7 +423,7 @@ body.light .status{border:1px solid transparent}
     </div>
   </aside>
   <main class="main">
-    <div class="print-brand"><img src="./photos/logo_sistema_do_treinador-transparent.png" alt=""><b>QG do Treinador</b></div>
+    <div class="print-brand"><img src="./brand/marca-1024.png" alt=""><b>QG do Treinador</b></div>
     <div class="topbar">
       <div><div class="eyebrow-row"><div class="eyebrow" id="pageEyebrow">Dashboard</div><div class="eyebrow-bar"></div></div><h2 class="page-title" id="pageTitle"></h2><p class="subtitle" id="pageSubtitle"></p></div>
       <div class="pill-row" id="activeFilters"></div>

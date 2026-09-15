@@ -3,11 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="./brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./brand/favicon-16.png">
+<link rel="apple-touch-icon" href="./brand/apple-touch-icon-180.png">
 <title>QG do Treinador · Sub-10</title>
 <meta property="og:type" content="website" />
 <meta property="og:title" content="QG do Treinador" />
 <meta property="og:description" content="Planejamento e monitoramento do Sub-10 — treinos, jogos, avaliações e evolução do elenco." />
-<meta property="og:image" content="https://phaoliveira19-prog.github.io/Relatorio-sub10/dashboard/photos/pedro-capa2-web.jpg" />
+<meta property="og:image" content="https://phaoliveira19-prog.github.io/Relatorio-sub10/dashboard/brand/marca-1024.png" />
 <meta property="og:url" content="https://phaoliveira19-prog.github.io/Relatorio-sub10/dashboard/index.html" />
 <meta name="twitter:card" content="summary_large_image" />
 <style>
@@ -28,8 +32,10 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 .hero{min-height:100%;display:flex}
 @media (max-width:880px){.hero{flex-direction:column}}
 
-.hero-photo{position:relative;flex:0 0 36%;min-height:100vh;background-size:cover;background-position:30% top;background-repeat:no-repeat}
+.hero-photo{position:relative;flex:0 0 36%;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(900px 650px at 30% 15%,rgba(96,165,250,.28),transparent 55%),radial-gradient(800px 650px at 75% 90%,rgba(50,213,131,.22),transparent 55%),linear-gradient(160deg,#0b1220 0%,#05070c 100%)}
 @media (max-width:880px){.hero-photo{flex:none;min-height:44vh}}
+.hero-photo img{position:relative;z-index:1;width:34%;max-width:190px;filter:drop-shadow(0 24px 60px rgba(34,211,238,.28))}
 .hero-photo:after{content:"";position:absolute;inset:0;
   background:linear-gradient(90deg,transparent 55%,var(--bg) 100%),linear-gradient(0deg,rgba(5,7,12,.35),transparent 40%)}
 body.light .hero-photo:after{background:linear-gradient(90deg,transparent 55%,var(--bg) 100%),linear-gradient(0deg,rgba(5,7,12,.14),transparent 40%)}
@@ -68,11 +74,11 @@ body.light .signature{background:rgba(255,255,255,.75)}
 </head>
 <body>
 <div class="hero">
-  <div class="hero-photo" style="background-image:url('./photos/pedro-capa2-web.jpg')"></div>
+  <div class="hero-photo"><img src="./brand/icone-marca.svg" alt=""></div>
   <div class="hero-content">
     <div class="hero-content-bg" style="--hero-bg-img:url('./photos/capa-bg.jpg')"></div>
     <div class="hero-inner">
-      <div class="logo"><img src="./photos/logo_sistema_do_treinador-transparent.png" alt="QG do Treinador"></div>
+      <div class="logo"><img src="./brand/marca-1024.png" alt="QG do Treinador"></div>
       <h1>QG do Treinador</h1>
       <p class="subtitle">Planejamento e Monitoramento</p>
       <div class="cards">
