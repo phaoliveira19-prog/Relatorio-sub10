@@ -116,12 +116,22 @@ function setByHeader(sheet, row, colmap, name, value) {
 // Datas chegam como texto "AAAA-MM-DD" (do <input type=date>); convertidas
 // pra objeto Date real aqui pra caírem como célula de data de verdade na
 // planilha, e não como texto.
+//
+// O horário usado é meio-dia (12h), não meia-noite: o construtor de Date
+// abaixo monta o instante usando o fuso horário padrão de execução do Apps
+// Script, que pode não ser o mesmo fuso da planilha (ex.: script rodando em
+// UTC e planilha configurada em America/Sao_Paulo, 3h atrás). Meia-noite
+// nesse cenário vira 21h do dia anterior quando a planilha exibe o valor no
+// seu próprio fuso — a sessão preenchida "hoje" aparece registrada "ontem".
+// Meio-dia dá margem de sobra (até ~12h de diferença de fuso) pra nunca
+// cruzar a virada do dia, não importa a combinação de fusos entre o projeto
+// do Apps Script e a planilha.
 function setDateByHeader(sheet, row, colmap, name, isoStr) {
   var col = colmap[name];
   if (!col || !isoStr) return;
   var parts = String(isoStr).split('-');
   if (parts.length !== 3) return;
-  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, 0);
   sheet.getRange(row, col).setValue(d);
 }
 
@@ -222,6 +232,14 @@ function uploadPhoto(apelido, base64Data, mimeType) {
 }
 
 // ---------- Banco de treinos ----------
+// IMPORTANTE: a aba "Banco de treinos" precisa ter uma coluna com o cabeçalho
+// exato "Minutagem total do treino" (linha 3, junto com as outras colunas) —
+// é nela que a minutagem total informada no formulário de preenchimento é
+// gravada. Sem essa coluna, o valor é enviado mas descartado em silêncio
+// (mesmo comportamento de qualquer outro campo cujo cabeçalho não existe —
+// ver setByHeader). O dashboard usa esse valor pra calcular o "% de
+// minutagem" de cada sessão (soma das partes ÷ minutagem total), em vez de
+// uma referência fixa de 80 minutos.
 function addTraining(d) {
   var sheet = getSS().getSheetByName('Banco de treinos');
   var headerRow = 3;
@@ -233,7 +251,8 @@ function addTraining(d) {
   var fields = {
     'ID da sessão': idSessao, 'Categoria': d.categoria || 'Sub-10',
     'Nota geral da sessão\n(0 a 10)': d.notaGeral, 'Nº de atletas': d.numAtletas,
-    'Atletas em avaliação': d.atletasAvaliacao, 'Observações': d.observacoes,
+    'Atletas em avaliação': d.atletasAvaliacao, 'Minutagem total do treino': d.minutagemTotal,
+    'Observações': d.observacoes,
   };
   ['preparatoria', 'conceitual'].forEach(function (key) {
     var suf = key === 'preparatoria' ? 'preparatória' : 'conceitual';

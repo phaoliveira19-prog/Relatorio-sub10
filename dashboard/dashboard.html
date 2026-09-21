@@ -170,11 +170,6 @@ body.light .eyebrow{color:#0e7490}
 .sidebar-categoria label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 5px 2px}
 .sidebar-categoria select{width:100%;border:1px solid var(--stroke);background:#090f1bdd;color:var(--text);border-radius:13px;padding:9px 11px;font-size:12px}
 .sidebar.collapsed .sidebar-categoria{display:none!important}
-.sidebar-search{flex:0 0 auto;display:flex;align-items:center;gap:8px;margin:0 18px 14px;padding:9px 11px;border:1px solid var(--stroke);border-radius:13px;background:#090f1bdd}
-.sidebar-search .search-ico{font-size:12px;opacity:.7}
-.sidebar-search input{border:0;background:transparent;padding:0;width:auto;flex:1 1 auto;font-size:12.5px}
-.sidebar-search input:focus{box-shadow:none}
-.sidebar-search kbd{font-size:10px;color:var(--muted);border:1px solid var(--stroke2);border-radius:6px;padding:2px 5px;font-family:inherit}
 .sidebar-scroll{flex:1 1 auto;overflow:auto;padding:0 18px;scrollbar-width:thin}
 .sidebar-foot{flex:0 0 auto;padding:12px 18px 18px;border-top:1px solid var(--stroke2);display:flex;flex-direction:column;gap:8px}
 .shortcut-row{display:flex;gap:8px}
@@ -191,13 +186,11 @@ body.light .eyebrow{color:#0e7490}
 .nav-group-body{display:flex;flex-direction:column;gap:2px;overflow:hidden}
 .nav-group-body.collapsed{display:none}
 .nav-groups button .nav-ico{display:inline-block;width:20px;text-align:center;margin-right:8px;font-size:13px}
-.nav-groups button.hidden-search{display:none!important}
 .print-brand{display:none}
 .app.sidebar-collapsed{grid-template-columns:74px 1fr}
 .sidebar.collapsed .sidebar-head{flex-direction:column;gap:8px;padding:16px 8px}
 .sidebar.collapsed .sidebar-head .brand-mini{justify-content:center;display:flex}
 .sidebar.collapsed .sidebar-head .brand-mini>div:last-child{display:none}
-.sidebar.collapsed .sidebar-search{display:none}
 .sidebar.collapsed .nav-group-title span:not(.grp-chev){display:none}
 .sidebar.collapsed .nav-groups button{display:flex;justify-content:center;padding:10px 6px}
 .sidebar.collapsed .nav-groups button .nav-label{display:none}
@@ -217,7 +210,7 @@ body.light .eyebrow{color:#0e7490}
   .app.sidebar-collapsed{grid-template-columns:1fr}
   .sidebar{position:relative;height:auto;top:0;display:block;align-self:start}
   .sidebar-scroll{overflow:visible;flex:none}
-  .sidebar-head,.sidebar-search,.sidebar-foot{flex:none}
+  .sidebar-head,.sidebar-foot{flex:none}
 }
 .gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
   background-image:radial-gradient(900px 650px at 80% 10%,rgba(96,165,250,.18),transparent 55%),radial-gradient(800px 600px at 10% 90%,rgba(50,213,131,.14),transparent 55%),linear-gradient(160deg,#0b1220 0%,#05070c 100%);
@@ -393,11 +386,6 @@ body.light .status{border:1px solid transparent}
     <div class="sidebar-categoria" id="sidebarCategoria" style="display:none">
       <label>Categoria em exibição</label>
       <select id="categoriaSwitcher"></select>
-    </div>
-    <div class="sidebar-search">
-      <span class="search-ico">🔎</span>
-      <input id="navSearch" type="text" placeholder="Buscar no menu" autocomplete="off">
-      <kbd>Ctrl+K</kbd>
     </div>
     <div class="sidebar-scroll">
       <nav class="nav-groups" id="navGroups"></nav>
@@ -732,7 +720,7 @@ function monthsBetweenIso(startIso,endIso){
 // treinos", mas a ordem das colunas continua estável). Ordem tirada dos CSVs
 // de referência já validados.
 const ATLETAS_COL_FALLBACK={'Nome':0,'Apelido':1,'ID atleta':2,'Data de Nascimento':3,'Quartil':4,'Posição':5,'Pé dominante':6,'Chegada ao clube':7,'Categoria':8,'Link foto':9,'Característica':10,'Pontos a melhorar':11};
-const TREINOS_COL_FALLBACK={'Data':0,'ID da sessão':1,'Categoria':2,'Conteúdo principal - preparatória':3,'Conteúdo secundário - preparatória':4,'Conteúdo concorrente - preparatória':5,'Tipo de conteúdo - preparatória':6,'Tipo de tarefa - preparatória':7,'Complexidade - preparatória':8,'Conteúdo principal - conceitual':9,'Conteúdo secundário - conceitual':10,'Conteúdo concorrente - conceitual':11,'Tipo de conteúdo - conceitual':12,'Tipo de tarefa - conceitual':13,'Complexidade - conceitual':14,'Relação númerica - conexão':15,'Tipo de tarefa - conexão':16,'Complexidade - conexão':17,'Nota geral da sessão (0 a 10)':18,'Nº de atletas':19,'Atletas em avaliação':20,'Minutagem - preparatória':21,'Jogadores ativos - preparatória':22,'TAA - preparatória':23,'Desempenho - preparatória (0 a 10)':24,'Minutagem - conceitual':25,'Jogadores ativos - conceitual':26,'TAA - conceitual':27,'Desempenho - conceitual (0 a 10)':28,'Minutagem - conexão':29,'Jogadores ativos - conexão':30,'TAA - conexão':31,'Desempenho - conexão (0 a 10)':32,'Observações':33,'Minutagem efetiva':34,'Total TAA':35,'% de minutagem':36,'% de TAA':37};
+const TREINOS_COL_FALLBACK={'Data':0,'ID da sessão':1,'Categoria':2,'Conteúdo principal - preparatória':3,'Conteúdo secundário - preparatória':4,'Conteúdo concorrente - preparatória':5,'Tipo de conteúdo - preparatória':6,'Tipo de tarefa - preparatória':7,'Complexidade - preparatória':8,'Conteúdo principal - conceitual':9,'Conteúdo secundário - conceitual':10,'Conteúdo concorrente - conceitual':11,'Tipo de conteúdo - conceitual':12,'Tipo de tarefa - conceitual':13,'Complexidade - conceitual':14,'Relação númerica - conexão':15,'Tipo de tarefa - conexão':16,'Complexidade - conexão':17,'Nota geral da sessão (0 a 10)':18,'Nº de atletas':19,'Atletas em avaliação':20,'Minutagem - preparatória':21,'Jogadores ativos - preparatória':22,'TAA - preparatória':23,'Desempenho - preparatória (0 a 10)':24,'Minutagem - conceitual':25,'Jogadores ativos - conceitual':26,'TAA - conceitual':27,'Desempenho - conceitual (0 a 10)':28,'Minutagem - conexão':29,'Jogadores ativos - conexão':30,'TAA - conexão':31,'Desempenho - conexão (0 a 10)':32,'Observações':33,'Minutagem efetiva':34,'Total TAA':35,'% de minutagem':36,'% de TAA':37,'Minutagem total do treino':38};
 const JOGOS_COL_FALLBACK={'Nº Jogo':0,'Data':1,'Categoria':2,'Adversário':3,'Ranking':4,'Categoria adversário':5,'Competição':6,'Local':7,'Cidade':8,'Período':9,'Formato':10,'Plataforma de jogo':11,'Treinador':12,'Capitão':13,'Minutagem':14,'Gols feitos':15,'Gols sofridos':16,'Saldo':17,'Resultado':18,'Cartão amarelo':19,'Cartão vermelho':20,'Desempenho':21,'Comentários gerais':22,'Pontos positivos':23,'Pontos negativos':24,'Data entre jogos':25};
 const JOGOSIND_COL_FALLBACK={'Nº Jogo':0,'Data':1,'Categoria':2,'Nome':3,'Posição':4,'Titularidade':5,'Minutagem':6,'Desempenho':7,'Gols feitos':8,'Gols sofridos':9,'Assistências':10,'Cartão amarelo':11,'Cartão vermelho':12,'Comentários individuais':13};
 function slugName(name){
@@ -783,6 +771,7 @@ function extractTrainingsFromCSV(csvText){
     const notaGeralRaw=csvNum(gv(row,'Nota geral da sess\u00e3o (0 a 10)'));
     const numAtletas=csvNum(gv(row,'N\u00ba de atletas'));
     const atletasAvaliacao=csvNum(gv(row,'Atletas em avalia\u00e7\u00e3o'));
+    const minutagemTotalInformada=csvNum(gv(row,'Minutagem total do treino'));
     const observacoes=gv(row,'Observa\u00e7\u00f5es');
     const partsDef=[['Preparat\u00f3ria','preparat\u00f3ria'],['Conceitual','conceitual'],['Conex\u00e3o','conex\u00e3o']];
     let minutagemEfetiva=0, totalTAA=0; const partsOut=[];
@@ -791,7 +780,7 @@ function extractTrainingsFromCSV(csvText){
       const jogAtivos=csvNum(gv(row,`Jogadores ativos - ${suffix}`));
       const desemp=csvNum(gv(row,`Desempenho - ${suffix} (0 a 10)`));
       const taskType=gv(row,`Tipo de tarefa - ${suffix}`);
-      const complexity=gv(row,`Complexidade - ${suffix}`);
+      const complexity=normalizeComplexity(gv(row,`Complexidade - ${suffix}`));
       let contentType, content, cPrin, cSec, cConc;
       if(suffix==='conex\u00e3o'){
         contentType='Conex\u00e3o com jogo'; content=gv(row,'Rela\u00e7\u00e3o n\u00famerica - conex\u00e3o');
@@ -818,10 +807,17 @@ function extractTrainingsFromCSV(csvText){
     const perfVals=partsOut.map(p=>p.performance).filter(v=>v!=null);
     const notaGeral=notaGeralRaw!=null?notaGeralRaw:(perfVals.length?avg(perfVals):null);
     blocks.push(...partsOut.map(p=>({date:dt, month, sessionId, sessionNote:notaGeral, category, ...p})));
+    // % de minutagem = soma da minutagem das partes ÷ minutagem total da sessão. A minutagem total
+    // agora é informada por sessão no preenchimento ("Minutagem total do treino") em vez de uma
+    // referência fixa de 80 min pra todo mundo — sessões antigas, cadastradas antes desse campo
+    // existir, continuam usando os 80 min como aproximação (REFERENCE_MINUTES), já que não têm como
+    // saber a duração real retroativamente.
+    const minutagemTotalSessao = minutagemTotalInformada || REFERENCE_MINUTES;
     trainings.push({
       date:dt, month, sessionId, category, note:notaGeral, numAthletes:numAtletas,
       athletesEval:atletasAvaliacao, effectiveMinutes:minutagemEfetiva, totalTAA,
-      pctMinutagem: minutagemEfetiva?minutagemEfetiva/REFERENCE_MINUTES:0,
+      minutagemTotal:minutagemTotalInformada,
+      pctMinutagem: minutagemEfetiva?minutagemEfetiva/minutagemTotalSessao:0,
       pctTAA: minutagemEfetiva?totalTAA/minutagemEfetiva:null,
       observations:observacoes,
     });
@@ -1090,6 +1086,16 @@ const monthFirstDate = {}; allDated.forEach(d=>{if(d.month&&d.date){if(!monthFir
 const MONTHS = Object.keys(monthFirstDate).sort((a,b)=>monthFirstDate[a].localeCompare(monthFirstDate[b]));
 const TASK_ORDER = ['Analítico geral','Analítico em contexto específico','Jogo fundamental','Conceitual','Situacional','Jogo condicionado','Jogo formal'];
 const COMPLEX_ORDER = ['Baixa','Média','Alta'];
+// "Complexidade" é texto livre na planilha, então "Média"/"média"/"MÉDIA" etc. digitados de forma
+// diferente viravam categorias separadas nos gráficos (ex.: duas barras de "média" em vez de uma).
+// Compara sem diferenciar maiúsculas/minúsculas contra o catálogo oficial (COMPLEX_ORDER) e devolve
+// sempre a grafia canônica; valor fora do catálogo só tem a primeira letra maiúscula, sem duplicar.
+function normalizeComplexity(v){
+  const s=String(v||'').replace(/\s+/g,' ').trim();
+  if(!s) return null;
+  const hit=COMPLEX_ORDER.find(c=>c.toLowerCase()===s.toLowerCase());
+  return hit || (s.charAt(0).toUpperCase()+s.slice(1).toLowerCase());
+}
 const PART_ORDER = ['Preparatória','Conceitual','Conexão'];
 const TENURE_ORDER = ['0–3 meses','4–6 meses','7–12 meses','13–24 meses','+24 meses'];
 const QUARTILE_ORDER = ['Q1','Q2','Q3','Q4'];
@@ -1212,22 +1218,6 @@ function init(){
     });
     navEl.appendChild(gt); navEl.appendChild(body);
   });
-  const navSearch=$('navSearch');
-  if(navSearch){
-    navSearch.oninput=()=>{
-      const q=navSearch.value.trim().toLowerCase();
-      document.querySelectorAll('.nav-group-title').forEach(gt=>{
-        const body=gt.nextElementSibling; let anyVisible=false;
-        body.querySelectorAll('button').forEach(b=>{
-          const match=!q || b.textContent.toLowerCase().includes(q);
-          b.classList.toggle('hidden-search', !match); if(match) anyVisible=true;
-        });
-        gt.style.display = (!q || anyVisible) ? '' : 'none';
-        if(q && anyVisible){gt.classList.remove('collapsed'); body.classList.remove('collapsed');}
-      });
-    };
-    document.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); navSearch.focus(); } });
-  }
   const collapseBtn=$('sidebarCollapse');
   if(collapseBtn){
     collapseBtn.onclick=()=>{
@@ -1459,13 +1449,13 @@ function renderMicrociclo(){
 function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard(); if(activePage==='centro') renderCentro(); if(activePage==='microciclo') renderMicrociclo();}
 
 function monthlyAgg(rows, valueFn, agg='avg'){return MONTHS.map(m=>{const arr=rows.filter(x=>x.month===m); return {month:m, value:agg==='sum'?sum(arr.map(valueFn)):avg(arr.map(valueFn)), count:arr.length, items:arr};}).filter(x=>x.count>0)}
-function renderGeral(f){const t=filteredTrainings(f), g=filteredGames(f); const effectiveAvg=avg(t.map(x=>x.effectiveMinutes)); const trainPct=effectiveAvg?effectiveAvg/80*100:null; const wins=g.filter(x=>x.result==='Vitória').length, draws=g.filter(x=>x.result==='Empate').length, losses=g.filter(x=>x.result==='Derrota').length; const totalMinutesGeral=sum(t.map(x=>x.effectiveMinutes)); const totalTAAGeral=sum(t.map(x=>x.totalTAA)); const avgTAAGeral=avg(t.map(x=>x.totalTAA)); metricCards('kpisGeral',[
+function renderGeral(f){const t=filteredTrainings(f), g=filteredGames(f); const effectiveAvg=avg(t.map(x=>x.effectiveMinutes)); const trainPct=avg(t.map(x=>x.pctMinutagem)); const wins=g.filter(x=>x.result==='Vitória').length, draws=g.filter(x=>x.result==='Empate').length, losses=g.filter(x=>x.result==='Derrota').length; const totalMinutesGeral=sum(t.map(x=>x.effectiveMinutes)); const totalTAAGeral=sum(t.map(x=>x.totalTAA)); const avgTAAGeral=avg(t.map(x=>x.totalTAA)); metricCards('kpisGeral',[
   {label:'Atletas cadastrados',value:fmtInt(DATA.athletes.length),sub:'elenco ativo na base'},
   {label:'Nº médio de atletas por treino',value:fmt(avg(t.map(x=>x.numAthletes))),sub:'presença média por sessão'},
   {label:'Nº de atletas em avaliação',value:fmt(avg(t.map(x=>x.athletesEval))),sub:'média por sessão'},
   {label:'Treinos realizados',value:fmtInt(t.length),sub:`${fmt(avg(t.map(x=>x.numAthletes)))} atletas/treino`},
   {label:'Nota média treino',value:fmt(avg(t.map(x=>x.note))),sub:'nota geral da sessão'},
-  {label:'Minutagem efetiva média',value:fmt(effectiveAvg,0)+' min',sub:`${fmt(trainPct,0)}% da referência de 80 min`},
+  {label:'Minutagem efetiva média',value:fmt(effectiveAvg,0)+' min',sub:`${fmt(trainPct?trainPct*100:null,0)}% da minutagem total das sessões`},
   {label:'Minutagem total',value:fmtInt(totalMinutesGeral)+' min',sub:'soma de todos os treinos no filtro'},
   {label:'TAA total',value:fmtInt(totalTAAGeral)+' min',sub:'tempo de atividade nas ações'},
   {label:'TAA média',value:fmt(avgTAAGeral,0)+' min',sub:'por treino'},
@@ -1500,9 +1490,9 @@ function ctrlWindowed(t0,b0,selId){
   return {t,b:b0.filter(x=>dates.has(x.date))};
 }
 function renderControle(f){const t0=filteredTrainings(f), b0=filteredBlocks(f);
-  const perf=avg(b0.map(x=>x.performance)); const parts=PART_ORDER.map(p=>({label:p,value:avg(b0.filter(x=>x.part===p).map(x=>x.performance))})); const effectiveAvg=avg(t0.map(x=>x.effectiveMinutes)); const totalMinutes=sum(b0.map(x=>x.minutes)); const avgMinutes=t0.length?totalMinutes/t0.length:null; const totalTAA=sum(t0.map(x=>x.totalTAA)); const avgTAA=avg(t0.map(x=>x.totalTAA)); const avgPctTAA=avg(t0.map(x=>x.pctTAA)); metricCards('kpisControle',[
+  const perf=avg(b0.map(x=>x.performance)); const parts=PART_ORDER.map(p=>({label:p,value:avg(b0.filter(x=>x.part===p).map(x=>x.performance))})); const effectiveAvg=avg(t0.map(x=>x.effectiveMinutes)); const avgPctMinutagem=avg(t0.map(x=>x.pctMinutagem)); const totalMinutes=sum(b0.map(x=>x.minutes)); const avgMinutes=t0.length?totalMinutes/t0.length:null; const totalTAA=sum(t0.map(x=>x.totalTAA)); const avgTAA=avg(t0.map(x=>x.totalTAA)); const avgPctTAA=avg(t0.map(x=>x.pctTAA)); metricCards('kpisControle',[
   {label:'Nº de treinos',value:fmtInt(t0.length),sub:'sessões no filtro atual'},
-  {label:'% minutagem média',value:fmt(effectiveAvg?effectiveAvg/80*100:null,0)+'%',sub:`${fmt(effectiveAvg,0)} min de referência 80 min`},
+  {label:'% minutagem média',value:fmt(avgPctMinutagem?avgPctMinutagem*100:null,0)+'%',sub:`${fmt(effectiveAvg,0)} min efetivos em média`},
   {label:'Desempenho médio',value:fmt(perf),sub:'média dos blocos',chips:parts.map(p=>({label:p.label,value:fmt(p.value)}))},
   {label:'Nº médio de atletas',value:fmt(avg(t0.map(x=>x.numAthletes))),sub:'por treino'},
   {label:'Minutagem total',value:fmtInt(totalMinutes)+' min',sub:`média de ${fmt(avgMinutes,0)} min/treino`},

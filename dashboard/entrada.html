@@ -229,11 +229,13 @@ async function fetchRosterAndLists(){
       caracteristica:a.characteristic, pontosAMelhorar:a.improvement,
     }));
     DATALISTS.contents = [...new Set([...CONTENT_CATALOG, ...((d.meta && d.meta.contents) || [])])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    // "Tipo de tarefa" e "Complexidade" continuam texto livre (autocomplete) — a lista de sugestões
-    // aprende com o que já foi digitado de verdade na planilha, em vez de ficar presa a um catálogo
-    // fixo que pode não bater com o que os treinadores realmente usam
-    DATALISTS.taskTypes = [...new Set([...TASK_ORDER, ...((d.meta && d.meta.taskTypes) || [])])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    DATALISTS.complexity = [...new Set([...COMPLEX_ORDER, ...((d.meta && d.meta.complexities) || [])])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    // "Tipo de tarefa" é texto livre no campo (pra digitar rápido com autocomplete), mas a lista de
+    // sugestões fica travada no catálogo oficial do sistema atual (TASK_ORDER) — a planilha tem
+    // registros antigos com nomes de um sistema anterior (ex.: "Analítico" sem o "geral"/"em
+    // contexto específico"), e misturar os dois deixava esses nomes descontinuados aparecendo nas
+    // sugestões do formulário. Complexidade também fica no catálogo oficial pelo mesmo motivo.
+    DATALISTS.taskTypes = [...TASK_ORDER];
+    DATALISTS.complexity = [...COMPLEX_ORDER];
     const myGames = (d.games||[]).filter(g=>normCategoria(g.category)===normCategoria(myCategoria()));
     DATALISTS.opponents = [...new Set(myGames.map(g=>g.opponent).filter(Boolean))].sort();
     DATALISTS.competitions = [...new Set(myGames.map(g=>g.competition).filter(Boolean))].sort();
@@ -509,6 +511,7 @@ function panelTreino(){
       <div class="field"><label>Nota geral da sessão (0 a 10)</label><input type="number" min="0" max="10" step="0.5" id="t_nota"></div>
       <div class="field"><label>Nº de atletas presentes</label><input type="number" min="0" id="t_numatletas"></div>
       <div class="field"><label>Atletas em avaliação</label><input type="number" min="0" id="t_avaliacao"></div>
+      <div class="field"><label>Minutagem total do treino</label><input type="number" min="0" id="t_minutagemtotal" placeholder="ex.: 90"><div class="hint" style="margin-top:6px">Tempo total da sessão (não é a soma das partes) — usado pra calcular o % de minutagem.</div></div>
     </div>
     <div class="field"><label>Observações</label><textarea id="t_obs"></textarea></div>
     ${partSection('preparatoria','preparatória')}
@@ -532,7 +535,7 @@ function wireTreino(){
     const r = await sendToScript({action:'addTraining', data:{
       data:$('t_data').value, categoria:$('t_categoria').value,
       notaGeral:num('t_nota'), numAtletas:num('t_numatletas'), atletasAvaliacao:num('t_avaliacao'),
-      observacoes:txt('t_obs'),
+      minutagemTotal:num('t_minutagemtotal'), observacoes:txt('t_obs'),
       preparatoria: part('preparatoria'), conceitual: part('conceitual'),
       conexao: { relacaoNumerica: txt('t_conexao_relacao'), tipoTarefa: txt('t_conexao_tarefa'),
         complexidade: txt('t_conexao_complex'), minutagem: num('t_conexao_min'),
