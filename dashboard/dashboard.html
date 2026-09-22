@@ -1001,6 +1001,22 @@ function photoErr(img,ext){if(ext&&img.dataset.step!=='2'){img.dataset.step='2';
 // precisa estar fora do boot() (escopo global, junto com as outras funções de extração de CSV):
 // extractTrainingsFromCSV roda antes/fora do corpo de boot() e não enxerga funções declaradas lá dentro
 function avg(arr){const v=arr.filter(x=>x!==null&&x!==undefined&&!isNaN(x)); return v.length? v.reduce((a,b)=>a+Number(b),0)/v.length:null;}
+// mesmo motivo do avg() acima: extractTrainingsFromCSV chama normalizeComplexity() durante a
+// extração, então tanto a função quanto o catálogo que ela usa (COMPLEX_ORDER) precisam estar aqui
+// fora — declarados dentro de boot() (como estavam antes), ficam invisíveis pra quem roda fora, e o
+// carregamento ao vivo da planilha quebra inteiro com "normalizeComplexity is not defined",
+// caindo pro data.json local desatualizado (mesmo sintoma do bug do avg corrigido antes).
+const COMPLEX_ORDER = ['Baixa','Média','Alta'];
+// "Complexidade" é texto livre na planilha, então "Média"/"média"/"MÉDIA" etc. digitados de forma
+// diferente viravam categorias separadas nos gráficos (ex.: duas barras de "média" em vez de uma).
+// Compara sem diferenciar maiúsculas/minúsculas contra o catálogo oficial (COMPLEX_ORDER) e devolve
+// sempre a grafia canônica; valor fora do catálogo só tem a primeira letra maiúscula, sem duplicar.
+function normalizeComplexity(v){
+  const s=String(v||'').replace(/\s+/g,' ').trim();
+  if(!s) return null;
+  const hit=COMPLEX_ORDER.find(c=>c.toLowerCase()===s.toLowerCase());
+  return hit || (s.charAt(0).toUpperCase()+s.slice(1).toLowerCase());
+}
 let DATA=null;
 async function boot(){
 try{
@@ -1101,17 +1117,8 @@ const allDated = [...DATA.trainings,...DATA.games,...DATA.blocks,...DATA.content
 const monthFirstDate = {}; allDated.forEach(d=>{if(d.month&&d.date){if(!monthFirstDate[d.month]||d.date<monthFirstDate[d.month]) monthFirstDate[d.month]=d.date;}});
 const MONTHS = Object.keys(monthFirstDate).sort((a,b)=>monthFirstDate[a].localeCompare(monthFirstDate[b]));
 const TASK_ORDER = ['Analítico geral','Analítico em contexto específico','Jogo fundamental','Conceitual','Situacional','Jogo condicionado','Jogo formal'];
-const COMPLEX_ORDER = ['Baixa','Média','Alta'];
-// "Complexidade" é texto livre na planilha, então "Média"/"média"/"MÉDIA" etc. digitados de forma
-// diferente viravam categorias separadas nos gráficos (ex.: duas barras de "média" em vez de uma).
-// Compara sem diferenciar maiúsculas/minúsculas contra o catálogo oficial (COMPLEX_ORDER) e devolve
-// sempre a grafia canônica; valor fora do catálogo só tem a primeira letra maiúscula, sem duplicar.
-function normalizeComplexity(v){
-  const s=String(v||'').replace(/\s+/g,' ').trim();
-  if(!s) return null;
-  const hit=COMPLEX_ORDER.find(c=>c.toLowerCase()===s.toLowerCase());
-  return hit || (s.charAt(0).toUpperCase()+s.slice(1).toLowerCase());
-}
+// COMPLEX_ORDER e normalizeComplexity ficam fora do boot() (ver comentário perto do avg()) — não
+// redeclarados aqui.
 const PART_ORDER = ['Preparatória','Conceitual','Conexão'];
 const TENURE_ORDER = ['0–3 meses','4–6 meses','7–12 meses','13–24 meses','+24 meses'];
 const QUARTILE_ORDER = ['Q1','Q2','Q3','Q4'];
