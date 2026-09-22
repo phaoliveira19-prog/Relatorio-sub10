@@ -220,6 +220,12 @@ body.light .gate{background-image:radial-gradient(900px 650px at 80% 10%,rgba(96
 .gate-box h2{margin-bottom:6px}
 .gate-box p{color:var(--muted);font-size:13px;margin:0 0 18px}
 @media print{.gate{display:none!important}}
+.data-warning{position:sticky;top:0;z-index:250;display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 18px;
+  background:linear-gradient(135deg,#fdb022,#f97066);color:#241300;font-weight:800;font-size:13px;line-height:1.4}
+.data-warning b{font-weight:950}
+.data-warning .dw-detail{font-weight:600;opacity:.85;font-size:12px}
+@media print{.data-warning{display:none!important}}
+@media (max-width:640px){.data-warning{font-size:12px;padding:9px 14px}}
 
 /* === Centro de Treino + Microciclo === */
 .modal-overlay{position:fixed;inset:0;z-index:300;background:rgba(3,6,12,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto}
@@ -360,6 +366,7 @@ body.light .status{border:1px solid transparent}
 </style>
 </head>
 <body>
+<div class="data-warning" id="dataWarning"></div>
 <div class="gate" id="gate">
   <div class="gate-box">
     <h2>Acesso ao dashboard</h2>
@@ -1002,6 +1009,15 @@ try{
 }catch(sheetsErr){
   console.warn('[dashboard] Google Sheets indispon\u00edvel, usando data.json local.', sheetsErr);
   try{DATA = await (await fetch('./data.json',{cache:'no-store'})).json();}catch(e){document.body.innerHTML='<div style="padding:40px;color:#eef4ff;font-family:sans-serif">N\u00e3o foi poss\u00edvel carregar dados do Google Sheets nem do data.json local. Verifique a conex\u00e3o e o compartilhamento da planilha.</div>';return;}
+  // Aviso vis\u00edvel na tela: sem isso, o erro s\u00f3 aparece no console (DevTools) e ningu\u00e9m percebe que
+  // os n\u00fameros mostrados s\u00e3o de um arquivo de backup desatualizado (gerado em ${DATA.meta && DATA.meta.generatedAt}),
+  // n\u00e3o da planilha ao vivo \u2014 foi exatamente assim que o bug "avg is not defined" passou despercebido antes.
+  const dw = document.getElementById('dataWarning');
+  if(dw){
+    const genAt = (DATA && DATA.meta && DATA.meta.generatedAt) ? new Date(DATA.meta.generatedAt).toLocaleDateString('pt-BR') : '?';
+    dw.style.display = 'flex';
+    dw.innerHTML = `<span>\u26a0\ufe0f <b>N\u00e3o foi poss\u00edvel carregar a planilha ao vivo.</b> Mostrando um backup desatualizado (gerado em ${genAt}) \u2014 os n\u00fameros na tela podem n\u00e3o bater com a planilha atual.</span><span class="dw-detail">Detalhe t\u00e9cnico: ${String(sheetsErr && sheetsErr.message || sheetsErr).replace(/[<>]/g,'')}</span>`;
+  }
 }
 DATA = applyCategoriaFilter(DATA, getActiveCategoria());
 const COLORS = ['#22d3ee','#60a5fa','#a78bfa','#32d583','#fdb022','#f97066','#f472b6','#38bdf8','#c4b5fd','#86efac'];
@@ -1535,7 +1551,11 @@ function renderControle(f){const t0=filteredTrainings(f), b0=filteredBlocks(f);
 
 function renderConteudos(f){const c=filteredContents(f), b=filteredBlocks(f); const cRole=role=>c.filter(x=>x.role===role); const allTypes=ordered(uniq(DATA.contents.map(d=>normalizeContentType(d.contentType))),[]); const mostType=Object.entries(by(c,x=>contentTypeFamily(x.contentType))).map(([k,v])=>({k,count:v.length})).sort((a,b)=>b.count-a.count)[0]; const topBy=role=>Object.entries(by(cRole(role),'content')).map(([k,v])=>({k,count:v.length})).sort((a,b)=>b.count-a.count)[0]; const topPrincipal=topBy('principal'), topSecundario=topBy('secundario'), topConcorrente=topBy('concorrente'); const contentsByType=Object.entries(by(c.filter(x=>x.contentType&&x.contentType!=='Sem tipo'),x=>contentTypeFamily(x.contentType))).map(([k,arr])=>({type:k,count:uniq(arr.map(x=>x.content)).length})).sort((a,b)=>b.count-a.count); metricCards('kpisConteudos',[{label:'Nº de conteúdos por tipo',value:fmtInt(uniq(c.map(x=>x.content)).length),sub:'distintos no filtro',chips:contentsByType.map(x=>({label:x.type,value:x.count}))}, {label:'Tipo mais trabalhado',value:mostType?truncate(mostType.k,28):'—',small:true,sub:mostType?`${mostType.count} ocorrências`:''}, {label:'Sem foco (princ./sec.) >30d',value:fmtInt(contentGapRows().filter(x=>x.days>30).length),sub:'conteúdos em alerta'}, {label:'Top principal',value:topPrincipal?truncate(topPrincipal.k,16):'—',small:true,sub:topPrincipal?`${topPrincipal.count} ocorrências`:'sem registro no período'}, {label:'Top secundário',value:topSecundario?truncate(topSecundario.k,16):'—',small:true,sub:topSecundario?`${topSecundario.count} ocorrências`:'sem registro no período'}, {label:'Top concorrente',value:topConcorrente?truncate(topConcorrente.k,16):'—',small:true,sub:topConcorrente?`${topConcorrente.count} ocorrências`:'sem registro no período'}],true);
   const heatSel=$('heatContentType'), heatMonthSel=$('heatMonthFilter'), heatSortSel=$('heatSort'), heatRoleSel=$('heatRole');
-  const heatMonthsAvailable=MONTHS.filter(m=>Number((monthFirstDate[m]||'0000-00').split('-')[1])>=8);
+  // Chegou a existir um corte fixo aqui escondendo meses antes de agosto/2026 (dado de teste da
+  // época em que o sistema foi implantado) — virou bug conforme o tempo passou: qualquer temporada
+  // que reaproveitasse meses "antigos" (fevereiro a julho) sumia inteira do heatmap, mesmo sendo
+  // dado real e atual. Mostra todos os meses que realmente têm registro, sem corte de calendário.
+  const heatMonthsAvailable=MONTHS;
   if(heatSel && !heatSel.dataset.ready){heatSel.innerHTML='<option value="">Todos os tipos</option>'+allTypes.map(x=>`<option value="${x}">${x}</option>`).join(''); heatSel.onchange=()=>{heatContentType=heatSel.value; renderConteudos(activeFilters());}; heatSel.dataset.ready='1';}
   if(heatMonthSel && !heatMonthSel.dataset.ready){heatMonthSel.onchange=()=>{heatMonthView=heatMonthSel.value; renderConteudos(activeFilters());}; heatMonthSel.dataset.ready='1';}
   if(heatSortSel && !heatSortSel.dataset.ready){heatSortSel.innerHTML='<option value="mais">Mais trabalhados primeiro</option><option value="menos">Menos trabalhados primeiro</option><option value="az">Ordem alfabética</option>'; heatSortSel.onchange=()=>{heatSort=heatSortSel.value; renderConteudos(activeFilters());}; heatSortSel.dataset.ready='1';}
@@ -1572,7 +1592,9 @@ function noteSummary(f){const n=filteredNotes(f); const g=by(n,'athlete'); retur
 function renderAvaliacao(f){const n=filteredNotes(f), s=noteSummary(f); const top=[...s].sort((a,b)=>b.avg-a.avg)[0]; const worst=[...s].sort((a,b)=>a.avg-b.avg)[0]; const trend=[...s].sort((a,b)=>b.diff-a.diff)[0]; const drop=[...s].sort((a,b)=>a.diff-b.diff)[0]; kpi('kpisAvaliacao',[{label:'Notas registradas',value:fmtInt(n.length),sub:'avaliações individuais'}, {label:'Atletas avaliados',value:fmtInt(s.length),sub:'com ao menos 1 nota'}, {label:'Média do grupo',value:fmt(avg(n.map(x=>x.note))),sub:'escala 0 a 10'}, {label:'Maior média',value:top?truncate(top.athlete,13):'—',sub:top?fmt(top.avg):''}, {label:'Pior média',value:worst?truncate(worst.athlete,13):'—',sub:worst?fmt(worst.avg):''}]);
   horizontalBar('chNoteRank',[...s].sort((a,b)=>b.avg-a.avg).slice(0,15),'athlete',['avg'],{xMin:3,xMax:10,left:145,dataLabel:true,athleteTooltip:true,tooltipFn:d=>`${athleteHTML(d.athlete)}<br>Média: ${fmt(d.avg)}<br>Avaliações: ${d.count}`});
   setupHeatAthFilters(); const hNotes=n.filter(x=>(!heatAthFilters.position||x.position===heatAthFilters.position)&&(!heatAthFilters.quartile||x.quartile===heatAthFilters.quartile)&&(!heatAthFilters.tenure||x.tenureBand===heatAthFilters.tenure)); const trainByDate=Object.fromEntries(DATA.trainings.map(t=>[t.date,t.effectiveMinutes||0])); const athletes=uniq(hNotes.map(x=>x.athlete));
-  const heatAvalMonthsAvailable=MONTHS.filter(m=>Number((monthFirstDate[m]||'0000-00').split('-')[1])>=8);
+  // mesmo corte fixo de agosto/2026 do heatmap de conteúdos, e mesmo problema: acaba escondendo
+  // meses "antigos" reais em vez de só o dado de teste original — removido pelo mesmo motivo.
+  const heatAvalMonthsAvailable=MONTHS;
   const heatAvalMonthSel=$('heatAvalMonthFilter');
   if(heatAvalMonthSel && !heatAvalMonthSel.dataset.ready){ heatAvalMonthSel.onchange=()=>{heatAvalMonthView=heatAvalMonthSel.value; renderAvaliacao(activeFilters());}; heatAvalMonthSel.dataset.ready='1'; }
   if(!heatAvalMonthsAvailable.includes(heatAvalMonthView)) heatAvalMonthView='';
