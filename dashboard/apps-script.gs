@@ -291,6 +291,19 @@ function getBlobSheet(sheetName) {
   if (!sheet) throw new Error('Aba "' + sheetName + '" não encontrada na planilha. Crie uma aba com esse nome e as colunas Categoria | Chave | Dados | Atualizado em antes de usar essa função.');
   return sheet;
 }
+// A Chave do Microciclo é uma data no formato "AAAA-MM-DD" (a segunda-feira da semana). Escrever
+// esse texto numa célula pelo Apps Script sofre a mesma "adivinhação" de formato que digitar direto
+// na planilha: o Sheets converte sozinho pra uma célula de data de verdade, mesmo a gente mandando
+// string. Da próxima vez que essa linha é lida, ela volta como objeto Date, não mais como o texto
+// original — e comparar Date com a string original (String(data) !== "2026-09-21") nunca bate.
+// Resultado: toda gravação parecia "chave nova" e criava uma linha duplicada em vez de atualizar a
+// existente, e a leitura (listBlobs) guardava o valor sob uma chave de objeto diferente da esperada
+// — por isso o conteúdo digitado "sumia" depois de sincronizar de novo. Normaliza os dois lados por
+// aqui antes de comparar/guardar, pra funcionar tanto com texto quanto com data.
+function keyStr(v) {
+  if (Object.prototype.toString.call(v) === '[object Date]') return dateToIso(v);
+  return String(v == null ? '' : v).trim();
+}
 function listBlobs(sheetName, categoria) {
   var sheet = getBlobSheet(sheetName);
   var lastRow = sheet.getLastRow();
@@ -299,7 +312,7 @@ function listBlobs(sheetName, categoria) {
   var rows = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
   rows.forEach(function (r) {
     if (String(r[0]) !== String(categoria)) return;
-    var key = r[1];
+    var key = keyStr(r[1]);
     if (!key) return;
     try { out[key] = JSON.parse(r[2]); } catch (e) { /* linha corrompida/vazia, ignora */ }
   });
@@ -313,13 +326,17 @@ function saveBlob(sheetName, categoria, key, data) {
   if (lastRow >= 2) {
     var rows = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
     for (var i = 0; i < rows.length; i++) {
-      if (String(rows[i][0]) === String(categoria) && String(rows[i][1]) === String(key)) { rowIdx = i + 2; break; }
+      if (String(rows[i][0]) === String(categoria) && keyStr(rows[i][1]) === keyStr(key)) { rowIdx = i + 2; break; }
     }
   }
   var json = JSON.stringify(data);
   var now = new Date();
   if (rowIdx === -1) {
-    sheet.getRange(lastRow + 1, 1, 1, 4).setValues([[categoria, key, json, now]]);
+    var newRow = lastRow + 1;
+    // formata a célula da Chave como texto puro ANTES de escrever, pra essa linha nova não sofrer
+    // a mesma conversão automática pra data de novo daqui pra frente
+    sheet.getRange(newRow, 2).setNumberFormat('@');
+    sheet.getRange(newRow, 1, 1, 4).setValues([[categoria, key, json, now]]);
   } else {
     sheet.getRange(rowIdx, 3, 1, 2).setValues([[json, now]]);
   }
@@ -331,7 +348,7 @@ function deleteBlob(sheetName, categoria, key) {
   if (lastRow >= 2) {
     var rows = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
     for (var i = 0; i < rows.length; i++) {
-      if (String(rows[i][0]) === String(categoria) && String(rows[i][1]) === String(key)) {
+      if (String(rows[i][0]) === String(categoria) && keyStr(rows[i][1]) === keyStr(key)) {
         sheet.deleteRow(i + 2);
         return { deleted: true };
       }
