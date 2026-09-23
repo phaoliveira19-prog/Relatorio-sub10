@@ -571,6 +571,7 @@ body.light .status{border:1px solid transparent}
           <div><h3>Microciclo <span id="mcNumber"></span></h3><div class="desc" id="mcWeekDesc"></div></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             <span class="save-status" id="mcSaveStatus"></span>
+            <button class="btn primary small" id="mcSaveBtn" type="button">💾 Salvar microciclo</button>
             <button class="btn small" id="mcRefresh" type="button" title="Buscar edições feitas em outro dispositivo">🔄 Sincronizar</button>
             <button class="btn small" id="mcPrevWeek" type="button">← Semana anterior</button>
             <button class="btn small" id="mcThisWeek" type="button">Semana atual</button>
@@ -1276,8 +1277,12 @@ function activeFilterPills(f){const div=$('activeFilters'); div.innerHTML=''; Ob
 function resetActiveFilters(){(FILTERS_BY_PAGE[activePage]||[]).forEach(k=>{filterState[k]=(k==='start'?DATA.meta.minDate:(k==='end'?DATA.meta.maxDate:''));}); renderFilters(); renderActive();}
 function closeMobileNav(){ $('appShell').classList.remove('mobile-nav-open'); const bd=$('mobileBackdrop'); if(bd) bd.classList.remove('show'); }
 function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive(); if(window.innerWidth<=1220){ closeMobileNav(); window.scrollTo(0,0); }
-  // busca de novo sempre que entra na aba — pega edição feita em outro aparelho desde a última visita
-  if(id==='microciclo') loadMicrociclosRemote();
+  // Centro de Treino: busca de novo sempre que entra na aba, pra pegar sessão criada em outro
+  // aparelho — seguro porque a edição só acontece dentro do modal (formulário próprio, não ligado
+  // direto ao estado que essa busca substitui). Microciclo NÃO busca sozinho ao entrar na aba: as
+  // células ficam ligadas direto ao estado em memória, e uma busca no meio de uma digitação
+  // sobrescrevia o que tava sendo escrito antes de dar tempo de salvar — por isso ali a
+  // sincronização com a planilha só acontece na abertura do site e no botão "🔄 Sincronizar".
   if(id==='centro') loadCentroSessionsRemote();
 }
 function init(){
@@ -1343,7 +1348,8 @@ function init(){
   const mcPrev=$('mcPrevWeek'); if(mcPrev) mcPrev.onclick=()=>{ mcCurrentWeek=addDaysIso(mcCurrentWeek,-7); renderMicrociclo(); };
   const mcNext=$('mcNextWeek'); if(mcNext) mcNext.onclick=()=>{ mcCurrentWeek=addDaysIso(mcCurrentWeek,7); renderMicrociclo(); };
   const mcThis=$('mcThisWeek'); if(mcThis) mcThis.onclick=()=>{ mcCurrentWeek=mondayOf(isoToday()); renderMicrociclo(); };
-  const mcNumInput=$('mcNumberInput'); if(mcNumInput) mcNumInput.onchange=()=>{ const all=getMcState(); if(!all[mcCurrentWeek]) all[mcCurrentWeek]={number:null,days:{}}; all[mcCurrentWeek].number=mcNumInput.value?Number(mcNumInput.value):null; scheduleMicrocicloSave(mcCurrentWeek); $('mcNumber').textContent = all[mcCurrentWeek].number ? '· '+all[mcCurrentWeek].number : ''; };
+  const mcNumInput=$('mcNumberInput'); if(mcNumInput) mcNumInput.onchange=()=>{ const all=getMcState(); if(!all[mcCurrentWeek]) all[mcCurrentWeek]={number:null,days:{}}; all[mcCurrentWeek].number=mcNumInput.value?Number(mcNumInput.value):null; markMcDirty(); $('mcNumber').textContent = all[mcCurrentWeek].number ? '· '+all[mcCurrentWeek].number : ''; };
+  const mcSaveBtn=$('mcSaveBtn'); if(mcSaveBtn) mcSaveBtn.onclick=()=>saveMicrocicloNow();
   go('geral');
 }
 function populateCardAthletes(){const sel=$('cardAthlete'); sel.innerHTML=DATA.meta.athletes.map(a=>`<option value="${a}">${a}</option>`).join('');}
@@ -1669,16 +1675,23 @@ async function saveCentroSession(){
 function loadMicrociclosLocalCache(){ try{ return JSON.parse(localStorage.getItem(LS_MICRO_KEY)||'{}'); } catch(e){ return {}; } }
 function cacheMicrociclosLocal(obj){ try{ localStorage.setItem(LS_MICRO_KEY, JSON.stringify(obj)); } catch(e){ /* best-effort */ } }
 let mcState = null;
-let mcSaveTimers = {};
+let mcDirty = false;
 function getMcState(){ if(!mcState) mcState = loadMicrociclosLocalCache(); return mcState; }
 function setMcSaveStatus(text, cls){ const el=$('mcSaveStatus'); if(!el) return; el.textContent=text; el.className='save-status'+(cls?' '+cls:''); }
+// Busca da planilha só acontece quando o app abre e quando você aperta "Sincronizar" (nunca sozinho
+// em segundo plano) — antes, toda entrada na aba Microciclo disparava uma busca nova, e se isso
+// acontecesse bem no meio de uma digitação, a busca sobrescrevia o que você tinha acabado de
+// escrever antes de dar tempo de salvar, e a edição ia embora sem avisar. Por isso agora salvar
+// também é manual (botão "💾 Salvar microciclo"), em vez de automático a cada tecla.
 async function loadMicrociclosRemote(){
   const cat = getActiveCategoria();
   if(!cat){ setMcSaveStatus('',''); return; }
+  if(mcDirty && !confirm('Você tem alterações nesta semana que ainda não foram salvas. Buscar da planilha agora vai substituir o que está na tela sem salvar. Buscar mesmo assim?')) return;
   setMcSaveStatus('Sincronizando…','busy');
   const r = await fetchFromScript({action:'listMicrociclos', categoria:cat});
   if(r.ok){
     mcState = r.data || {};
+    mcDirty = false;
     cacheMicrociclosLocal(mcState);
     setMcSaveStatus('Sincronizado com a planilha ✓','ok');
   } else {
@@ -1687,20 +1700,19 @@ async function loadMicrociclosRemote(){
   }
   if(activePage==='microciclo') renderMicrociclo();
 }
-// Salva com um pequeno atraso (não a cada tecla digitada) pra não disparar uma chamada de rede por
-// caractere — junta as edições rápidas numa só chamada, e mesmo assim guarda a semana inteira (não
-// dia a dia), já que ela é uma unidade só no doc da planilha.
-function scheduleMicrocicloSave(weekKey){
-  setMcSaveStatus('Salvando…','busy');
+function markMcDirty(){
+  mcDirty = true;
   cacheMicrociclosLocal(getMcState());
-  clearTimeout(mcSaveTimers[weekKey]);
-  mcSaveTimers[weekKey] = setTimeout(async ()=>{
-    const cat = getActiveCategoria();
-    if(!cat){ setMcSaveStatus('Salvo só neste aparelho (faça login pra sincronizar)','warn'); return; }
-    const r = await sendToScript({action:'saveMicrociclo', categoria:cat, key:weekKey, data:getMcState()[weekKey]});
-    if(r.ok) setMcSaveStatus('Salvo e sincronizado ✓','ok');
-    else setMcSaveStatus('Editado aqui, mas não sincronizou: '+r.error,'err');
-  }, 800);
+  setMcSaveStatus('Alterações não salvas — clique em "Salvar microciclo"','warn');
+}
+async function saveMicrocicloNow(){
+  const weekKey = mcCurrentWeek;
+  setMcSaveStatus('Salvando…','busy');
+  const cat = getActiveCategoria();
+  if(!cat){ setMcSaveStatus('Salvo só neste aparelho (faça login pra sincronizar)','warn'); return; }
+  const r = await sendToScript({action:'saveMicrociclo', categoria:cat, key:weekKey, data:getMcState()[weekKey]});
+  if(r.ok){ mcDirty = false; setMcSaveStatus('Salvo e sincronizado ✓','ok'); }
+  else setMcSaveStatus('Editado aqui, mas não sincronizou: '+r.error,'err');
 }
 function emptyMcDay(){ return {folga:false, pre:'', p1dur:'', p1:'', p2dur:'', p2:'', p3dur:'', p3:'', comp:''}; }
 function mcCellTd(week,d,key){
@@ -1734,13 +1746,13 @@ function renderMicrociclo(){
   const table = $('mcTable');
   table.innerHTML = head + '<tbody>' + rows.join('') + '</tbody>';
   table.querySelectorAll('.folga-toggle').forEach(btn=>{
-    btn.onclick = ()=>{ const d=btn.dataset.day; week.days[d].folga=!week.days[d].folga; scheduleMicrocicloSave(weekKey); renderMicrociclo(); };
+    btn.onclick = ()=>{ const d=btn.dataset.day; week.days[d].folga=!week.days[d].folga; markMcDirty(); renderMicrociclo(); };
   });
   table.querySelectorAll('textarea.mc-cell').forEach(ta=>{
-    ta.oninput = ()=>{ week.days[ta.dataset.day][ta.dataset.key]=ta.value; scheduleMicrocicloSave(weekKey); };
+    ta.oninput = ()=>{ week.days[ta.dataset.day][ta.dataset.key]=ta.value; markMcDirty(); };
   });
   table.querySelectorAll('input.mc-dur').forEach(inp=>{
-    inp.oninput = ()=>{ week.days[inp.dataset.day][inp.dataset.key]=inp.value; scheduleMicrocicloSave(weekKey); };
+    inp.oninput = ()=>{ week.days[inp.dataset.day][inp.dataset.key]=inp.value; markMcDirty(); };
   });
 }
 function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='explorador') renderExplorador(); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard(); if(activePage==='centro') renderCentro(); if(activePage==='microciclo') renderMicrociclo();}
@@ -2050,6 +2062,7 @@ function renderCard(){
 }
 function athleteContentPerformance(athlete){const notesByDate=Object.fromEntries(DATA.notes.filter(n=>n.athlete===athlete).map(n=>[n.date,n.note])); const rows=[]; DATA.contents.forEach(c=>{if(notesByDate[c.date]!=null) rows.push({content:c.content,note:notesByDate[c.date],type:c.contentType});}); const s=Object.entries(by(rows,'content')).map(([k,v])=>({content:k,avg:avg(v.map(x=>x.note)),count:v.length})).filter(x=>x.count>=2&&x.avg!=null); return {best:[...s].sort((a,b)=>b.avg-a.avg).slice(0,8), worst:[...s].sort((a,b)=>a.avg-b.avg).slice(0,8)};}
 window.addEventListener('resize',()=>renderActive());
+window.addEventListener('beforeunload',(e)=>{ if(mcDirty){ e.preventDefault(); e.returnValue=''; } });
 init();
 // busca em segundo plano, pra já estar pronto se o treinador for direto pra uma dessas abas
 loadMicrociclosRemote();
