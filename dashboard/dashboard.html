@@ -231,6 +231,14 @@ body.light .gate{background-image:radial-gradient(900px 650px at 80% 10%,rgba(96
 .save-status.ok{color:var(--green,#32d583)}
 .save-status.err{color:var(--red,#f97066)}
 .save-status.warn{color:var(--yellow,#fdb022)}
+.anexos-row{margin:10px 0}
+.anexos-label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800;margin-bottom:6px}
+.anexos-list{display:flex;flex-wrap:wrap;gap:8px}
+.anexo-thumb{display:block;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid var(--stroke);flex:none}
+.anexo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.anexo-file{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--stroke);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--text);text-decoration:none;background:rgba(255,255,255,.04)}
+.anexo-file:hover{border-color:var(--cyan)}
+.anexo-uploading{font-size:11.5px;color:var(--muted);margin-top:6px}
 
 /* === Centro de Treino + Microciclo === */
 .modal-overlay{position:fixed;inset:0;z-index:300;background:rgba(3,6,12,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto}
@@ -246,7 +254,6 @@ body.light .gate{background-image:radial-gradient(900px 650px at 80% 10%,rgba(96
 body.light .field textarea{background:#fff}
 .activity-block{border:1px solid var(--stroke2);border-radius:16px;padding:14px;margin:10px 0;background:rgba(255,255,255,.02)}
 .activity-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.a-img-preview img{max-width:140px;max-height:100px;border-radius:10px;margin-top:8px;object-fit:cover}
 .session-month-head{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--soft);margin:18px 0 10px}
 .session-month-head:first-child{margin-top:0}
 .session-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
@@ -536,7 +543,11 @@ body.light .status{border:1px solid transparent}
       <div class="card" style="margin-bottom:18px">
         <div class="card-head">
           <div><h3>Sessões de treino</h3><div class="desc">Treinos já aplicados no sistema e sessões construídas manualmente. Use o botão para subir a próxima sessão.</div></div>
-          <button class="btn primary" id="centroUploadBtn" type="button">+ Subir sessão</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <span class="save-status" id="centroSaveStatus"></span>
+            <button class="btn small" id="centroRefresh" type="button" title="Buscar sessões criadas em outro dispositivo">🔄 Sincronizar</button>
+            <button class="btn primary" id="centroUploadBtn" type="button">+ Subir sessão</button>
+          </div>
         </div>
         <div id="centroMonthGroups" style="margin-top:14px"></div>
       </div>
@@ -579,6 +590,12 @@ body.light .status{border:1px solid transparent}
         <div class="field"><label>Duração do treino (min)</label><input type="number" min="0" id="cs_duracao"></div>
       </div>
       <div class="field"><label>Objetivo da sessão</label><textarea id="cs_objetivo"></textarea></div>
+      <div class="field">
+        <label>Anexos da sessão (PDF do plano, imagens gerais)</label>
+        <input type="file" accept="image/*,application/pdf" multiple id="cs_anexos">
+        <div class="anexo-uploading" id="cs_anexosStatus"></div>
+        <div class="anexos-list" id="cs_anexosList" style="margin-top:8px"></div>
+      </div>
       <div class="sidebar-divider"></div>
       <div class="card-head"><h3 style="font-size:15px;margin:0">Atividades</h3><button type="button" class="btn small" id="cs_addAtividade">+ Adicionar atividade</button></div>
       <div id="cs_atividades"></div>
@@ -1248,6 +1265,7 @@ function closeMobileNav(){ $('appShell').classList.remove('mobile-nav-open'); co
 function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive(); if(window.innerWidth<=1220){ closeMobileNav(); window.scrollTo(0,0); }
   // busca de novo sempre que entra na aba — pega edição feita em outro aparelho desde a última visita
   if(id==='microciclo') loadMicrociclosRemote();
+  if(id==='centro') loadCentroSessionsRemote();
 }
 function init(){
   const account = getAccount();
@@ -1303,6 +1321,9 @@ function init(){
   const csAdd=$('cs_addAtividade'); if(csAdd) csAdd.onclick=addCentroActivity;
   const csSave=$('cs_save'); if(csSave) csSave.onclick=saveCentroSession;
   const centroModal=$('centroModal'); if(centroModal) centroModal.onclick=(e)=>{ if(e.target===centroModal) closeCentroModal(); };
+  const centroRefresh=$('centroRefresh'); if(centroRefresh) centroRefresh.onclick=()=>loadCentroSessionsRemote();
+  const csAnexos=$('cs_anexos');
+  if(csAnexos) wireAttachmentInput(csAnexos, $('cs_anexosStatus'), $('cs_anexosList'), ()=>csSessionAnexos, (next)=>{ csSessionAnexos=next; });
   const mcRefresh=$('mcRefresh'); if(mcRefresh) mcRefresh.onclick=()=>loadMicrociclosRemote();
   const mcPrev=$('mcPrevWeek'); if(mcPrev) mcPrev.onclick=()=>{ mcCurrentWeek=addDaysIso(mcCurrentWeek,-7); renderMicrociclo(); };
   const mcNext=$('mcNextWeek'); if(mcNext) mcNext.onclick=()=>{ mcCurrentWeek=addDaysIso(mcCurrentWeek,7); renderMicrociclo(); };
@@ -1320,12 +1341,68 @@ function filteredGames(f){return DATA.games.filter(d=>dateOK(d.date,f)&&(!f.mont
 function filteredGameInd(f){let rows=enrichRowsWithAthlete(DATA.gameInd); return rows.filter(d=>dateOK(d.date,f)&&(!f.month||d.month===f.month)&&(!f.athlete||d.athlete===f.athlete)&&(!f.position||d.position===f.position)&&(!f.quartile||d.quartile===f.quartile)&&(!f.competition||d.competition===f.competition)&&(!f.rank||d.rank===f.rank)&&(!f.format||d.format===f.format)&&(!f.result||d.result===f.result));}
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s){ return String(s||'').replace(/"/g,'&quot;'); }
-function loadCentroSessions(){ try{ return JSON.parse(localStorage.getItem(LS_CENTRO_KEY)||'[]'); } catch(e){ return []; } }
-function saveCentroSessions(arr){ try{ localStorage.setItem(LS_CENTRO_KEY, JSON.stringify(arr)); } catch(e){ alert('Não foi possível salvar no armazenamento local do navegador (pode estar cheio). A sessão pode não persistir.'); } }
+// Cópia local só de segurança (mostra algo se a rede cair) — a fonte de verdade agora é a aba
+// "Centro de Treino" da planilha, lida/gravada pelo Apps Script (mesmo esquema do Microciclo), pra
+// funcionar em qualquer dispositivo que abrir o dashboard, não só no navegador onde foi criada.
+function loadCentroSessionsLocalCache(){ try{ return JSON.parse(localStorage.getItem(LS_CENTRO_KEY)||'{}'); } catch(e){ return {}; } }
+function cacheCentroSessionsLocal(obj){ try{ localStorage.setItem(LS_CENTRO_KEY, JSON.stringify(obj)); } catch(e){ /* best-effort */ } }
+let centroState = null;
+function getCentroState(){ if(!centroState) centroState = loadCentroSessionsLocalCache(); return centroState; }
+function setCentroSaveStatus(text, cls){ const el=$('centroSaveStatus'); if(!el) return; el.textContent=text; el.className='save-status'+(cls?' '+cls:''); }
+async function loadCentroSessionsRemote(){
+  const cat = getActiveCategoria();
+  if(!cat){ setCentroSaveStatus('',''); return; }
+  setCentroSaveStatus('Sincronizando…','busy');
+  const r = await fetchFromScript({action:'listCentroSessions', categoria:cat});
+  if(r.ok){
+    centroState = r.data || {};
+    cacheCentroSessionsLocal(centroState);
+    setCentroSaveStatus('Sincronizado com a planilha ✓','ok');
+  } else {
+    if(!centroState) centroState = loadCentroSessionsLocalCache();
+    setCentroSaveStatus('Não deu pra sincronizar — mostrando cópia local. '+r.error,'err');
+  }
+  if(activePage==='centro') renderCentro();
+}
+async function saveCentroSessionRemote(session){
+  const all = getCentroState();
+  all[session.id] = session;
+  cacheCentroSessionsLocal(all);
+  const cat = getActiveCategoria();
+  if(!cat){ setCentroSaveStatus('Salvo só neste aparelho (faça login pra sincronizar)','warn'); return; }
+  setCentroSaveStatus('Salvando…','busy');
+  const r = await sendToScript({action:'saveCentroSession', categoria:cat, key:session.id, data:session});
+  if(r.ok) setCentroSaveStatus('Salvo e sincronizado ✓','ok');
+  else setCentroSaveStatus('Editado aqui, mas não sincronizou: '+r.error,'err');
+}
+async function deleteCentroSessionRemote(id){
+  const all = getCentroState();
+  delete all[id];
+  cacheCentroSessionsLocal(all);
+  const cat = getActiveCategoria();
+  if(!cat) return;
+  setCentroSaveStatus('Excluindo…','busy');
+  const r = await sendToScript({action:'deleteCentroSession', categoria:cat, key:id});
+  setCentroSaveStatus(r.ok ? 'Excluído e sincronizado ✓' : 'Excluído aqui, mas não sincronizou: '+r.error, r.ok?'ok':'err');
+}
+// Uma sessão manual (plano) e uma sessão histórica (execução real, vinda da planilha) podem ser a
+// mesma coisa em datas diferentes de vida: primeiro o plano é criado (fonte "local"), depois o
+// treino acontece e vira uma linha em "Banco de treinos" (fonte "historical"). Quando as duas datas
+// batem, mostra como UMA sessão só ("combined"), com o plano (atividades + anexos) e o resumo
+// pós-sessão (nota, partes) juntos — é o que dá pra ver "o que foi planejado" e "o que realmente
+// aconteceu" lado a lado.
 function unifiedSessions(){
-  const local = loadCentroSessions().map(s=>({...s, source:'local', date:s.data}));
-  const historical = DATA.trainings.map(t=>({id:'hist-'+t.date+'-'+(t.sessionId||''), source:'historical', date:t.date, sessionId:t.sessionId, categoria:t.category, nota:t.note, numAtletas:t.numAthletes, effectiveMinutes:t.effectiveMinutes}));
-  return [...local, ...historical].sort((a,b)=>b.date.localeCompare(a.date));
+  const local = Object.values(getCentroState()).map(s=>({...s, source:'local', date:s.data}));
+  const historicalByDate = {};
+  DATA.trainings.forEach(t=>{ historicalByDate[t.date] = t; });
+  const merged = local.map(s=>{
+    const hist = historicalByDate[s.date];
+    if(!hist) return s;
+    delete historicalByDate[s.date];
+    return {...s, source:'combined', sessionId:hist.sessionId, categoria:hist.category, nota:hist.note, numAtletas:hist.numAthletes, effectiveMinutes:hist.effectiveMinutes};
+  });
+  const historical = Object.values(historicalByDate).map(t=>({id:'hist-'+t.date+'-'+(t.sessionId||''), source:'historical', date:t.date, sessionId:t.sessionId, categoria:t.category, nota:t.note, numAtletas:t.numAthletes, effectiveMinutes:t.effectiveMinutes}));
+  return [...merged, ...historical].sort((a,b)=>b.date.localeCompare(a.date));
 }
 function renderCentro(){
   const all = unifiedSessions();
@@ -1341,9 +1418,10 @@ function renderCentro(){
     const strip = document.createElement('div'); strip.className='session-strip';
     items.forEach(s=>{
       const tile = document.createElement('div');
-      tile.className = 'session-tile' + (s.source==='local'?' local':'') + (centroSelectedId===s.id?' active':'');
-      const sub = s.source==='local' ? (s.objetivo?truncate(s.objetivo,16):'Sessão manual') : ('Sessão '+(s.sessionId||'—'));
-      tile.innerHTML = `<div class="d">${dayLabelFromDate(s.date)}</div><div class="s">${sub}</div><div class="tag">${s.source==='local'?'Manual':'Aplicada'}</div>`;
+      tile.className = 'session-tile' + (s.source!=='historical'?' local':'') + (centroSelectedId===s.id?' active':'');
+      const sub = s.source!=='historical' ? (s.objetivo?truncate(s.objetivo,16):'Sessão manual') : ('Sessão '+(s.sessionId||'—'));
+      const tag = s.source==='combined' ? 'Planejada + aplicada' : (s.source==='local' ? 'Manual' : 'Aplicada');
+      tile.innerHTML = `<div class="d">${dayLabelFromDate(s.date)}</div><div class="s">${sub}</div><div class="tag">${tag}</div>`;
       tile.onclick = ()=>{ centroSelectedId = s.id; renderCentro(); };
       strip.appendChild(tile);
     });
@@ -1352,25 +1430,53 @@ function renderCentro(){
   if((!centroSelectedId || !all.find(x=>x.id===centroSelectedId)) && all.length) centroSelectedId = all[0].id;
   renderCentroDetail(all.find(x=>x.id===centroSelectedId));
 }
+// Um anexo (imagem ou PDF) vira uma miniatura clicável (imagem) ou um chip "abrir arquivo" (PDF e
+// outros formatos) — o link do Drive sempre abre numa aba nova.
+function anexoChip(a){
+  if(!a || !a.url) return '';
+  const isImg = /^image\//.test(a.mimeType||'');
+  if(isImg) return `<a href="${escAttr(a.url)}" target="_blank" rel="noopener" class="anexo-thumb" title="${escAttr(a.name||'')}"><img src="${escAttr(a.url)}" loading="lazy"></a>`;
+  return `<a href="${escAttr(a.url)}" target="_blank" rel="noopener" class="anexo-file">📄 ${escHtml(a.name||'arquivo')}</a>`;
+}
+function anexosBlock(anexos, label){
+  if(!anexos || !anexos.length) return '';
+  return `<div class="anexos-row"><span class="anexos-label">${label}</span><div class="anexos-list">${anexos.map(anexoChip).join('')}</div></div>`;
+}
+function renderPosSessaoResumo(s){
+  const blocks = DATA.blocks.filter(b=>b.date===s.date);
+  return `<div class="card" style="margin-top:16px">
+    <h3>Resumo pós-sessão</h3>
+    <div class="desc">${s.categoria||''} · Nota geral ${fmt(s.nota)} · ${fmtInt(s.numAtletas)} atletas · ${fmtInt(s.effectiveMinutes)} min efetivos</div>
+    <div class="grid" style="margin-top:16px">
+      ${PART_ORDER.map(part=>{
+        const arr = blocks.filter(b=>b.part===part);
+        if(!arr.length) return '';
+        return `<div class="card span-4"><h3>${part}</h3>${arr.map(b=>`<div style="margin-bottom:10px;font-size:13px"><b>${escHtml(b.content)||escHtml(b.contentType)||'—'}</b><br><span class="mini">${b.taskType||''}${b.complexity?' · '+b.complexity:''}${b.minutes?' · '+fmtInt(b.minutes)+' min':''}${b.performance!=null?' · nota '+fmt(b.performance):''}</span></div>`).join('')}</div>`;
+      }).join('') || '<div class="card span-12"><div class="empty">Sem blocos detalhados para esta sessão.</div></div>'}
+    </div>
+  </div>`;
+}
 function renderCentroDetail(s){
   const el = $('centroDetail');
   if(!s){ el.innerHTML = ''; return; }
-  if(s.source==='local'){
+  if(s.source==='local' || s.source==='combined'){
     const atividades = s.atividades||[];
+    const statusLabel = s.source==='combined' ? 'Sessão planejada e aplicada' : 'Sessão manual (plano)';
     el.innerHTML = `<div class="card">
-      <div class="card-head"><div><h3>Sessão manual · ${s.data}</h3><div class="desc">${escHtml(s.objetivo)||'Sem objetivo registrado.'}</div></div>
-      <button type="button" class="btn small" id="centroDeleteBtn">Excluir sessão</button></div>
+      <div class="card-head"><div><h3>${statusLabel} · ${s.data}</h3><div class="desc">${escHtml(s.objetivo)||'Sem objetivo registrado.'}</div></div>
+      <button type="button" class="btn small" id="centroDeleteBtn">Excluir plano</button></div>
       <div class="chips" style="margin:12px 0 4px">
         <span class="chip">Nº de atletas previsto<b>${s.numAtletasPrevisto ?? '—'}</b></span>
         <span class="chip">Duração<b>${s.duracaoTreino?s.duracaoTreino+' min':'—'}</b></span>
         <span class="chip">Atividades<b>${atividades.length}</b></span>
       </div>
+      ${anexosBlock(s.anexos,'Anexos da sessão (plano/PDF)')}
       <div class="grid" style="margin-top:16px">
         ${atividades.map((a,i)=>`
           <div class="card span-6">
             <h3>${escHtml(a.nome)||('Atividade '+(i+1))}</h3>
             <div class="desc">${a.duracao?a.duracao+' min':''}${a.tamanhoCampo?' · Campo '+escHtml(a.tamanhoCampo):''}</div>
-            ${a.imagem?`<img src="${a.imagem}" style="width:100%;border-radius:14px;margin:8px 0;object-fit:cover;max-height:220px">`:''}
+            ${anexosBlock(a.anexos,'Anexos da tarefa')}
             ${a.descricao?`<p style="font-size:13px;color:var(--text);margin:8px 0"><b>Descrição:</b> ${escHtml(a.descricao)}</p>`:''}
             ${a.variacoes?`<p style="font-size:13px;color:var(--muted);margin:8px 0"><b>Variações previstas:</b> ${escHtml(a.variacoes)}</p>`:''}
             ${a.feedback?`<p style="font-size:13px;color:var(--muted);margin:8px 0"><b>Comportamento chave / feedbacks:</b> ${escHtml(a.feedback)}</p>`:''}
@@ -1381,17 +1487,16 @@ function renderCentroDetail(s){
             </div>
           </div>`).join('') || '<div class="card span-12"><div class="empty">Sem atividades cadastradas nesta sessão.</div></div>'}
       </div>
-    </div>`;
+    </div>${s.source==='combined' ? renderPosSessaoResumo(s) : ''}`;
     const delBtn = $('centroDeleteBtn');
-    if(delBtn) delBtn.onclick = ()=>{ if(confirm('Excluir esta sessão manual?')){ saveCentroSessions(loadCentroSessions().filter(x=>x.id!==s.id)); centroSelectedId=null; renderCentro(); } };
+    if(delBtn) delBtn.onclick = ()=>{ if(confirm('Excluir este plano de sessão?')){ deleteCentroSessionRemote(s.id); centroSelectedId=null; renderCentro(); } };
   } else {
-    const blocks = DATA.blocks.filter(b=>b.date===s.date);
     el.innerHTML = `<div class="card">
       <h3>Sessão ${s.sessionId||''} · ${s.date}</h3>
       <div class="desc">${s.categoria||''} · Nota geral ${fmt(s.nota)} · ${fmtInt(s.numAtletas)} atletas · ${fmtInt(s.effectiveMinutes)} min efetivos</div>
       <div class="grid" style="margin-top:16px">
         ${PART_ORDER.map(part=>{
-          const arr = blocks.filter(b=>b.part===part);
+          const arr = DATA.blocks.filter(b=>b.date===s.date&&b.part===part);
           if(!arr.length) return '';
           return `<div class="card span-4"><h3>${part}</h3>${arr.map(b=>`<div style="margin-bottom:10px;font-size:13px"><b>${escHtml(b.content)||escHtml(b.contentType)||'—'}</b><br><span class="mini">${b.taskType||''}${b.complexity?' · '+b.complexity:''}${b.minutes?' · '+fmtInt(b.minutes)+' min':''}${b.performance!=null?' · nota '+fmt(b.performance):''}</span></div>`).join('')}</div>`;
         }).join('') || '<div class="card span-12"><div class="empty">Sem blocos detalhados para esta sessão.</div></div>'}
@@ -1403,14 +1508,90 @@ function openCentroModal(){
   $('cs_data').value = isoToday();
   $('cs_numAtletas').value=''; $('cs_duracao').value=''; $('cs_objetivo').value='';
   $('cs_atividades').innerHTML=''; centroActivityCount=0;
+  csSessionAnexos = [];
+  $('cs_anexosList').innerHTML=''; $('cs_anexosStatus').textContent='';
+  $('cs_anexos').value='';
   addCentroActivity();
   $('centroModal').style.display='flex';
 }
 function closeCentroModal(){ $('centroModal').style.display='none'; }
+// Reduz a imagem antes de enviar (igual ao upload de foto do atleta em entrada.html) — a maioria das
+// fotos de celular tem vários MB e isso deixa o envio rápido. PDF vai sem mexer, do jeito que é.
+function resizeImageFileDash(file, maxDim, quality){
+  maxDim = maxDim || 1000; quality = quality || 0.82;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Arquivo selecionado não é uma imagem válida.'));
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          if(w >= h){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function readFileAsDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadAttachment(file){
+  const isImage = /^image\//.test(file.type);
+  const dataUrl = isImage ? await resizeImageFileDash(file) : await readFileAsDataUrl(file);
+  const mimeType = isImage ? 'image/jpeg' : (file.type || 'application/octet-stream');
+  const r = await sendToScript({action:'uploadFile', fileName:file.name, imageBase64: dataUrl.split(',')[1], mimeType});
+  if(!r.ok) throw new Error(r.error || 'Falha ao enviar o arquivo.');
+  return {name:file.name, url:r.result.url, mimeType};
+}
+function renderAnexosEditList(container, list, onRemove){
+  container.innerHTML = list.map((a,i)=>`<span class="anexo-file" data-i="${i}">${/^image\//.test(a.mimeType)?'🖼️':'📄'} ${escHtml(a.name)} <b style="cursor:pointer;margin-left:4px" data-rm="${i}">✕</b></span>`).join('');
+  container.querySelectorAll('[data-rm]').forEach(b=>{ b.onclick = ()=>onRemove(Number(b.dataset.rm)); });
+}
+// Envia cada arquivo escolhido assim que é selecionado (não espera o "Salvar sessão"), pra já mostrar
+// erro de upload na hora em vez de descobrir só depois de preencher o resto do formulário.
+function wireAttachmentInput(inputEl, statusEl, listEl, getList, setList){
+  function onRemove(i){
+    const next = [...getList()]; next.splice(i,1); setList(next);
+    renderAnexosEditList(listEl, getList(), onRemove);
+  }
+  inputEl.onchange = async () => {
+    const files = [...inputEl.files];
+    if(!files.length) return;
+    statusEl.textContent = `Enviando ${files.length} arquivo(s)…`;
+    for(const file of files){
+      try{
+        const uploaded = await uploadAttachment(file);
+        setList([...getList(), uploaded]);
+        renderAnexosEditList(listEl, getList(), onRemove);
+      }catch(e){
+        statusEl.textContent = `Erro ao enviar "${file.name}": ${e.message}`;
+        return;
+      }
+    }
+    statusEl.textContent = '';
+    inputEl.value = '';
+  };
+}
+let csSessionAnexos = [];
 function addCentroActivity(){
   centroActivityCount++;
   const idx = centroActivityCount;
   const div = document.createElement('div'); div.className='activity-block'; div.dataset.idx=idx;
+  div._anexos = [];
   div.innerHTML = `
     <div class="activity-block-head"><b>Atividade ${idx}</b><button type="button" class="btn small" data-remove>Remover</button></div>
     <div class="field-grid3">
@@ -1426,18 +1607,16 @@ function addCentroActivity(){
       <div class="field"><label>Conteúdo secundário</label><input class="a-sec" list="dlCentroContents"></div>
       <div class="field"><label>Conteúdo concorrente</label><input class="a-conc" list="dlCentroContents"></div>
     </div>
-    <div class="field"><label>Imagem ilustrativa</label><input type="file" accept="image/*" class="a-imagem"><div class="a-img-preview"></div></div>
+    <div class="field"><label>Anexos da tarefa (imagem, PDF)</label><input type="file" accept="image/*,application/pdf" multiple class="a-anexos"><div class="anexo-uploading a-anexos-status"></div><div class="anexos-list a-anexos-list" style="margin-top:8px"></div></div>
   `;
   div.querySelector('[data-remove]').onclick = ()=>div.remove();
-  div.querySelector('.a-imagem').onchange = (e)=>{
-    const file = e.target.files[0]; if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{ div.dataset.imagem = reader.result; div.querySelector('.a-img-preview').innerHTML = `<img src="${reader.result}">`; };
-    reader.readAsDataURL(file);
-  };
+  wireAttachmentInput(
+    div.querySelector('.a-anexos'), div.querySelector('.a-anexos-status'), div.querySelector('.a-anexos-list'),
+    ()=>div._anexos, (next)=>{ div._anexos = next; }
+  );
   $('cs_atividades').appendChild(div);
 }
-function saveCentroSession(){
+async function saveCentroSession(){
   const data = $('cs_data').value;
   if(!data){ alert('Informe a data da sessão.'); return; }
   const atividades = [...$('cs_atividades').querySelectorAll('.activity-block')].map(div=>({
@@ -1450,19 +1629,24 @@ function saveCentroSession(){
     conteudoPrincipal: div.querySelector('.a-princ').value.trim(),
     conteudoSecundario: div.querySelector('.a-sec').value.trim(),
     conteudoConcorrente: div.querySelector('.a-conc').value.trim(),
-    imagem: div.dataset.imagem || null,
+    anexos: div._anexos || [],
   })).filter(a=>a.nome||a.descricao);
   const session = {
     id: 'local-'+Date.now(),
     data, numAtletasPrevisto: Number($('cs_numAtletas').value)||null,
     duracaoTreino: Number($('cs_duracao').value)||null,
     objetivo: $('cs_objetivo').value.trim(),
+    anexos: csSessionAnexos,
     atividades, createdAt: new Date().toISOString(),
   };
-  const arr = loadCentroSessions(); arr.push(session); saveCentroSessions(arr);
+  // dispara o save (que já grava no cache local de forma síncrona, antes do primeiro "await" lá
+  // dentro) e só then renderiza — se renderizasse antes de chamar isso, a sessão nova ainda não
+  // estaria no estado local e sumiria da tela até a resposta da rede voltar
+  const savePromise = saveCentroSessionRemote(session);
   centroSelectedId = session.id;
   closeCentroModal();
   renderCentro();
+  await savePromise;
 }
 // Cópia local só de segurança (mostra algo se a rede cair) — a fonte de verdade agora é a aba
 // "Microciclos" da planilha, lida/gravada pelo Apps Script, pra funcionar em qualquer dispositivo
@@ -1804,7 +1988,9 @@ function renderCard(){
 function athleteContentPerformance(athlete){const notesByDate=Object.fromEntries(DATA.notes.filter(n=>n.athlete===athlete).map(n=>[n.date,n.note])); const rows=[]; DATA.contents.forEach(c=>{if(notesByDate[c.date]!=null) rows.push({content:c.content,note:notesByDate[c.date],type:c.contentType});}); const s=Object.entries(by(rows,'content')).map(([k,v])=>({content:k,avg:avg(v.map(x=>x.note)),count:v.length})).filter(x=>x.count>=2&&x.avg!=null); return {best:[...s].sort((a,b)=>b.avg-a.avg).slice(0,8), worst:[...s].sort((a,b)=>a.avg-b.avg).slice(0,8)};}
 window.addEventListener('resize',()=>renderActive());
 init();
-loadMicrociclosRemote(); // busca em segundo plano, pra já estar pronto se o treinador for direto pra essa aba
+// busca em segundo plano, pra já estar pronto se o treinador for direto pra uma dessas abas
+loadMicrociclosRemote();
+loadCentroSessionsRemote();
 }
 boot();
 </script>
