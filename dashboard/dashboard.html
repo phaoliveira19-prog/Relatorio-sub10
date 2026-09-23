@@ -478,6 +478,17 @@ body.light .status{border:1px solid transparent}
       </div>
     </section>
 
+    <section class="page" id="page-explorador">
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-head">
+          <div><h3>Explorador de conteúdo</h3><div class="desc">Escolha um conteúdo pra ver todas as tarefas já trabalhadas com ele, do mais recente pro mais antigo.</div></div>
+        </div>
+        <div class="field" style="max-width:420px;margin-top:14px"><label>Conteúdo</label><input id="explContent" list="dlExplContents" placeholder="ex.: Passe de ruptura" autocomplete="off"></div>
+        <datalist id="dlExplContents"></datalist>
+      </div>
+      <div id="explResult"></div>
+    </section>
+
     <section class="page" id="page-avaliacao">
       <div class="kpi-grid" id="kpisAvaliacao"></div>
       <div class="grid">
@@ -1097,6 +1108,7 @@ const PAGES = [
   ['geral','Visão Geral da Categoria','Resumo executivo do semestre, volume de treinos, jogos, composição do elenco e evolução geral.','Visão geral'],
   ['controle','Controle Pedagógico dos Treinos','informações sobre a condução e avaliação dos treinos','Controle pedagógico'],
   ['conteudos','Mapa de Conteúdos','Currículo aplicado no semestre: recorrência, lacunas, agrupamentos e relação com desempenho.','Mapa de conteúdos'],
+  ['explorador','Explorador de Conteúdo','Escolha um conteúdo e veja todas as tarefas já trabalhadas para ele, com a avaliação de cada uma.','Explorador de conteúdo'],
   ['avaliacao','Avaliação Individual · Panorama do Grupo','Comparação entre atletas, tendência recente, regularidade e diferenças por perfil.','Avaliação individual'],
   ['jogos','Desempenho em Jogos','Análise coletiva de resultados, desempenho, gols e contexto competitivo.','Desempenho em jogos'],
   ['posjogo','Pós-jogo Individual · Gestão de Minutagem','Oportunidades, titularidade, produção ofensiva e coerência com avaliação de treino.','Pós-jogo individual'],
@@ -1106,15 +1118,16 @@ const PAGES = [
 ];
 const NAV_GROUPS = [
   {group:'Geral', pages:['geral']},
-  {group:'Treinos', pages:['controle','conteudos','centro','microciclo']},
+  {group:'Treinos', pages:['controle','conteudos','explorador','centro','microciclo']},
   {group:'Jogos', pages:['jogos','posjogo']},
   {group:'Elenco', pages:['avaliacao','card']}
 ];
-const PAGE_ICONS = {geral:'📊', controle:'🗂️', conteudos:'🗺️', jogos:'⚽', posjogo:'🎯', avaliacao:'📈', card:'🪪', centro:'🏟️', microciclo:'📅'};
+const PAGE_ICONS = {geral:'📊', controle:'🗂️', conteudos:'🗺️', explorador:'🔎', jogos:'⚽', posjogo:'🎯', avaliacao:'📈', card:'🪪', centro:'🏟️', microciclo:'📅'};
 const FILTERS_BY_PAGE = {
   geral:['start','end','month'],
   controle:['start','end','month','task','complexity','part'],
   conteudos:['start','end','month','contentType','content'],
+  explorador:[],
   avaliacao:['start','end','month','athlete','position','quartile','tenure'],
   jogos:['start','end','month','competition','rank','format','result'],
   posjogo:['start','end','month','competition','rank','format','result'],
@@ -1315,6 +1328,8 @@ function init(){
   populateCardAthletes(); $('openCardBtn').onclick=()=>renderCard(); $('cardAthlete').onchange=()=>{filterState.athlete=$('cardAthlete').value; renderCard();};
   $('dataFoot').textContent=`Período: ${DATA.meta.minDate} a ${DATA.meta.maxDate}`;
   const dlc=$('dlCentroContents'); if(dlc) dlc.innerHTML=DATA.meta.contents.map(c=>`<option value="${escAttr(c)}">`).join('');
+  const dlExpl=$('dlExplContents'); if(dlExpl) dlExpl.innerHTML=[...DATA.meta.contents].sort((a,b)=>a.localeCompare(b,'pt-BR')).map(c=>`<option value="${escAttr(c)}">`).join('');
+  const explInput=$('explContent'); if(explInput) explInput.oninput=()=>renderExplorador();
   const centroUploadBtn=$('centroUploadBtn'); if(centroUploadBtn) centroUploadBtn.onclick=openCentroModal;
   const centroModalClose=$('centroModalClose'); if(centroModalClose) centroModalClose.onclick=closeCentroModal;
   const centroModalCancel=$('centroModalCancel'); if(centroModalCancel) centroModalCancel.onclick=closeCentroModal;
@@ -1728,7 +1743,7 @@ function renderMicrociclo(){
     inp.oninput = ()=>{ week.days[inp.dataset.day][inp.dataset.key]=inp.value; scheduleMicrocicloSave(weekKey); };
   });
 }
-function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard(); if(activePage==='centro') renderCentro(); if(activePage==='microciclo') renderMicrociclo();}
+function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='explorador') renderExplorador(); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard(); if(activePage==='centro') renderCentro(); if(activePage==='microciclo') renderMicrociclo();}
 
 function monthlyAgg(rows, valueFn, agg='avg'){return MONTHS.map(m=>{const arr=rows.filter(x=>x.month===m); return {month:m, value:agg==='sum'?sum(arr.map(valueFn)):avg(arr.map(valueFn)), count:arr.length, items:arr};}).filter(x=>x.count>0)}
 function renderGeral(f){const t=filteredTrainings(f), g=filteredGames(f); const effectiveAvg=avg(t.map(x=>x.effectiveMinutes)); const trainPct=avg(t.map(x=>x.pctMinutagem)); const wins=g.filter(x=>x.result==='Vitória').length, draws=g.filter(x=>x.result==='Empate').length, losses=g.filter(x=>x.result==='Derrota').length; const totalMinutesGeral=sum(t.map(x=>x.effectiveMinutes)); const totalTAAGeral=sum(t.map(x=>x.totalTAA)); const avgTAAGeral=avg(t.map(x=>x.totalTAA)); metricCards('kpisGeral',[
@@ -1854,6 +1869,54 @@ function mostCommonContentType(name){
   return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
 }
 function contentGapRows(){const asOf=DATA.meta.asOf; const relevant=DATA.contents.filter(x=>x.role==='principal'||x.role==='secundario'); const all=uniq(DATA.contents.map(x=>x.content)); return all.map(name=>{const arr=relevant.filter(x=>x.content===name).sort((a,b)=>a.date.localeCompare(b.date)); const last=arr.length?arr[arr.length-1].date:null; const days=last?Math.round((new Date(asOf)-new Date(last))/(1000*3600*24)):999; const type=mostCommonContentType(name); let status='Recente',cls='good'; if(days>30){status='Sem foco recente';cls='bad'} else if(days>15){status='Atenção';cls='warn'} if(!last){status='Nunca foi foco (princ./sec.)';cls='neutral'} return {content:name,type,last,days,total:arr.length,status,cls};}).sort((a,b)=>b.days-a.days||a.content.localeCompare(b.content,'pt-BR'));}
+// Cada linha de DATA.contents é "esse conteúdo apareceu nessa parte, com esse papel" — mas quem tem
+// complexidade/tipo de tarefa/minutagem/desempenho da tarefa em si é o bloco correspondente (mesma
+// data+sessão+parte), em DATA.blocks. Junta os dois pra listar toda tarefa que já trabalhou um
+// conteúdo, com a avaliação de cada uma.
+function contentTaskHistory(contentName){
+  // "sessionId" às vezes vem null num lado do join e undefined (chave ausente) no outro — mesmo
+  // treino, duas formas diferentes de dizer "sem id" — por isso normaliza os dois lados pra "" antes
+  // de comparar; comparação direta (===) deixava esses casos sem achar o bloco correspondente e a
+  // tarefa aparecia com tipo/complexidade/minutagem/desempenho tudo "—" mesmo quando o dado existia.
+  const sid = v => v==null ? '' : String(v);
+  return DATA.contents.filter(c=>c.content===contentName).map(c=>{
+    const block = DATA.blocks.find(b=>b.date===c.date && sid(b.sessionId)===sid(c.sessionId) && b.part===c.part);
+    return {
+      date:c.date, part:c.part, role:c.role, sessionId:c.sessionId, category:c.category,
+      contentType:c.contentType, taskType:block?block.taskType:null, complexity:block?block.complexity:null,
+      minutes:block?block.minutes:null, performance:block?block.performance:null,
+    };
+  }).sort((a,b)=>b.date.localeCompare(a.date));
+}
+const ROLE_LABELS = {principal:'Principal', secundario:'Secundário', concorrente:'Concorrente'};
+function renderExplorador(){
+  const el = $('explResult');
+  const name = ($('explContent')||{}).value || '';
+  if(!name){ el.innerHTML = '<div class="card"><div class="empty">Escolha um conteúdo acima pra ver o histórico de tarefas.</div></div>'; return; }
+  const rows = contentTaskHistory(name);
+  if(!rows.length){ el.innerHTML = `<div class="card"><div class="empty">Nenhuma tarefa registrada com "${escHtml(name)}" ainda.</div></div>`; return; }
+  const byRole = {principal:0, secundario:0, concorrente:0};
+  rows.forEach(r=>{ if(byRole[r.role]!=null) byRole[r.role]++; });
+  const perfVals = rows.map(r=>r.performance).filter(v=>v!=null);
+  const minutesTotal = sum(rows.map(r=>r.minutes||0));
+  el.innerHTML = `<div class="card">
+    <h3>${escHtml(name)}</h3>
+    <div class="chips" style="margin-top:10px">
+      <span class="chip">Tarefas<b>${rows.length}</b></span>
+      <span class="chip">Como principal<b>${byRole.principal}</b></span>
+      <span class="chip">Como secundário<b>${byRole.secundario}</b></span>
+      <span class="chip">Como concorrente<b>${byRole.concorrente}</b></span>
+      <span class="chip">Desempenho médio<b>${fmt(avg(perfVals))}</b></span>
+      <span class="chip">Minutagem total<b>${fmtInt(minutesTotal)} min</b></span>
+    </div>
+    <div class="table-wrap" id="explTable" style="margin-top:16px"></div>
+  </div>`;
+  renderTable('explTable', ['Data','Sessão','Parte','Papel','Tipo de tarefa','Complexidade','Minutagem','Desempenho'], rows.map(r=>[
+    r.date.split('-').reverse().join('/'), r.sessionId||'—', r.part, ROLE_LABELS[r.role]||r.role,
+    r.taskType?escHtml(r.taskType):null, r.complexity?escHtml(r.complexity):null,
+    r.minutes!=null?fmtInt(r.minutes)+' min':null, r.performance!=null?fmt(r.performance):null,
+  ]));
+}
 function noteSummary(f){const n=filteredNotes(f); const g=by(n,'athlete'); return Object.entries(g).map(([ath,rows])=>{const vals=rows.map(x=>x.note); const sorted=[...rows].sort((a,b)=>a.date.localeCompare(b.date)); const recent=sorted.slice(-5).map(x=>x.note); return {athlete:ath,avg:avg(vals),count:vals.length,recent:avg(recent),diff:(avg(recent)||0)-(avg(vals)||0),sd:sd(vals),position:(rows[0]||{}).position,quartile:(rows[0]||{}).quartile,tenureBand:(rows[0]||{}).tenureBand};}).filter(x=>x.avg!=null);}
 function renderAvaliacao(f){const n=filteredNotes(f), s=noteSummary(f); const top=[...s].sort((a,b)=>b.avg-a.avg)[0]; const worst=[...s].sort((a,b)=>a.avg-b.avg)[0]; const trend=[...s].sort((a,b)=>b.diff-a.diff)[0]; const drop=[...s].sort((a,b)=>a.diff-b.diff)[0]; kpi('kpisAvaliacao',[{label:'Notas registradas',value:fmtInt(n.length),sub:'avaliações individuais'}, {label:'Atletas avaliados',value:fmtInt(s.length),sub:'com ao menos 1 nota'}, {label:'Média do grupo',value:fmt(avg(n.map(x=>x.note))),sub:'escala 0 a 10'}, {label:'Maior média',value:top?truncate(top.athlete,13):'—',sub:top?fmt(top.avg):''}, {label:'Pior média',value:worst?truncate(worst.athlete,13):'—',sub:worst?fmt(worst.avg):''}]);
   horizontalBar('chNoteRank',[...s].sort((a,b)=>b.avg-a.avg).slice(0,15),'athlete',['avg'],{xMin:3,xMax:10,left:145,dataLabel:true,athleteTooltip:true,tooltipFn:d=>`${athleteHTML(d.athlete)}<br>Média: ${fmt(d.avg)}<br>Avaliações: ${d.count}`});
