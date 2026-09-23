@@ -226,6 +226,11 @@ body.light .gate{background-image:radial-gradient(900px 650px at 80% 10%,rgba(96
 .data-warning .dw-detail{font-weight:600;opacity:.85;font-size:12px}
 @media print{.data-warning{display:none!important}}
 @media (max-width:640px){.data-warning{font-size:12px;padding:9px 14px}}
+.save-status{font-size:11.5px;font-weight:800;color:var(--muted)}
+.save-status.busy{color:var(--blue,#60a5fa)}
+.save-status.ok{color:var(--green,#32d583)}
+.save-status.err{color:var(--red,#f97066)}
+.save-status.warn{color:var(--yellow,#fdb022)}
 
 /* === Centro de Treino + Microciclo === */
 .modal-overlay{position:fixed;inset:0;z-index:300;background:rgba(3,6,12,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto}
@@ -542,7 +547,9 @@ body.light .status{border:1px solid transparent}
       <div class="card" style="margin-bottom:18px">
         <div class="card-head">
           <div><h3>Microciclo <span id="mcNumber"></span></h3><div class="desc" id="mcWeekDesc"></div></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <span class="save-status" id="mcSaveStatus"></span>
+            <button class="btn small" id="mcRefresh" type="button" title="Buscar edições feitas em outro dispositivo">🔄 Sincronizar</button>
             <button class="btn small" id="mcPrevWeek" type="button">← Semana anterior</button>
             <button class="btn small" id="mcThisWeek" type="button">Semana atual</button>
             <button class="btn small" id="mcNextWeek" type="button">Próxima semana →</button>
@@ -591,6 +598,35 @@ const ACCOUNTS = [
   { login: 'joaofortes', hash: 'e2f5a6e0ee3009367db913b0a16aeb1f288a65de781618c82153f5b6e1c3c560', nome: 'João Fortes', categoria: 'Sub-09' },
 ];
 const CATEGORIAS_LIST = [...new Set(ACCOUNTS.map(a=>a.categoria))];
+// Mesma URL/implantação do Apps Script usada em entrada.html — o dashboard passa a usá-la também
+// pra sincronizar Microciclo e Centro de Treino entre dispositivos (antes ficava só no localStorage
+// do navegador, por isso não aparecia em outro aparelho).
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyazQGCdsQR_iyh1e_lX1rDZAy792z_eLbqHYfplFW45fqHqozRd_8DVscrD2B7_ww/exec';
+async function sendToScript(payload){
+  if(SCRIPT_URL.indexOf('COLE_AQUI')===0 || !SCRIPT_URL) return {ok:false, error:'URL do Apps Script não configurada.'};
+  try{
+    const res = await fetch(SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)});
+    const text = await res.text();
+    try{ return JSON.parse(text); }
+    catch(parseErr){
+      const preview = text.replace(/\s+/g,' ').trim().slice(0,220);
+      return {ok:false, error:`resposta do Apps Script não veio em JSON (HTTP ${res.status}). Provável causa: a implantação está pedindo login/permissão, ou a URL da implantação mudou. Início da resposta: "${preview}"`};
+    }
+  }catch(e){ return {ok:false, error:String(e)}; }
+}
+async function fetchFromScript(params){
+  if(SCRIPT_URL.indexOf('COLE_AQUI')===0 || !SCRIPT_URL) return {ok:false, error:'URL do Apps Script não configurada.'};
+  try{
+    const qs = new URLSearchParams(params).toString();
+    const res = await fetch(`${SCRIPT_URL}?${qs}`, {cache:'no-store'});
+    const text = await res.text();
+    try{ return JSON.parse(text); }
+    catch(parseErr){
+      const preview = text.replace(/\s+/g,' ').trim().slice(0,220);
+      return {ok:false, error:`resposta do Apps Script não veio em JSON (HTTP ${res.status}). Início da resposta: "${preview}"`};
+    }
+  }catch(e){ return {ok:false, error:String(e)}; }
+}
 async function sha256Hex(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -1209,7 +1245,10 @@ function activeFilters(){const keys=FILTERS_BY_PAGE[activePage]||[]; const f={};
 function activeFilterPills(f){const div=$('activeFilters'); div.innerHTML=''; Object.keys(f).forEach(k=>{if(k==='start'||k==='end') return; if(f[k]){let s=document.createElement('span'); s.className='pill'; s.textContent=`${filterLabels[k]||k}: ${f[k]}`; div.appendChild(s)}});}
 function resetActiveFilters(){(FILTERS_BY_PAGE[activePage]||[]).forEach(k=>{filterState[k]=(k==='start'?DATA.meta.minDate:(k==='end'?DATA.meta.maxDate:''));}); renderFilters(); renderActive();}
 function closeMobileNav(){ $('appShell').classList.remove('mobile-nav-open'); const bd=$('mobileBackdrop'); if(bd) bd.classList.remove('show'); }
-function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive(); if(window.innerWidth<=1220){ closeMobileNav(); window.scrollTo(0,0); }}
+function go(id){activePage=id; document.querySelectorAll('.nav-groups button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id)); const p=PAGES.find(x=>x[0]===id); $('pageTitle').textContent=p[1]; $('pageSubtitle').textContent=p[2]; $('pageEyebrow').textContent='Dashboard · '+(PAGES.findIndex(x=>x[0]===id)+1)+' de '+PAGES.length; renderFilters(); renderActive(); if(window.innerWidth<=1220){ closeMobileNav(); window.scrollTo(0,0); }
+  // busca de novo sempre que entra na aba — pega edição feita em outro aparelho desde a última visita
+  if(id==='microciclo') loadMicrociclosRemote();
+}
 function init(){
   const account = getAccount();
   const activeCategoria = getActiveCategoria();
@@ -1264,10 +1303,11 @@ function init(){
   const csAdd=$('cs_addAtividade'); if(csAdd) csAdd.onclick=addCentroActivity;
   const csSave=$('cs_save'); if(csSave) csSave.onclick=saveCentroSession;
   const centroModal=$('centroModal'); if(centroModal) centroModal.onclick=(e)=>{ if(e.target===centroModal) closeCentroModal(); };
+  const mcRefresh=$('mcRefresh'); if(mcRefresh) mcRefresh.onclick=()=>loadMicrociclosRemote();
   const mcPrev=$('mcPrevWeek'); if(mcPrev) mcPrev.onclick=()=>{ mcCurrentWeek=addDaysIso(mcCurrentWeek,-7); renderMicrociclo(); };
   const mcNext=$('mcNextWeek'); if(mcNext) mcNext.onclick=()=>{ mcCurrentWeek=addDaysIso(mcCurrentWeek,7); renderMicrociclo(); };
   const mcThis=$('mcThisWeek'); if(mcThis) mcThis.onclick=()=>{ mcCurrentWeek=mondayOf(isoToday()); renderMicrociclo(); };
-  const mcNumInput=$('mcNumberInput'); if(mcNumInput) mcNumInput.onchange=()=>{ const all=getMcState(); if(!all[mcCurrentWeek]) all[mcCurrentWeek]={number:null,days:{}}; all[mcCurrentWeek].number=mcNumInput.value?Number(mcNumInput.value):null; saveMicrociclos(all); $('mcNumber').textContent = all[mcCurrentWeek].number ? '· '+all[mcCurrentWeek].number : ''; };
+  const mcNumInput=$('mcNumberInput'); if(mcNumInput) mcNumInput.onchange=()=>{ const all=getMcState(); if(!all[mcCurrentWeek]) all[mcCurrentWeek]={number:null,days:{}}; all[mcCurrentWeek].number=mcNumInput.value?Number(mcNumInput.value):null; scheduleMicrocicloSave(mcCurrentWeek); $('mcNumber').textContent = all[mcCurrentWeek].number ? '· '+all[mcCurrentWeek].number : ''; };
   go('geral');
 }
 function populateCardAthletes(){const sel=$('cardAthlete'); sel.innerHTML=DATA.meta.athletes.map(a=>`<option value="${a}">${a}</option>`).join('');}
@@ -1424,10 +1464,45 @@ function saveCentroSession(){
   closeCentroModal();
   renderCentro();
 }
-function loadMicrociclos(){ try{ return JSON.parse(localStorage.getItem(LS_MICRO_KEY)||'{}'); } catch(e){ return {}; } }
-function saveMicrociclos(obj){ try{ localStorage.setItem(LS_MICRO_KEY, JSON.stringify(obj)); } catch(e){ alert('Não foi possível salvar no armazenamento local do navegador (pode estar cheio).'); } }
+// Cópia local só de segurança (mostra algo se a rede cair) — a fonte de verdade agora é a aba
+// "Microciclos" da planilha, lida/gravada pelo Apps Script, pra funcionar em qualquer dispositivo
+// que abrir o dashboard, não só no navegador onde foi digitado.
+function loadMicrociclosLocalCache(){ try{ return JSON.parse(localStorage.getItem(LS_MICRO_KEY)||'{}'); } catch(e){ return {}; } }
+function cacheMicrociclosLocal(obj){ try{ localStorage.setItem(LS_MICRO_KEY, JSON.stringify(obj)); } catch(e){ /* best-effort */ } }
 let mcState = null;
-function getMcState(){ if(!mcState) mcState = loadMicrociclos(); return mcState; }
+let mcSaveTimers = {};
+function getMcState(){ if(!mcState) mcState = loadMicrociclosLocalCache(); return mcState; }
+function setMcSaveStatus(text, cls){ const el=$('mcSaveStatus'); if(!el) return; el.textContent=text; el.className='save-status'+(cls?' '+cls:''); }
+async function loadMicrociclosRemote(){
+  const cat = getActiveCategoria();
+  if(!cat){ setMcSaveStatus('',''); return; }
+  setMcSaveStatus('Sincronizando…','busy');
+  const r = await fetchFromScript({action:'listMicrociclos', categoria:cat});
+  if(r.ok){
+    mcState = r.data || {};
+    cacheMicrociclosLocal(mcState);
+    setMcSaveStatus('Sincronizado com a planilha ✓','ok');
+  } else {
+    if(!mcState) mcState = loadMicrociclosLocalCache();
+    setMcSaveStatus('Não deu pra sincronizar — mostrando cópia local. '+r.error,'err');
+  }
+  if(activePage==='microciclo') renderMicrociclo();
+}
+// Salva com um pequeno atraso (não a cada tecla digitada) pra não disparar uma chamada de rede por
+// caractere — junta as edições rápidas numa só chamada, e mesmo assim guarda a semana inteira (não
+// dia a dia), já que ela é uma unidade só no doc da planilha.
+function scheduleMicrocicloSave(weekKey){
+  setMcSaveStatus('Salvando…','busy');
+  cacheMicrociclosLocal(getMcState());
+  clearTimeout(mcSaveTimers[weekKey]);
+  mcSaveTimers[weekKey] = setTimeout(async ()=>{
+    const cat = getActiveCategoria();
+    if(!cat){ setMcSaveStatus('Salvo só neste aparelho (faça login pra sincronizar)','warn'); return; }
+    const r = await sendToScript({action:'saveMicrociclo', categoria:cat, key:weekKey, data:getMcState()[weekKey]});
+    if(r.ok) setMcSaveStatus('Salvo e sincronizado ✓','ok');
+    else setMcSaveStatus('Editado aqui, mas não sincronizou: '+r.error,'err');
+  }, 800);
+}
 function emptyMcDay(){ return {folga:false, pre:'', p1dur:'', p1:'', p2dur:'', p2:'', p3dur:'', p3:'', comp:''}; }
 function mcCellTd(week,d,key){
   if(week.days[d].folga) return `<td class="folga">FOLGA</td>`;
@@ -1460,13 +1535,13 @@ function renderMicrociclo(){
   const table = $('mcTable');
   table.innerHTML = head + '<tbody>' + rows.join('') + '</tbody>';
   table.querySelectorAll('.folga-toggle').forEach(btn=>{
-    btn.onclick = ()=>{ const d=btn.dataset.day; week.days[d].folga=!week.days[d].folga; saveMicrociclos(all); renderMicrociclo(); };
+    btn.onclick = ()=>{ const d=btn.dataset.day; week.days[d].folga=!week.days[d].folga; scheduleMicrocicloSave(weekKey); renderMicrociclo(); };
   });
   table.querySelectorAll('textarea.mc-cell').forEach(ta=>{
-    ta.oninput = ()=>{ week.days[ta.dataset.day][ta.dataset.key]=ta.value; saveMicrociclos(all); };
+    ta.oninput = ()=>{ week.days[ta.dataset.day][ta.dataset.key]=ta.value; scheduleMicrocicloSave(weekKey); };
   });
   table.querySelectorAll('input.mc-dur').forEach(inp=>{
-    inp.oninput = ()=>{ week.days[inp.dataset.day][inp.dataset.key]=inp.value; saveMicrociclos(all); };
+    inp.oninput = ()=>{ week.days[inp.dataset.day][inp.dataset.key]=inp.value; scheduleMicrocicloSave(weekKey); };
   });
 }
 function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard(); if(activePage==='centro') renderCentro(); if(activePage==='microciclo') renderMicrociclo();}
@@ -1729,6 +1804,7 @@ function renderCard(){
 function athleteContentPerformance(athlete){const notesByDate=Object.fromEntries(DATA.notes.filter(n=>n.athlete===athlete).map(n=>[n.date,n.note])); const rows=[]; DATA.contents.forEach(c=>{if(notesByDate[c.date]!=null) rows.push({content:c.content,note:notesByDate[c.date],type:c.contentType});}); const s=Object.entries(by(rows,'content')).map(([k,v])=>({content:k,avg:avg(v.map(x=>x.note)),count:v.length})).filter(x=>x.count>=2&&x.avg!=null); return {best:[...s].sort((a,b)=>b.avg-a.avg).slice(0,8), worst:[...s].sort((a,b)=>a.avg-b.avg).slice(0,8)};}
 window.addEventListener('resize',()=>renderActive());
 init();
+loadMicrociclosRemote(); // busca em segundo plano, pra já estar pronto se o treinador for direto pra essa aba
 }
 boot();
 </script>

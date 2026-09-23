@@ -24,6 +24,16 @@
  * Funciona tanto colado dentro da planilha (Extensões -> Apps Script) quanto
  * num projeto avulso do Apps Script — nos dois casos ele abre a planilha
  * pelo ID abaixo em vez de depender de "planilha ativa".
+ *
+ * A partir da versão com Microciclo/Centro de Treino sincronizados entre
+ * dispositivos, o script também precisa de DUAS ABAS NOVAS na planilha
+ * (crie-as se ainda não existirem, com a linha 1 = cabeçalho igual abaixo):
+ *   - "Microciclos"       — colunas: Categoria | Chave | Dados | Atualizado em
+ *   - "Centro de Treino"  — colunas: Categoria | Chave | Dados | Atualizado em
+ * Não precisa formatar nada além do cabeçalho — o script preenche o resto
+ * sozinho (uma linha por semana/sessão, com o conteúdo inteiro guardado como
+ * JSON na coluna "Dados"). Sem essas abas, salvar microciclo ou sessão do
+ * Centro de Treino dá erro "Aba ... não encontrada".
  */
 var SPREADSHEET_ID = '1XBswfpypHskEIG75ZrVm5_Gu7A8FaVbs';
 function getSS() { return SpreadsheetApp.openById(SPREADSHEET_ID); }
@@ -41,6 +51,11 @@ function dateToIso(v) {
 
 function doGet(e) {
   try {
+    var action = e.parameter && e.parameter.action;
+    if (action === 'listMicrociclos') return jsonOut({ ok: true, data: listBlobs('Microciclos', e.parameter.categoria) });
+    if (action === 'listCentroSessions') return jsonOut({ ok: true, data: listBlobs('Centro de Treino', e.parameter.categoria) });
+    // Sem "action" (ou action desconhecida): comportamento de sempre, devolve o roster de atletas —
+    // é assim que entrada.html já chama isso, sem mandar action nenhuma, então isso não pode mudar.
     var ss = getSS();
     var sheet = ss.getSheetByName('Banco de atletas');
     var col = headerMap(sheet, 1);
@@ -80,6 +95,11 @@ function doPost(e) {
     else if (action === 'addGame') result = addGame(body.data);
     else if (action === 'addGameInd') result = addGameInd(body.gameNo, body.date, body.category, body.entries);
     else if (action === 'uploadPhoto') result = uploadPhoto(body.apelido, body.imageBase64, body.mimeType);
+    else if (action === 'uploadFile') result = uploadFile(body.fileName, body.imageBase64, body.mimeType);
+    else if (action === 'saveMicrociclo') result = saveBlob('Microciclos', body.categoria, body.key, body.data);
+    else if (action === 'deleteMicrociclo') result = deleteBlob('Microciclos', body.categoria, body.key);
+    else if (action === 'saveCentroSession') result = saveBlob('Centro de Treino', body.categoria, body.key, body.data);
+    else if (action === 'deleteCentroSession') result = deleteBlob('Centro de Treino', body.categoria, body.key);
     else throw new Error('Ação desconhecida: ' + action);
     return jsonOut({ ok: true, result: result });
   } catch (err) {
@@ -229,6 +249,95 @@ function uploadPhoto(apelido, base64Data, mimeType) {
   var file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return { url: 'https://lh3.googleusercontent.com/d/' + file.getId() + '=w500', fileId: file.getId() };
+}
+
+// ---------- Anexos do Centro de Treino (PDF do plano, imagem da tarefa etc.) ----------
+// Mesma ideia do upload de foto acima, mas genérico pra qualquer tipo de arquivo (PDF incluído) e
+// numa pasta separada. Pra imagem, devolve o link direto (lh3.googleusercontent.com, funciona dentro
+// de <img>); pra qualquer outro tipo (PDF etc.), devolve o link de abrir no Drive normal, porque esse
+// formato de imagem direta só existe pra imagem — o link do Drive abre numa aba nova certinho.
+var ATTACH_FOLDER_NAME = 'Anexos do Centro de Treino - QG do Treinador';
+function getAttachFolder() {
+  var it = DriveApp.getFoldersByName(ATTACH_FOLDER_NAME);
+  if (it.hasNext()) return it.next();
+  return DriveApp.createFolder(ATTACH_FOLDER_NAME);
+}
+function uploadFile(fileName, base64Data, mimeType) {
+  if (!base64Data) throw new Error('Nenhum arquivo recebido.');
+  var folder = getAttachFolder();
+  var bytes = Utilities.base64Decode(base64Data);
+  var safeName = String(fileName || 'arquivo').replace(/[^a-zA-Z0-9.\-]+/g, '-');
+  var blob = Utilities.newBlob(bytes, mimeType || 'application/octet-stream', safeName + '-' + new Date().getTime());
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  var isImage = /^image\//.test(mimeType || '');
+  return {
+    url: isImage ? ('https://lh3.googleusercontent.com/d/' + file.getId() + '=w1200') : file.getUrl(),
+    fileId: file.getId(),
+    name: fileName || null,
+    mimeType: mimeType || null,
+  };
+}
+
+// ---------- Armazenamento genérico "chave -> JSON" (Microciclo e Centro de Treino) ----------
+// As duas telas (microciclo semanal e planejamento do Centro de Treino) guardam dado bem livre,
+// que muda de formato conforme o app evolui — em vez de modelar uma coluna por campo (como o resto
+// da planilha), cada linha aqui guarda um JSON inteiro numa célula só. Uma aba por tela, mesmas 4
+// colunas nas duas: Categoria | Chave | Dados (JSON) | Atualizado em. Isso é o que faz o dado ficar
+// disponível em qualquer dispositivo que abrir o dashboard, em vez de preso ao localStorage do
+// navegador de um aparelho só.
+function getBlobSheet(sheetName) {
+  var sheet = getSS().getSheetByName(sheetName);
+  if (!sheet) throw new Error('Aba "' + sheetName + '" não encontrada na planilha. Crie uma aba com esse nome e as colunas Categoria | Chave | Dados | Atualizado em antes de usar essa função.');
+  return sheet;
+}
+function listBlobs(sheetName, categoria) {
+  var sheet = getBlobSheet(sheetName);
+  var lastRow = sheet.getLastRow();
+  var out = {};
+  if (lastRow < 2) return out;
+  var rows = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+  rows.forEach(function (r) {
+    if (String(r[0]) !== String(categoria)) return;
+    var key = r[1];
+    if (!key) return;
+    try { out[key] = JSON.parse(r[2]); } catch (e) { /* linha corrompida/vazia, ignora */ }
+  });
+  return out;
+}
+function saveBlob(sheetName, categoria, key, data) {
+  if (!key) throw new Error('Chave vazia.');
+  var sheet = getBlobSheet(sheetName);
+  var lastRow = sheet.getLastRow();
+  var rowIdx = -1;
+  if (lastRow >= 2) {
+    var rows = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]) === String(categoria) && String(rows[i][1]) === String(key)) { rowIdx = i + 2; break; }
+    }
+  }
+  var json = JSON.stringify(data);
+  var now = new Date();
+  if (rowIdx === -1) {
+    sheet.getRange(lastRow + 1, 1, 1, 4).setValues([[categoria, key, json, now]]);
+  } else {
+    sheet.getRange(rowIdx, 3, 1, 2).setValues([[json, now]]);
+  }
+  return { key: key };
+}
+function deleteBlob(sheetName, categoria, key) {
+  var sheet = getBlobSheet(sheetName);
+  var lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    var rows = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]) === String(categoria) && String(rows[i][1]) === String(key)) {
+        sheet.deleteRow(i + 2);
+        return { deleted: true };
+      }
+    }
+  }
+  return { deleted: false };
 }
 
 // ---------- Banco de treinos ----------
