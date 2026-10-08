@@ -1086,11 +1086,24 @@ function parseAntropoDate(v){
   }
   return null;
 }
+// Mais tolerante que csvNum pra medidas antropométricas: tira espaço comum/não separável, unidade
+// colada junto ("140cm", "32,4 kg") e separador de milhar quando dá pra distinguir do decimal.
+function csvMeasurement(v){
+  if(v===null||v===undefined) return null;
+  let s=String(v).trim();
+  if(s==='') return null;
+  s=s.replace(/ /g,' ').replace(/[A-Za-zÀ-ÿ%]+/g,'').replace(/\s+/g,'').trim();
+  if(s==='') return null;
+  if(/^-?\d{1,3}(\.\d{3})+,\d+$/.test(s)) s=s.replace(/\./g,'').replace(',','.');
+  else if(/^-?\d{1,3}(,\d{3})+\.\d+$/.test(s)) s=s.replace(/,/g,'');
+  else if(/^-?\d+,\d+$/.test(s)) s=s.replace(',','.');
+  const n=Number(s); return isNaN(n)?null:n;
+}
 function extractAnthropometricsFromCSV(csvText, athletes){
   const rows=parseCSV(csvText); const col=headerMap(rows,0);
   const gv=(row,name)=>gGate(row,col,name,ANTRO_COL_FALLBACK[name]);
   const byNick={}; (athletes||[]).forEach(a=>{ byNick[normLowerText(a.nickname)]=a; });
-  const out=[]; const diag={skippedBlank:0, skippedNoNickname:0, skippedNoDate:0, skippedNoHeight:0, sampleRawDate:null};
+  const out=[]; const diag={skippedBlank:0, skippedNoNickname:0, skippedNoDate:0, skippedNoHeight:0, sampleRawDate:null, sampleRawHeight:null, headerRow:(rows[0]||[]).join(' | ')};
   for(let r=1;r<rows.length;r++){
     const row=rows[r];
     if(!row.length || row.every(c=>!String(c||'').trim())){ diag.skippedBlank++; continue; }
@@ -1099,11 +1112,12 @@ function extractAnthropometricsFromCSV(csvText, athletes){
     const rawDate=gv(row,'Data avaliação');
     const date=parseAntropoDate(rawDate);
     if(!date){ diag.skippedNoDate++; if(diag.sampleRawDate==null && rawDate!=null) diag.sampleRawDate=rawDate; continue; }
-    const height=csvNum(gv(row,'Estatura (cm)'));
-    const sittingRaw=csvNum(gv(row,'Estatura sentado (cm)'));
-    const weight=csvNum(gv(row,'Massa Corporal (kg)'));
-    const bench=csvNum(gv(row,'Altura do banco (cm)'));
-    if(height==null){ diag.skippedNoHeight++; continue; }
+    const rawHeight=gv(row,'Estatura (cm)');
+    const height=csvMeasurement(rawHeight);
+    const sittingRaw=csvMeasurement(gv(row,'Estatura sentado (cm)'));
+    const weight=csvMeasurement(gv(row,'Massa Corporal (kg)'));
+    const bench=csvMeasurement(gv(row,'Altura do banco (cm)'));
+    if(height==null){ diag.skippedNoHeight++; if(diag.sampleRawHeight==null && rawHeight!=null) diag.sampleRawHeight=rawHeight; continue; }
     const a=byNick[normLowerText(nickname)];
     const dob=a?a.dob:null;
     const age = dob ? ((new Date(date)-new Date(dob))/(1000*60*60*24*365)) : null;
@@ -2285,10 +2299,11 @@ function renderMaturacao(){
       const parts=[];
       if(d.skippedNoNickname) parts.push(`${d.skippedNoNickname} sem apelido reconhecido`);
       if(d.skippedNoDate) parts.push(`${d.skippedNoDate} com data inválida${d.sampleRawDate!=null?` (exemplo do que veio na planilha: "${escHtml(d.sampleRawDate)}")`:''}`);
-      if(d.skippedNoHeight) parts.push(`${d.skippedNoHeight} sem estatura preenchida`);
+      if(d.skippedNoHeight) parts.push(`${d.skippedNoHeight} sem estatura reconhecida${d.sampleRawHeight!=null?` (exemplo do que veio na planilha: "${escHtml(d.sampleRawHeight)}")`:''}`);
       if(d.skippedBlank) parts.push(`${d.skippedBlank} linha(s) em branco`);
       const detail = parts.length ? parts.join('; ') : 'motivo não identificado';
-      diag.innerHTML=`<div class="insight" style="border-left-color:#fdb022;background:rgba(253,176,34,.08);color:#ffd58a">⚠️ A aba foi encontrada e tem ${DATA.anthropometricsRawRows} linha(s), mas nenhuma foi reconhecida: ${detail}.</div>`;
+      const headerInfo = d.headerRow ? `<br><span style="opacity:.8">Cabeçalho lido na 1ª linha da aba: "${escHtml(d.headerRow)}"</span>` : '';
+      diag.innerHTML=`<div class="insight" style="border-left-color:#fdb022;background:rgba(253,176,34,.08);color:#ffd58a">⚠️ A aba foi encontrada e tem ${DATA.anthropometricsRawRows} linha(s), mas nenhuma foi reconhecida: ${detail}.${headerInfo}</div>`;
     } else {
       diag.innerHTML='';
     }
