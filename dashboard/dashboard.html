@@ -1201,6 +1201,21 @@ async function fetchSheetCSV(sheetId, sheetName){
     return text;
   } finally { clearTimeout(timer); }
 }
+// Busca direta pelo gid da aba (o n\u00famero depois de "#gid=" na URL do Google Sheets quando a aba
+// est\u00e1 aberta) \u2014 ao contr\u00e1rio da busca por nome (fetchSheetCSV), n\u00e3o depende de bater exatamente
+// mai\u00fascula/acento/espa\u00e7o com o nome real da aba, ent\u00e3o \u00e9 imune a esse tipo de desencontro.
+async function fetchSheetCSVByGid(sheetId, gid){
+  const url=`https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${encodeURIComponent(gid)}`;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(), 12000);
+  try{
+    const res=await fetch(url,{signal:controller.signal, cache:'no-store'});
+    if(!res.ok) throw new Error(`HTTP ${res.status} na aba de gid ${gid}`);
+    const text=await res.text();
+    if(text.trim().startsWith('<')) throw new Error(`Resposta inesperada (HTML) na aba de gid ${gid} \u2014 verifique compartilhamento`);
+    return text;
+  } finally { clearTimeout(timer); }
+}
 // A busca por aba do Sheets (gviz) exige o nome exato (mai\u00fascula/min\u00fascula e acento importam).
 // Pra abas cujo nome o treinador pode ter digitado com varia\u00e7\u00f5es, tenta cada nome candidato em
 // sequ\u00eancia e usa o primeiro que responder \u2014 evita quebrar silenciosamente por causa de um acento.
@@ -1243,17 +1258,31 @@ async function loadFromGoogleSheets(sheetId){
   // ela ainda n\u00e3o existir (ou falhar por qualquer motivo pontual) o resto do dashboard continua
   // funcionando normalmente \u2014 s\u00f3 a parte de matura\u00e7\u00e3o fica vazia, em vez de derrubar o carregamento
   // inteiro pro data.json desatualizado.
+  // gid confirmado pelo treinador (vis\u00edvel na URL do Sheets quando a aba "Avalia\u00e7\u00e3o antropometrica"
+  // est\u00e1 aberta: ...#gid=485490679). Buscar por gid \u00e9 imune a desencontros de mai\u00fascula/acento no
+  // nome \u2014 foi o que causava a leitura cair silenciosamente em "Banco de atletas".
+  const ANTRO_SHEET_GID = '485490679';
+  const looksLikeAntropometriaHeader = (csv)=>{
+    const header=(csv.split('\n')[0]||'').toLowerCase();
+    return header.includes('apelido') && (header.includes('estatura') || header.includes('avalia'));
+  };
   let anthropometrics=[], anthropometricsError=null, anthropometricsRawRows=null, anthropometricsDiag=null;
   try{
-    const antropometriaCsv = await fetchSheetCSVAny(sheetId,[
-      'Avalia\u00e7\u00e3o antropom\u00e9trica','avalia\u00e7\u00e3o antropometrica','Avalia\u00e7\u00e3o antropometrica',
-      'avalia\u00e7\u00e3o antropom\u00e9trica','Avalia\u00e7\u00e3o Antropom\u00e9trica','Avalia\u00e7\u00e3o Antropometrica',
-      'Avalia\u00e7ao antropom\u00e9trica','avalia\u00e7ao antropom\u00e9trica','Avalia\u00e7ao antropometrica','avalia\u00e7ao antropometrica',
-      'avaliacao antropometrica','Avaliacao antropometrica','Avaliacao Antropometrica','AVALIA\u00c7\u00c3O ANTROPOM\u00c9TRICA',
-    ], (csv)=>{
-      const header=(csv.split('\n')[0]||'').toLowerCase();
-      return header.includes('apelido') && (header.includes('estatura') || header.includes('avalia'));
-    });
+    let antropometriaCsv;
+    try{
+      antropometriaCsv = await fetchSheetCSVByGid(sheetId, ANTRO_SHEET_GID);
+      if(!looksLikeAntropometriaHeader(antropometriaCsv)){
+        throw new Error(`gid ${ANTRO_SHEET_GID} n\u00e3o parece ser a aba certa (cabe\u00e7alho: "${(antropometriaCsv.split('\n')[0]||'').trim()}")`);
+      }
+    }catch(gidErr){
+      console.warn('[dashboard] Busca por gid da avalia\u00e7\u00e3o antropom\u00e9trica falhou, tentando por nome.', gidErr);
+      antropometriaCsv = await fetchSheetCSVAny(sheetId,[
+        'Avalia\u00e7\u00e3o antropom\u00e9trica','avalia\u00e7\u00e3o antropometrica','Avalia\u00e7\u00e3o antropometrica',
+        'avalia\u00e7\u00e3o antropom\u00e9trica','Avalia\u00e7\u00e3o Antropom\u00e9trica','Avalia\u00e7\u00e3o Antropometrica',
+        'Avalia\u00e7ao antropom\u00e9trica','avalia\u00e7ao antropom\u00e9trica','Avalia\u00e7ao antropometrica','avalia\u00e7ao antropometrica',
+        'avaliacao antropometrica','Avaliacao antropometrica','Avaliacao Antropometrica','AVALIA\u00c7\u00c3O ANTROPOM\u00c9TRICA',
+      ], looksLikeAntropometriaHeader);
+    }
     anthropometricsRawRows = Math.max(0, antropometriaCsv.split('\n').filter(l=>l.trim()).length-1);
     const extraction = extractAnthropometricsFromCSV(antropometriaCsv, athletes);
     anthropometrics = extraction.rows;
