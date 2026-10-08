@@ -1103,7 +1103,7 @@ function extractAnthropometricsFromCSV(csvText, athletes){
   const rows=parseCSV(csvText); const col=headerMap(rows,0);
   const gv=(row,name)=>gGate(row,col,name,ANTRO_COL_FALLBACK[name]);
   const byNick={}; (athletes||[]).forEach(a=>{ byNick[normLowerText(a.nickname)]=a; });
-  const out=[]; const diag={skippedBlank:0, skippedNoNickname:0, skippedNoDate:0, skippedNoHeight:0, sampleRawDate:null, sampleRawHeight:null, headerRow:(rows[0]||[]).join(' | ')};
+  const out=[]; const diag={skippedBlank:0, skippedNoNickname:0, skippedNoDate:0, skippedNoHeight:0, sampleRawDate:null, sampleRawHeight:null, headerRow:(rows[0]||[]).join(' | '), firstDataRow:(rows[1]||[]).join(' | ')};
   for(let r=1;r<rows.length;r++){
     const row=rows[r];
     if(!row.length || row.every(c=>!String(c||'').trim())){ diag.skippedBlank++; continue; }
@@ -2306,6 +2306,13 @@ function renderMaturacao(){
       diag.innerHTML=`<div class="insight" style="border-left-color:#fdb022;background:rgba(253,176,34,.08);color:#ffd58a">⚠️ A aba foi encontrada e tem ${DATA.anthropometricsRawRows} linha(s), mas nenhuma foi reconhecida: ${detail}.${headerInfo}</div>`;
     } else {
       diag.innerHTML='';
+    }
+    // Linha técnica sempre visível (independente de ter dado erro ou não), pra dar pra conferir de
+    // olho se as colunas estão sendo lidas da aba certa, nas posições certas — sem precisar adivinhar
+    // de novo caso os números saiam estranhos mesmo sem nenhum aviso de erro aparecer.
+    const dd=DATA.anthropometricsDiag;
+    if(dd && (dd.headerRow || dd.firstDataRow)){
+      diag.innerHTML += `<div class="small-note" style="margin-top:8px">🔧 Diagnóstico técnico da leitura desta aba — cabeçalho: "${escHtml(dd.headerRow||'')}" · 1ª linha de dados: "${escHtml(dd.firstDataRow||'')}"</div>`;
     }
   }
   const sel=$('maturacaoAthlete');
