@@ -557,11 +557,19 @@ body.light .status{border:1px solid transparent}
     </section>
 
     <section class="page" id="page-maturacao">
-      <div class="card" style="margin-bottom:18px">
-        <h3>Maturação por atleta</h3>
-        <div class="desc">Baseado na avaliação antropométrica mais recente de cada atleta — estimativa de maturação biológica (Mirwald et al., 2002), não um diagnóstico médico.</div>
-        <div id="maturacaoDiag"></div>
-        <div class="table-wrap" id="tblMaturacao" style="margin-top:14px"></div>
+      <div class="kpi-grid" id="kpisMaturacao" style="margin-bottom:18px"></div>
+      <div class="grid" style="margin-bottom:18px">
+        <div class="card span-12">
+          <h3>Maturação por atleta</h3>
+          <div class="desc">Baseado na avaliação antropométrica mais recente de cada atleta — estimativa de maturação biológica (Mirwald et al., 2002), não um diagnóstico médico.</div>
+          <div id="maturacaoDiag"></div>
+          <div class="table-wrap" id="tblMaturacao" style="margin-top:14px"></div>
+        </div>
+        <div class="card span-12">
+          <h3>Distribuição de maturação do grupo</h3>
+          <div class="desc">Quantos atletas (com avaliação registrada) estão em cada faixa de maturação.</div>
+          <div class="chart" id="chMaturacaoStatusDonut"></div>
+        </div>
       </div>
       <div class="card">
         <div class="card-head">
@@ -2304,8 +2312,16 @@ const MATURACAO_VAR_DEFS=[
   {key:'height',label:'Estatura atual (cm)',color:COLORS[0]},
   {key:'predictedHeight',label:'Estatura predita (cm)',color:COLORS[3]},
   {key:'weight',label:'Massa corporal (kg)',color:COLORS[2]},
-  {key:'aphv',label:'Idade do PVC (anos)',color:COLORS[5]},
 ];
+// Escala fixa por variável (em vez de autoescala por filtro) — facilita comparar a mesma faixa de
+// valores entre atletas e entre avaliações diferentes. Quando mais de uma variável com faixas
+// diferentes está selecionada ao mesmo tempo, o gráfico usa a união das duas faixas no eixo Y.
+const MATURACAO_VAR_DOMAINS={height:[125,210], predictedHeight:[125,210], weight:[20,80]};
+function maturacaoYDomain(selectedVars){
+  const domains=selectedVars.map(k=>MATURACAO_VAR_DOMAINS[k]).filter(Boolean);
+  if(!domains.length) return {};
+  return {yMin:Math.min(...domains.map(d=>d[0])), yMax:Math.max(...domains.map(d=>d[1]))};
+}
 function latestAnthro(nickname){const rows=(DATA.anthropometrics||[]).filter(x=>x.nickname===nickname); return rows.length?rows[rows.length-1]:null;}
 function ageNowFromDob(dob){if(!dob) return null; return (new Date()-new Date(dob))/(1000*60*60*24*365);}
 function renderVarPicker(containerId, checkedList, onChange){
@@ -2330,7 +2346,36 @@ function renderGrowthChart(chartId, nickname, selectedVars){
   if(!rows.length){ drawEmpty(chartId,'Sem avaliação antropométrica registrada para este atleta.'); return; }
   if(!selectedVars.length){ drawEmpty(chartId,'Selecione ao menos uma variável para visualizar.'); return; }
   const series=MATURACAO_VAR_DEFS.filter(v=>selectedVars.includes(v.key)).map(v=>({key:v.key,label:v.label,color:v.color}));
-  lineChart(chartId, rows, 'ageLabel', series, {});
+  lineChart(chartId, rows, 'ageLabel', series, maturacaoYDomain(selectedVars));
+}
+function maturacaoEvaluatedAthletes(){
+  return DATA.athletes.map(a=>({athlete:a, last:latestAnthro(a.nickname)})).filter(x=>x.last);
+}
+function renderMaturacaoOverview(){
+  const evald=maturacaoEvaluatedAthletes();
+  if(!evald.length){
+    $('kpisMaturacao').innerHTML='';
+    drawEmpty('chMaturacaoStatusDonut','Sem avaliações registradas ainda.');
+    return;
+  }
+  const heights=evald.map(x=>x.last.height).filter(v=>v!=null);
+  const predicted=evald.map(x=>x.last.predictedHeight).filter(v=>v!=null);
+  const withAphv=evald.filter(x=>x.last.aphv!=null);
+  const mostPrecoce=withAphv.length ? withAphv.reduce((a,b)=>a.last.aphv<b.last.aphv?a:b) : null;
+  const mostTardio=withAphv.length ? withAphv.reduce((a,b)=>a.last.aphv>b.last.aphv?a:b) : null;
+  kpi('kpisMaturacao',[
+    {label:'Estatura atual média', value: heights.length?fmt(avg(heights),1)+' cm':'—', sub:`${evald.length} atleta(s) com avaliação`},
+    {label:'Estatura predita média', value: predicted.length?fmt(avg(predicted),1)+' cm':'—', sub:'estimativa Mirwald et al. (2002)'},
+    {label:'Idade do PVC média', value: withAphv.length?fmt(avg(withAphv.map(x=>x.last.aphv)),2)+' anos':'—', sub:'pico de velocidade de crescimento'},
+    {label:'Mais precoce do grupo', value: mostPrecoce?mostPrecoce.athlete.nickname:'—', sub: mostPrecoce?`PVC aos ${fmt(mostPrecoce.last.aphv,2)} anos`:''},
+    {label:'Mais tardio do grupo', value: mostTardio?mostTardio.athlete.nickname:'—', sub: mostTardio?`PVC aos ${fmt(mostTardio.last.aphv,2)} anos`:''},
+  ]);
+  const statusCounts={Precoce:0, Normal:0, Tardio:0};
+  evald.forEach(x=>{ if(x.last.status && statusCounts[x.last.status]!=null) statusCounts[x.last.status]++; });
+  const donutData=Object.entries(statusCounts)
+    .map(([key,value])=>({key,value,items:evald.filter(x=>x.last.status===key).map(x=>({nickname:x.athlete.nickname}))}))
+    .filter(x=>x.value>0);
+  donutChart('chMaturacaoStatusDonut', donutData, {unit:'atleta(s)'});
 }
 function renderMaturacao(){
   const diag=$('maturacaoDiag');
@@ -2383,6 +2428,7 @@ function renderMaturacao(){
     ];
   });
   renderTable('tblMaturacao', ['Atleta','Idade atual','Estatura atual','Estatura predita','Maturity offset','Idade do PVC','Sua maturação será','Última avaliação'], rows);
+  renderMaturacaoOverview();
   if(sel){
     renderVarPicker('maturacaoVarsPicker', maturacaoVars, ()=>renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars));
     renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars);
