@@ -1039,10 +1039,9 @@ function mirwaldGrowthRemaining(offset, col){
 // - Offset negativo = ainda não chegou no pico de velocidade de crescimento (PHV); perto de zero =
 //   no auge do estirão; positivo = já passou.
 // - "Estatura predita" = estatura atual + crescimento restante esperado (tabela acima), escolhendo a
-//   coluna adiantado/média/tardio pela mesma faixa de corte da planilha de referência (que é um
-//   detalhe interno desse cálculo específico — não precisa bater com a classificação de maturação
-//   mostrada pro treinador, calculada com os limites que foram pedidos: <13 precoce, 13–14 normal,
-//   >14 tardio).
+//   coluna adiantado/média/tardio pelo MESMO critério usado na classificação de maturação mostrada
+//   pro treinador (<13 precoce, 13–14 normal, >14 tardio) — unificado a pedido, mesmo divergindo da
+//   faixa de corte interna da planilha de referência original.
 function computeMaturation(ageDecimal, heightCm, sittingHeightRawCm, benchHeightCm, weightKg){
   if([ageDecimal,heightCm,sittingHeightRawCm,benchHeightCm,weightKg].some(v=>v==null||isNaN(v))){
     return {sittingHeight:null, legLength:null, maturityOffset:null, aphv:null, status:null, predictedHeight:null};
@@ -1054,7 +1053,7 @@ function computeMaturation(ageDecimal, heightCm, sittingHeightRawCm, benchHeight
   const maturityOffset = -9.236 + 0.0002708*X - 0.001663*Y + 0.007216*Z + 0.02292*weightHeightRatio;
   const aphv = ageDecimal - maturityOffset;
   const status = aphv<13 ? 'Precoce' : (aphv<=14 ? 'Normal' : 'Tardio');
-  const lookupCol = aphv<13 ? 'precoce' : (aphv<15 ? 'normal' : 'tardio');
+  const lookupCol = aphv<13 ? 'precoce' : (aphv<=14 ? 'normal' : 'tardio');
   const remaining = mirwaldGrowthRemaining(maturityOffset, lookupCol);
   const predictedHeight = remaining!=null ? heightCm+remaining : null;
   return {sittingHeight, legLength, maturityOffset, aphv, status, predictedHeight};
