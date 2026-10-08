@@ -560,6 +560,7 @@ body.light .status{border:1px solid transparent}
       <div class="card" style="margin-bottom:18px">
         <h3>Maturação por atleta</h3>
         <div class="desc">Baseado na avaliação antropométrica mais recente de cada atleta — estimativa de maturação biológica (Mirwald et al., 2002), não um diagnóstico médico.</div>
+        <div id="maturacaoDiag"></div>
         <div class="table-wrap" id="tblMaturacao" style="margin-top:14px"></div>
       </div>
       <div class="card">
@@ -1183,17 +1184,21 @@ async function loadFromGoogleSheets(sheetId){
   // ela ainda n\u00e3o existir (ou falhar por qualquer motivo pontual) o resto do dashboard continua
   // funcionando normalmente \u2014 s\u00f3 a parte de matura\u00e7\u00e3o fica vazia, em vez de derrubar o carregamento
   // inteiro pro data.json desatualizado.
-  let anthropometrics=[];
+  let anthropometrics=[], anthropometricsError=null, anthropometricsRawRows=null;
   try{
     const antropometriaCsv = await fetchSheetCSVAny(sheetId,[
       'Avalia\u00e7\u00e3o antropom\u00e9trica','avalia\u00e7\u00e3o antropometrica','Avalia\u00e7\u00e3o antropometrica',
       'avalia\u00e7\u00e3o antropom\u00e9trica','Avalia\u00e7\u00e3o Antropom\u00e9trica','Avalia\u00e7\u00e3o Antropometrica',
+      'Avalia\u00e7ao antropom\u00e9trica','avalia\u00e7ao antropom\u00e9trica','Avalia\u00e7ao antropometrica','avalia\u00e7ao antropometrica',
+      'avaliacao antropometrica','Avaliacao antropometrica','Avaliacao Antropometrica','AVALIA\u00c7\u00c3O ANTROPOM\u00c9TRICA',
     ]);
+    anthropometricsRawRows = Math.max(0, antropometriaCsv.split('\n').filter(l=>l.trim()).length-1);
     anthropometrics = extractAnthropometricsFromCSV(antropometriaCsv, athletes);
   }catch(antroErr){
+    anthropometricsError = (antroErr && antroErr.message) ? antroErr.message : String(antroErr);
     console.warn('[dashboard] Aba de avalia\u00e7\u00e3o antropom\u00e9trica indispon\u00edvel (conferir o nome exato da aba na planilha).', antroErr);
   }
-  return {meta:buildSheetsMeta({athletes,trainings,blocks,contents,games}), athletes, trainings, blocks, contents, notes, games, gameInd, anthropometrics};
+  return {meta:buildSheetsMeta({athletes,trainings,blocks,contents,games}), athletes, trainings, blocks, contents, notes, games, gameInd, anthropometrics, anthropometricsError, anthropometricsRawRows};
 }
 
 // Globais: precisam existir fora de boot() porque atributos onerror inline
@@ -2235,6 +2240,18 @@ function renderGrowthChart(chartId, nickname, selectedVars){
   lineChart(chartId, rows, 'ageLabel', series, {});
 }
 function renderMaturacao(){
+  const diag=$('maturacaoDiag');
+  if(diag){
+    if(DATA.anthropometricsError){
+      diag.innerHTML=`<div class="insight" style="border-left-color:#fdb022;background:rgba(253,176,34,.08);color:#ffd58a">⚠️ Não foi possível ler a aba de avaliação antropométrica na planilha (${escHtml(DATA.anthropometricsError)}). Confira o nome exato da aba (abra a planilha e veja a etiqueta embaixo) — ele precisa bater exatamente com o que está escrito lá, incluindo maiúsculas e acentos.</div>`;
+    } else if(!DATA.anthropometrics.length && DATA.anthropometricsRawRows===0){
+      diag.innerHTML=`<div class="insight">A aba de avaliação antropométrica foi encontrada, mas ainda não tem nenhuma linha preenchida.</div>`;
+    } else if(!DATA.anthropometrics.length && DATA.anthropometricsRawRows>0){
+      diag.innerHTML=`<div class="insight" style="border-left-color:#fdb022;background:rgba(253,176,34,.08);color:#ffd58a">⚠️ A aba foi encontrada e tem ${DATA.anthropometricsRawRows} linha(s), mas nenhuma foi reconhecida. Confira se os nomes das colunas são exatamente: Apelido, Data avaliação, Estatura (cm), Estatura sentado (cm), Massa Corporal (kg), Altura do banco (cm) — e se o "Apelido" bate com o cadastrado no Banco de atletas.</div>`;
+    } else {
+      diag.innerHTML='';
+    }
+  }
   const sel=$('maturacaoAthlete');
   if(sel && !sel.dataset.ready){
     sel.innerHTML=DATA.meta.athletes.map(a=>`<option value="${a}">${a}</option>`).join('');
