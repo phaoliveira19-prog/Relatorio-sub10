@@ -61,8 +61,8 @@ svg text{font-family:inherit}.axis{fill:var(--muted);font-size:12px}.value-on-sh
 
 /* === Ajustes v3 === */
 body.light{
-  --bg:#f5f7fa; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffff; --stroke:#e1e6ee; --stroke2:#ebeef3;
-  --text:#0f1720; --muted:#5b6778; --soft:#33404f; --shadow:0 1px 2px rgba(15,23,42,.04), 0 10px 28px rgba(15,23,42,.06);
+  --bg:#f5f7fa; --panel:#ffffff; --panel2:#eef4fb; --card:#ffffff; --stroke:#b7c3d6; --stroke2:#c7d1e0;
+  --text:#0f1720; --muted:#5b6778; --soft:#33404f; --shadow:0 2px 6px rgba(15,23,42,.08), 0 18px 44px rgba(15,23,42,.14);
 }
 /* modo claro em "dashboard de SaaS": fundo liso, cartão branco chapado com borda fina e sombra discreta —
    em vez do fundo com brilhos coloridos e cartões translúcidos que fazem sentido no escuro mas ficam
@@ -576,19 +576,21 @@ body.light .status{border:1px solid transparent}
           <div class="var-picker" id="maturacaoColsPicker" style="margin-top:12px"></div>
           <div class="table-wrap" id="tblMaturacao" style="margin-top:14px"></div>
         </div>
-        <div class="card span-12">
+        <div class="card span-6">
           <h3>Distribuição de maturação do grupo</h3>
           <div class="desc">Quantos atletas (com avaliação registrada) estão em cada faixa de maturação.</div>
           <div class="chart" id="chMaturacaoStatusDonut"></div>
         </div>
-      </div>
-      <div class="card">
-        <div class="card-head">
-          <div><h3>Curva de crescimento</h3><div class="desc">Eixo X = idade do atleta em cada avaliação. Escolha o atleta e as variáveis no eixo Y.</div></div>
-          <select id="maturacaoAthlete" style="max-width:240px"></select>
+        <div class="card span-6">
+          <h3>Curva de crescimento</h3>
+          <div class="desc">Eixo X = idade do atleta (8 a 15 anos). Escolha o atleta e as variáveis no eixo Y.</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+            <img id="maturacaoAthletePhoto" class="ath-mini" style="width:40px;height:40px;border-radius:12px;object-fit:cover;background:#111b2e;border:1px solid var(--stroke);flex-shrink:0">
+            <select id="maturacaoAthlete" style="flex:1"></select>
+          </div>
+          <div class="var-picker" id="maturacaoVarsPicker"></div>
+          <div class="chart" id="chMaturacaoCurve"></div>
         </div>
-        <div class="var-picker" id="maturacaoVarsPicker"></div>
-        <div class="chart tall" id="chMaturacaoCurve"></div>
       </div>
     </section>
 
@@ -2401,15 +2403,44 @@ function renderVarPicker(containerId, defs, checkedList, onChange){
 }
 function growthChartRows(nickname){
   return (DATA.anthropometrics||[]).filter(x=>x.nickname===nickname)
-    .map(x=>({ageLabel:(x.age!=null?fmt(x.age,1):'—')+' anos', date:x.date, height:x.height, predictedHeight:x.predictedHeight, weight:x.weight, aphv:x.aphv}))
+    .map(x=>({age:x.age, ageLabel:(x.age!=null?fmt(x.age,1):'—')+' anos', date:x.date, height:x.height, predictedHeight:x.predictedHeight, weight:x.weight, aphv:x.aphv}))
     .sort((a,b)=>a.date.localeCompare(b.date));
+}
+// Eixo X fixo de 8 a 15 anos (faixa coberta pelo Mirwald, cobre bem além do Sub-10 pra sobrar espaço
+// de acompanhar o atleta nas próximas categorias) em vez de posição por índice — assim a distância
+// entre pontos no gráfico reflete a diferença real de idade entre avaliações.
+const MATURACAO_AGE_AXIS_MIN=8, MATURACAO_AGE_AXIS_MAX=15;
+function lineChartAgeAxis(id, data, xMin, xMax, series, opts={}){
+  const pts0=data.filter(d=>d.age!=null);
+  if(!pts0.length){ drawEmpty(id, opts.emptyMsg); return; }
+  const box=chartBox(id); if(!box)return; const {el,svg,w,h}=box;
+  const m={l:48,r:22,t:18,b:42};
+  const yVals=[]; pts0.forEach(d=>series.forEach(s=>{if(d[s.key]!=null&&!isNaN(d[s.key])) yVals.push(Number(d[s.key]))}));
+  const yMin=opts.yMin??0, yMax=opts.yMax??niceMax(Math.max(...yVals,1));
+  drawGrid(svg,w,h,m,yMin,yMax,opts.ticks||4);
+  const x=(v)=>m.l+(w-m.l-m.r)*((v-xMin)/(xMax-xMin));
+  const y=(v)=>h-m.b-(h-m.t-m.b)*((v-yMin)/(yMax-yMin));
+  svg.appendChild(svgEl('line',{x1:m.l,y1:h-m.b,x2:w-m.r,y2:h-m.b,class:'axisline'}));
+  for(let age=Math.ceil(xMin); age<=Math.floor(xMax); age++){ addText(svg,x(age),h-20,age+' anos','axis'); }
+  series.forEach((s,si)=>{
+    const pts=pts0.filter(d=>d[s.key]!=null&&!isNaN(d[s.key])).sort((a,b)=>a.age-b.age).map(d=>[x(d.age),y(d[s.key]),d]);
+    if(!pts.length)return;
+    const path=pts.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' ');
+    svg.appendChild(svgEl('path',{d:path,class:'line',stroke:s.color||COLORS[si]}));
+    pts.forEach(p=>{
+      const c=svgEl('circle',{cx:p[0],cy:p[1],r:4.4,fill:s.color||COLORS[si],class:'point'});
+      c.onmousemove=e=>tip(`<b>${fmt(p[2].age,1)} anos</b><br>${p[2].date?p[2].date.split('-').reverse().join('/')+'<br>':''}${s.label||s.key}: ${fmt(p[2][s.key])}`,e);
+      c.onmouseleave=hideTip; svg.appendChild(c);
+    });
+  });
+  if(series.length>1) legend(el,series.map(s=>s.key),series.map((s,i)=>s.color||COLORS[i]),series.map(s=>s.label||s.key));
 }
 function renderGrowthChart(chartId, nickname, selectedVars){
   const rows=growthChartRows(nickname);
   if(!rows.length){ drawEmpty(chartId,'Sem avaliação antropométrica registrada para este atleta.'); return; }
   if(!selectedVars.length){ drawEmpty(chartId,'Selecione ao menos uma variável para visualizar.'); return; }
   const series=MATURACAO_VAR_DEFS.filter(v=>selectedVars.includes(v.key)).map(v=>({key:v.key,label:v.label,color:v.color}));
-  lineChart(chartId, rows, 'ageLabel', series, maturacaoYDomain(selectedVars));
+  lineChartAgeAxis(chartId, rows, MATURACAO_AGE_AXIS_MIN, MATURACAO_AGE_AXIS_MAX, series, {...maturacaoYDomain(selectedVars), emptyMsg:'Sem avaliação antropométrica registrada para este atleta.'});
 }
 function maturacaoEvaluatedAthletes(){
   return DATA.athletes.map(a=>({athlete:a, last:latestAnthro(a.nickname)})).filter(x=>x.last);
@@ -2428,17 +2459,21 @@ function renderMaturacaoOverview(){
   const mostTardio=withAphv.length ? withAphv.reduce((a,b)=>a.last.aphv>b.last.aphv?a:b) : null;
   kpi('kpisMaturacao',[
     {label:'Estatura atual média', value: heights.length?fmt(avg(heights),1)+' cm':'—', sub:`${evald.length} atleta(s) com avaliação`},
-    {label:'Estatura predita média', value: predicted.length?fmt(avg(predicted),1)+' cm':'—', sub:'estimativa Mirwald et al. (2002)'},
-    {label:'Idade do PVC média', value: withAphv.length?fmt(avg(withAphv.map(x=>x.last.aphv)),2)+' anos':'—', sub:'pico de velocidade de crescimento'},
+    {label:'Estatura predita (mediana)', value: predicted.length?fmt(median(predicted),1)+' cm':'—', sub:'estimativa Mirwald et al. (2002)'},
+    {label:'Idade do PVC (mediana)', value: withAphv.length?fmt(median(withAphv.map(x=>x.last.aphv)),2)+' anos':'—', sub:'pico de velocidade de crescimento'},
     {label:'Mais precoce do grupo', value: mostPrecoce?mostPrecoce.athlete.nickname:'—', sub: mostPrecoce?`PVC aos ${fmt(mostPrecoce.last.aphv,2)} anos`:''},
     {label:'Mais tardio do grupo', value: mostTardio?mostTardio.athlete.nickname:'—', sub: mostTardio?`PVC aos ${fmt(mostTardio.last.aphv,2)} anos`:''},
   ]);
   const statusCounts={Precoce:0, Normal:0, Tardio:0};
   evald.forEach(x=>{ if(x.last.status && statusCounts[x.last.status]!=null) statusCounts[x.last.status]++; });
+  // Mesma paleta espalhada (verde/ciano/vermelho) já usada no donut "Resumo competitivo" do Card do
+  // Atleta, em vez do ciclo padrão de cores adjacentes (ciano/azul/roxo) — fica bem mais fácil
+  // diferenciar as fatias de relance.
+  const MATURACAO_STATUS_COLORS={Precoce:COLORS[5], Normal:COLORS[3], Tardio:COLORS[0]};
   const donutData=Object.entries(statusCounts)
     .map(([key,value])=>({key,value,items:evald.filter(x=>x.last.status===key).map(x=>({nickname:x.athlete.nickname}))}))
     .filter(x=>x.value>0);
-  donutChart('chMaturacaoStatusDonut', donutData, {unit:'atleta(s)'});
+  donutChart('chMaturacaoStatusDonut', donutData, {unit:'atleta(s)', colors:donutData.map(d=>MATURACAO_STATUS_COLORS[d.key])});
 }
 function renderMaturacao(){
   const diag=$('maturacaoDiag');
@@ -2478,6 +2513,12 @@ function renderMaturacao(){
   renderMaturacaoTable();
   renderMaturacaoOverview();
   if(sel){
+    const photoEl=$('maturacaoAthletePhoto');
+    if(photoEl){
+      const a=athleteObj(sel.value)||{};
+      photoEl.src=safePhoto(a)||fallbackPhoto();
+      photoEl.onerror=()=>photoErr(photoEl, a.photoExternal||'');
+    }
     renderVarPicker('maturacaoVarsPicker', MATURACAO_VAR_DEFS, maturacaoVars, ()=>renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars));
     renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars);
   }
