@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <title>QG do Treinador — marca, versão monocromática (herda a cor do texto ao redor)</title>
+  <g fill="none" stroke="currentColor">
+    <path d="M60,20 L86,31 L86,64 C86,86 74,98 60,104 C46,98 34,86 34,64 L34,31 Z" stroke-width="4"/>
+    <circle cx="60" cy="66" r="19" stroke-width="3" opacity=".85"/>
+    <circle cx="60" cy="66" r="10" stroke-width="3"/>
+    <circle cx="60" cy="66" r="3" fill="currentColor" stroke="none"/>
+    <line x1="60" y1="66" x2="77" y2="49" stroke-width="4" stroke-linecap="round"/>
+    <line x1="60" y1="66" x2="47" y2="77" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+  </g>
+  <polygon points="77,49 68,52 71,58" fill="currentColor"/>
+</svg>
