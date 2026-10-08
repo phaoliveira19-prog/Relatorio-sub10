@@ -27,6 +27,7 @@ body.light .topnav{background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(
 .app{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 73px)}.sidebar{position:sticky;top:73px;height:calc(100vh - 73px);overflow:auto;padding:18px 18px 28px;border-right:1px solid var(--stroke2);background:linear-gradient(180deg,rgba(8,13,24,.84),rgba(5,7,12,.58));backdrop-filter:blur(18px)}.main{padding:26px 28px 42px;max-width:1810px;width:100%;margin:0 auto}.filter-title{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.14em;margin:4px 0 12px}.filter-grid{display:grid;gap:10px}.field label{display:block;color:var(--muted);font-size:11px;margin:0 0 6px 2px}select,input{width:100%;border:1px solid var(--stroke);background:#090f1bdd;color:var(--text);border-radius:14px;padding:10px 11px;outline:none;font-size:12px}select:focus,input:focus{border-color:rgba(34,211,238,.6);box-shadow:0 0 0 3px rgba(34,211,238,.10)}.filter-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.btn{border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.055);color:var(--text);padding:10px 12px;cursor:pointer;font-weight:800}.btn.primary{background:linear-gradient(135deg,var(--cyan),#4f8cff);color:#06101b;border:0}.btn.small{padding:7px 10px;font-size:11px}.btn:hover{filter:brightness(1.08)}
 .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:18px}.eyebrow{color:#9eeefe;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.18em}.page-title{font-size:38px;font-weight:900;line-height:1.05;margin:7px 0 8px;letter-spacing:-1.3px}.subtitle{color:var(--muted);max-width:900px;line-height:1.5;margin:0}.pill-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.pill{border:1px solid var(--stroke);background:rgba(255,255,255,.055);border-radius:999px;color:var(--soft);padding:9px 12px;font-size:12px}.page{display:none;animation:fade .2s ease}.page.active{display:block}@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(155px,1fr));gap:14px;margin:18px 0}.kpi{position:relative;overflow:hidden;padding:16px;border:1px solid var(--stroke);border-radius:22px;background:linear-gradient(180deg,rgba(18,27,43,.82),rgba(10,16,28,.78));box-shadow:0 16px 50px rgba(0,0,0,.18)}.kpi:before{content:"";position:absolute;inset:0;background:radial-gradient(400px 120px at 0% 0%,rgba(34,211,238,.12),transparent 60%);pointer-events:none}.kpi .label{font-size:11.5px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.1em}.kpi .value{font-size:27px;font-weight:950;margin-top:8px;letter-spacing:-.8px;line-height:1.05}.kpi .value.small{font-size:18px;line-height:1.1}.kpi .sub{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}.kpi .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.chip{display:inline-flex;border:1px solid rgba(148,163,184,.24);background:rgba(255,255,255,.05);border-radius:999px;color:var(--soft);font-size:11.5px;padding:5px 7px}.chip b{color:var(--text);margin-left:4px}
+.var-picker{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0;padding:10px 12px;border:1px solid var(--stroke2);border-radius:14px;background:rgba(255,255,255,.03)}.var-picker label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--soft);cursor:pointer}.var-picker input{width:auto;cursor:pointer}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.card{min-height:260px;border:1px solid var(--stroke);border-radius:var(--radius);background:linear-gradient(180deg,rgba(16,24,39,.82),rgba(8,13,24,.78));box-shadow:0 20px 70px rgba(0,0,0,.22);padding:18px;position:relative;overflow:hidden}.card:before{content:"";position:absolute;inset:0;background:radial-gradient(640px 220px at 12% 0%,rgba(76,201,240,.07),transparent 62%);pointer-events:none}.card h3{font-size:18px;font-weight:800;margin:0;color:var(--text);letter-spacing:-.3px}.card .desc{font-size:13px;color:var(--muted);margin:5px 0 12px;line-height:1.4}.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.card-head select{max-width:260px;padding:8px 10px}.chart{width:100%;height:260px;position:relative}.chart.tall{height:365px}.chart.short{height:220px}.chart.xshort{height:175px}.span-3{grid-column:span 3}.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-7{grid-column:span 7}.span-8{grid-column:span 8}.span-9{grid-column:span 9}.span-12{grid-column:span 12}.table-wrap{max-height:360px;overflow:auto;border-radius:18px;border:1px solid var(--stroke2)}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 11px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;vertical-align:middle}th{position:sticky;top:0;background:#0d1524;color:#b8d6ef;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;z-index:2}td{color:#d8e4f3}.status{border-radius:999px;padding:5px 8px;display:inline-block;font-weight:850;font-size:11px}.good{background:rgba(50,213,131,.14);color:#8af0b5}.warn{background:rgba(253,176,34,.14);color:#ffd58a}.bad{background:rgba(249,112,102,.15);color:#ffb5ae}.neutral{background:rgba(148,163,184,.13);color:#d4deec}.empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}.legend{display:flex;gap:12px;flex-wrap:wrap;margin:4px 0 10px}.legend-item{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.sw{width:10px;height:10px;border-radius:99px}.small-note{font-size:12px;color:var(--muted);margin-top:10px}.section-foot{display:flex;justify-content:space-between;gap:12px;margin-top:16px;color:var(--muted);font-size:11px}.insight{border-left:3px solid var(--cyan);padding:10px 12px;background:rgba(34,211,238,.07);border-radius:0 14px 14px 0;color:#cfefff;font-size:13px;line-height:1.45;margin-top:10px}.mini{font-size:12px;color:var(--muted)}
 .tooltip{position:fixed;pointer-events:none;z-index:1000;background:#09111f;border:1px solid rgba(148,163,184,.35);box-shadow:0 18px 48px rgba(0,0,0,.45);border-radius:14px;padding:10px 12px;color:#edf4ff;font-size:12px;opacity:0;transform:translate(-50%,-112%);max-width:340px}.tooltip .tip-ath{display:flex;gap:10px;align-items:center;white-space:normal}.tooltip img,.ath-mini{width:42px;height:42px;border-radius:12px;object-fit:cover;background:#111b2e;border:1px solid var(--stroke)}.tooltip b{color:inherit}.tooltip .muted{color:var(--muted)}.tip-list{white-space:normal;max-width:300px;line-height:1.35;color:inherit}.ath-cell{display:flex;align-items:center;gap:8px}.ath-cell img{width:32px;height:32px;border-radius:10px;object-fit:cover;background:#111b2e;border:1px solid var(--stroke)}
 svg text{font-family:inherit}.axis{fill:var(--muted);font-size:12px}.value-on-shape{font-size:12px;font-weight:800;pointer-events:none}.gridline{stroke:var(--stroke2);stroke-width:1}.axisline{stroke:var(--stroke);stroke-width:1}.bar,.arc,.point{transition:opacity .12s,filter .12s}.bar:hover,.point:hover,.arc:hover{opacity:.78;filter:brightness(1.12)}.line{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.area{opacity:.13}
@@ -544,9 +545,30 @@ body.light .status{border:1px solid transparent}
             <div class="card span-6"><h3>Conteúdos de maior dificuldade</h3><div class="desc">Conteúdos com menor média do atleta nas datas relacionadas.</div><div class="chart" id="chCardWorstContents"></div></div>
             <div class="card span-4"><h3>Resumo competitivo</h3><div class="desc">Distribuição entre titular, reserva e não relacionado.</div><div class="chart" id="chCardStatusDonut"></div></div>
             <div class="card span-8"><h3>Gols + assistências por mês</h3><div class="desc">Barras empilhadas com gols e assistências no mês.</div><div class="chart" id="chCardGAMonth"></div></div>
-            
+            <div class="card span-12" id="cardMaturacaoBox">
+              <div class="card-head"><div><h3>Desenvolvimento maturacional</h3><div class="desc">Mirwald et al. (2002) — baseado na avaliação antropométrica mais recente deste atleta.</div></div></div>
+              <div class="chips" id="cardMaturacaoChips" style="margin:10px 0"></div>
+              <div class="var-picker" id="cardMaturacaoVars"></div>
+              <div class="chart" id="chCardMaturacaoCurve"></div>
+            </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-maturacao">
+      <div class="card" style="margin-bottom:18px">
+        <h3>Maturação por atleta</h3>
+        <div class="desc">Baseado na avaliação antropométrica mais recente de cada atleta — estimativa de maturação biológica (Mirwald et al., 2002), não um diagnóstico médico.</div>
+        <div class="table-wrap" id="tblMaturacao" style="margin-top:14px"></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div><h3>Curva de crescimento</h3><div class="desc">Eixo X = idade do atleta em cada avaliação. Escolha o atleta e as variáveis no eixo Y.</div></div>
+          <select id="maturacaoAthlete" style="max-width:240px"></select>
+        </div>
+        <div class="var-picker" id="maturacaoVarsPicker"></div>
+        <div class="chart tall" id="chMaturacaoCurve"></div>
       </div>
     </section>
 
@@ -974,6 +996,97 @@ function extractGameIndFromCSV(csvText, athleteByNick){
   return gameInd;
 }
 
+// ---------- Avaliação antropométrica / maturação (Mirwald et al., 2002) ----------
+const ANTRO_COL_FALLBACK={'Nome':0,'Apelido':1,'ID atleta':2,'Data avaliação':3,'Estatura (cm)':4,'Estatura sentado (cm)':5,'Massa Corporal (kg)':6,'Altura do banco (cm)':7};
+// Tabela "Expectativa de Crescimento (cm)" (meninos) do protocolo Mirwald — quanto de estatura ainda
+// falta pra maturidade, em função do offset de maturação (de -4 a +4 anos, passo 0.2). Mesma tabela
+// de referência usada pela comissão técnica (planilha "SUB_12 Antropometria Acompanhamento").
+const MIRWALD_GROWTH_TABLE=[
+  {offset:-4.0,precoce:45.29,normal:40.09,tardio:34.73},{offset:-3.8,precoce:44.21,normal:39.08,tardio:33.83},
+  {offset:-3.6,precoce:43.11,normal:38.07,tardio:32.94},{offset:-3.4,precoce:41.99,normal:37.06,tardio:32.05},
+  {offset:-3.2,precoce:40.85,normal:36.05,tardio:31.16},{offset:-3.0,precoce:39.69,normal:35.04,tardio:30.27},
+  {offset:-2.8,precoce:38.52,normal:34.04,tardio:29.38},{offset:-2.6,precoce:37.33,normal:33.05,tardio:28.49},
+  {offset:-2.4,precoce:36.15,normal:32.06,tardio:27.60},{offset:-2.2,precoce:34.97,normal:31.07,tardio:26.70},
+  {offset:-2.0,precoce:33.80,normal:30.06,tardio:25.77},{offset:-1.8,precoce:32.62,normal:29.03,tardio:24.79},
+  {offset:-1.6,precoce:31.44,normal:27.95,tardio:23.74},{offset:-1.4,precoce:30.23,normal:26.83,tardio:22.63},
+  {offset:-1.2,precoce:28.98,normal:25.63,tardio:21.45},{offset:-1.0,precoce:27.66,normal:24.36,tardio:20.22},
+  {offset:-0.8,precoce:26.24,normal:22.99,tardio:18.96},{offset:-0.6,precoce:24.68,normal:21.51,tardio:17.68},
+  {offset:-0.4,precoce:22.96,normal:19.88,tardio:16.31},{offset:-0.2,precoce:21.07,normal:18.09,tardio:14.76},
+  {offset:0.0, precoce:19.04,normal:16.16,tardio:13.05},{offset:0.2, precoce:16.96,normal:14.21,tardio:11.32},
+  {offset:0.4, precoce:14.92,normal:12.35,tardio:9.71}, {offset:0.6, precoce:13.01,normal:10.65,tardio:8.27},
+  {offset:0.8, precoce:11.26,normal:9.12, tardio:6.94}, {offset:1.0, precoce:9.70, normal:7.78, tardio:5.70},
+  {offset:1.2, precoce:8.33, normal:6.59, tardio:4.54}, {offset:1.4, precoce:7.11, normal:5.54, tardio:3.51},
+  {offset:1.6, precoce:6.04, normal:4.62, tardio:2.64}, {offset:1.8, precoce:5.10, normal:3.80, tardio:1.92},
+  {offset:2.0, precoce:4.26, normal:3.09, tardio:1.35}, {offset:2.2, precoce:3.52, normal:2.48, tardio:0.91},
+  {offset:2.4, precoce:2.86, normal:1.96, tardio:0.58}, {offset:2.6, precoce:2.29, normal:1.52, tardio:0.32},
+  {offset:2.8, precoce:1.78, normal:1.16, tardio:0.13}, {offset:3.0, precoce:1.34, normal:0.87, tardio:0.00},
+  {offset:3.2, precoce:0.96, normal:0.63, tardio:0.00}, {offset:3.4, precoce:0.64, normal:0.43, tardio:0.00},
+  {offset:3.6, precoce:0.37, normal:0.27, tardio:0.00}, {offset:3.8, precoce:0.16, normal:0.12, tardio:0.00},
+  {offset:4.0, precoce:0.00, normal:0.00, tardio:0.00},
+];
+// Mesmo comportamento do VLOOKUP aproximado do Excel/Sheets (último argumento TRUE): acha, na tabela
+// ordenada, a maior chave que seja <= o valor buscado — não interpola entre as linhas.
+function mirwaldGrowthRemaining(offset, col){
+  if(offset==null || isNaN(offset)) return null;
+  let match=null;
+  for(const row of MIRWALD_GROWTH_TABLE){ if(row.offset<=offset) match=row; else break; }
+  return match ? match[col] : null;
+}
+// Fórmula de offset de maturação (Mirwald et al., 2002, equação para meninos) + estatura predita,
+// replicando exatamente o método da planilha de referência da comissão técnica:
+// - "Estatura sentado" na planilha de coleta é a leitura bruta (criança sentada em cima do banco);
+//   a estatura sentada de verdade é essa leitura menos a altura do banco.
+// - Offset negativo = ainda não chegou no pico de velocidade de crescimento (PHV); perto de zero =
+//   no auge do estirão; positivo = já passou.
+// - "Estatura predita" = estatura atual + crescimento restante esperado (tabela acima), escolhendo a
+//   coluna adiantado/média/tardio pela mesma faixa de corte da planilha de referência (que é um
+//   detalhe interno desse cálculo específico — não precisa bater com a classificação de maturação
+//   mostrada pro treinador, calculada com os limites que foram pedidos: <13 precoce, 13–14 normal,
+//   >14 tardio).
+function computeMaturation(ageDecimal, heightCm, sittingHeightRawCm, benchHeightCm, weightKg){
+  if([ageDecimal,heightCm,sittingHeightRawCm,benchHeightCm,weightKg].some(v=>v==null||isNaN(v))){
+    return {sittingHeight:null, legLength:null, maturityOffset:null, aphv:null, status:null, predictedHeight:null};
+  }
+  const sittingHeight = sittingHeightRawCm - benchHeightCm;
+  const legLength = heightCm - sittingHeight;
+  const X = sittingHeight*legLength, Y = ageDecimal*legLength, Z = ageDecimal*sittingHeight;
+  const weightHeightRatio = (weightKg/heightCm)*100;
+  const maturityOffset = -9.236 + 0.0002708*X - 0.001663*Y + 0.007216*Z + 0.02292*weightHeightRatio;
+  const aphv = ageDecimal - maturityOffset;
+  const status = aphv<13 ? 'Precoce' : (aphv<=14 ? 'Normal' : 'Tardio');
+  const lookupCol = aphv<13 ? 'precoce' : (aphv<15 ? 'normal' : 'tardio');
+  const remaining = mirwaldGrowthRemaining(maturityOffset, lookupCol);
+  const predictedHeight = remaining!=null ? heightCm+remaining : null;
+  return {sittingHeight, legLength, maturityOffset, aphv, status, predictedHeight};
+}
+function extractAnthropometricsFromCSV(csvText, athletes){
+  const rows=parseCSV(csvText); const col=headerMap(rows,0);
+  const gv=(row,name)=>gGate(row,col,name,ANTRO_COL_FALLBACK[name]);
+  const byNick={}; (athletes||[]).forEach(a=>{ byNick[normLowerText(a.nickname)]=a; });
+  const out=[];
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r]; const nickname=gv(row,'Apelido'); if(!nickname) continue;
+    const date=parseSheetsDate(gv(row,'Data avaliação')); if(!date) continue;
+    const height=csvNum(gv(row,'Estatura (cm)'));
+    const sittingRaw=csvNum(gv(row,'Estatura sentado (cm)'));
+    const weight=csvNum(gv(row,'Massa Corporal (kg)'));
+    const bench=csvNum(gv(row,'Altura do banco (cm)'));
+    if(height==null) continue;
+    const a=byNick[normLowerText(nickname)];
+    const dob=a?a.dob:null;
+    const age = dob ? ((new Date(date)-new Date(dob))/(1000*60*60*24*365)) : null;
+    const m = computeMaturation(age, height, sittingRaw, bench, weight);
+    out.push({
+      nickname, athleteId:gv(row,'ID atleta'), date, month:sheetsMonthLabel(date),
+      age, height, weight, sittingHeightRaw:sittingRaw, benchHeight:bench,
+      sittingHeight:m.sittingHeight, legLength:m.legLength, maturityOffset:m.maturityOffset,
+      aphv:m.aphv, status:m.status, predictedHeight:m.predictedHeight,
+    });
+  }
+  out.sort((x,y)=>x.date.localeCompare(y.date));
+  return out;
+}
+
 function buildSheetsMeta({athletes,trainings,blocks,contents,games}){
   const allDated=[...trainings,...games];
   const monthsSeen=[...new Set(allDated.map(x=>x.month).filter(Boolean))]
@@ -1025,8 +1138,9 @@ function applyCategoriaFilter(data, categoria){
   const games = (data.games||[]).filter(g=>normalizeCategoria(g.category)===norm);
   const gameInd = (data.gameInd||[]).filter(g=>normalizeCategoria(g.category)===norm);
   const notes = (data.notes||[]).filter(n=>allowedNicknames.has(normLowerText(n.athlete)));
+  const anthropometrics = (data.anthropometrics||[]).filter(x=>allowedNicknames.has(normLowerText(x.nickname)));
   const meta = buildSheetsMeta({athletes,trainings,blocks,contents,games});
-  return {...data, athletes, trainings, blocks, contents, games, gameInd, notes, meta};
+  return {...data, athletes, trainings, blocks, contents, games, gameInd, notes, anthropometrics, meta};
 }
 
 async function fetchSheetCSV(sheetId, sheetName){
@@ -1055,7 +1169,18 @@ async function loadFromGoogleSheets(sheetId){
   const notes=extractNotesFromCSV(avaliacaoCsv, athleteByNick);
   const games=extractGamesFromCSV(posjogoCsv);
   const gameInd=extractGameIndFromCSV(posjogoIndCsv, athleteByNick);
-  return {meta:buildSheetsMeta({athletes,trainings,blocks,contents,games}), athletes, trainings, blocks, contents, notes, games, gameInd};
+  // Fora do Promise.all principal de prop\u00f3sito: essa aba foi adicionada depois das outras, ent\u00e3o se
+  // ela ainda n\u00e3o existir (ou falhar por qualquer motivo pontual) o resto do dashboard continua
+  // funcionando normalmente \u2014 s\u00f3 a parte de matura\u00e7\u00e3o fica vazia, em vez de derrubar o carregamento
+  // inteiro pro data.json desatualizado.
+  let anthropometrics=[];
+  try{
+    const antropometriaCsv = await fetchSheetCSV(sheetId,'Avalia\u00e7\u00e3o antropom\u00e9trica');
+    anthropometrics = extractAnthropometricsFromCSV(antropometriaCsv, athletes);
+  }catch(antroErr){
+    console.warn('[dashboard] Aba "Avalia\u00e7\u00e3o antropom\u00e9trica" indispon\u00edvel.', antroErr);
+  }
+  return {meta:buildSheetsMeta({athletes,trainings,blocks,contents,games}), athletes, trainings, blocks, contents, notes, games, gameInd, anthropometrics};
 }
 
 // Globais: precisam existir fora de boot() porque atributos onerror inline
@@ -1114,6 +1239,7 @@ const PAGES = [
   ['jogos','Desempenho em Jogos','Análise coletiva de resultados, desempenho, gols e contexto competitivo.','Desempenho em jogos'],
   ['posjogo','Pós-jogo Individual · Gestão de Minutagem','Oportunidades, titularidade, produção ofensiva e coerência com avaliação de treino.','Pós-jogo individual'],
   ['card','Card Individual do Atleta','Página de detalhe com perfil, treino, jogo, evolução, oportunidades e conteúdos associados.','Card do atleta'],
+  ['maturacao','Desenvolvimento Maturacional','Estimativa de maturação biológica (Mirwald et al., 2002) a partir da avaliação antropométrica — estatura predita, offset de maturação e distância ao pico de velocidade de crescimento.','Maturação'],
   ['centro','Centro de Treino','Sessões já aplicadas e opção de subir manualmente as próximas — organização da sessão, conteúdos e atividades.','Centro de treino'],
   ['microciclo','Microciclo Semanal','Planejamento semanal dos conteúdos técnico/táticos por parte da sessão.','Microciclo semanal']
 ];
@@ -1121,9 +1247,9 @@ const NAV_GROUPS = [
   {group:'Geral', pages:['geral']},
   {group:'Treinos', pages:['controle','conteudos','explorador','centro','microciclo']},
   {group:'Jogos', pages:['jogos','posjogo']},
-  {group:'Elenco', pages:['avaliacao','card']}
+  {group:'Elenco', pages:['avaliacao','card','maturacao']}
 ];
-const PAGE_ICONS = {geral:'📊', controle:'🗂️', conteudos:'🗺️', explorador:'🔎', jogos:'⚽', posjogo:'🎯', avaliacao:'📈', card:'🪪', centro:'🏟️', microciclo:'📅'};
+const PAGE_ICONS = {geral:'📊', controle:'🗂️', conteudos:'🗺️', explorador:'🔎', jogos:'⚽', posjogo:'🎯', avaliacao:'📈', card:'🪪', maturacao:'📏', centro:'🏟️', microciclo:'📅'};
 const FILTERS_BY_PAGE = {
   geral:['start','end','month'],
   controle:['start','end','month','task','complexity','part'],
@@ -1133,11 +1259,13 @@ const FILTERS_BY_PAGE = {
   jogos:['start','end','month','competition','rank','format','result'],
   posjogo:['start','end','month','competition','rank','format','result'],
   card:['athlete','start','end','month'],
+  maturacao:[],
   centro:[],
   microciclo:[]
 };
 const filterState = {start:DATA.meta.minDate||'', end:DATA.meta.maxDate||'', month:'', athlete:'', position:'', quartile:'', tenure:'', competition:'', rank:'', format:'', result:'', task:'', complexity:'', part:'', content:'', contentType:''};
 let activePage = 'geral';
+let maturacaoVars = ['height'];
 let donutState = {tenureBand:null, quartile:null, position:null};
 let heatContentType = '';
 let heatRoleFilter = '';
@@ -1755,7 +1883,7 @@ function renderMicrociclo(){
     inp.oninput = ()=>{ week.days[inp.dataset.day][inp.dataset.key]=inp.value; markMcDirty(); };
   });
 }
-function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='explorador') renderExplorador(); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard(); if(activePage==='centro') renderCentro(); if(activePage==='microciclo') renderMicrociclo();}
+function renderActive(){const f=activeFilters(); activeFilterPills(f); if(activePage==='geral') renderGeral(f); if(activePage==='controle') renderControle(f); if(activePage==='conteudos') renderConteudos(f); if(activePage==='explorador') renderExplorador(); if(activePage==='avaliacao') renderAvaliacao(f); if(activePage==='jogos') renderJogos(f); if(activePage==='posjogo') renderPosJogo(f); if(activePage==='card') renderCard(); if(activePage==='maturacao') renderMaturacao(); if(activePage==='centro') renderCentro(); if(activePage==='microciclo') renderMicrociclo();}
 
 function monthlyAgg(rows, valueFn, agg='avg'){return MONTHS.map(m=>{const arr=rows.filter(x=>x.month===m); return {month:m, value:agg==='sum'?sum(arr.map(valueFn)):avg(arr.map(valueFn)), count:arr.length, items:arr};}).filter(x=>x.count>0)}
 function renderGeral(f){const t=filteredTrainings(f), g=filteredGames(f); const effectiveAvg=avg(t.map(x=>x.effectiveMinutes)); const trainPct=avg(t.map(x=>x.pctMinutagem)); const wins=g.filter(x=>x.result==='Vitória').length, draws=g.filter(x=>x.result==='Empate').length, losses=g.filter(x=>x.result==='Derrota').length; const totalMinutesGeral=sum(t.map(x=>x.effectiveMinutes)); const totalTAAGeral=sum(t.map(x=>x.totalTAA)); const avgTAAGeral=avg(t.map(x=>x.totalTAA)); metricCards('kpisGeral',[
@@ -2058,9 +2186,94 @@ function renderCard(){
   const contentPerf=athleteContentPerformance(name); horizontalBar('chCardBestContents',contentPerf.best,'content',['avg'],{xMin:3,xMax:10,left:170,dataLabel:true,truncate:26}); horizontalBar('chCardWorstContents',contentPerf.worst,'content',['avg'],{xMin:3,xMax:10,left:170,dataLabel:true,truncate:26});
   donutChart('chCardStatusDonut',[{key:'Titular',value:gsum.titular,items:[]},{key:'Reserva',value:gsum.reserva,items:[]},{key:'Não relacionado',value:gsum.nao,items:[]}].filter(x=>x.value>0),{unit:'jogo(s)',showNames:false,colors:[COLORS[3],COLORS[0],COLORS[5]]});
   const gaMonth=MONTHS.map(m=>{const arr=gi.filter(x=>x.month===m); return {month:m,gols:sum(arr.map(x=>x.goals)),assistências:sum(arr.map(x=>x.assists))};}).filter(x=>x.gols+x.assistências>0); verticalBar('chCardGAMonth',gaMonth,'month',['gols','assistências'],{stacked:true,colors:[COLORS[3],COLORS[2]],labels:['Gols','Assistências'],dataLabel:true});
-  
+  renderCardMaturacao(name);
 }
 function athleteContentPerformance(athlete){const notesByDate=Object.fromEntries(DATA.notes.filter(n=>n.athlete===athlete).map(n=>[n.date,n.note])); const rows=[]; DATA.contents.forEach(c=>{if(notesByDate[c.date]!=null) rows.push({content:c.content,note:notesByDate[c.date],type:c.contentType});}); const s=Object.entries(by(rows,'content')).map(([k,v])=>({content:k,avg:avg(v.map(x=>x.note)),count:v.length})).filter(x=>x.count>=2&&x.avg!=null); return {best:[...s].sort((a,b)=>b.avg-a.avg).slice(0,8), worst:[...s].sort((a,b)=>a.avg-b.avg).slice(0,8)};}
+const MATURACAO_VAR_DEFS=[
+  {key:'height',label:'Estatura atual (cm)',color:COLORS[0]},
+  {key:'predictedHeight',label:'Estatura predita (cm)',color:COLORS[3]},
+  {key:'weight',label:'Massa corporal (kg)',color:COLORS[2]},
+  {key:'aphv',label:'Idade do PVC (anos)',color:COLORS[5]},
+];
+function latestAnthro(nickname){const rows=(DATA.anthropometrics||[]).filter(x=>x.nickname===nickname); return rows.length?rows[rows.length-1]:null;}
+function ageNowFromDob(dob){if(!dob) return null; return (new Date()-new Date(dob))/(1000*60*60*24*365);}
+function renderVarPicker(containerId, checkedList, onChange){
+  const el=$(containerId); if(!el) return;
+  el.innerHTML=MATURACAO_VAR_DEFS.map(v=>`<label><input type="checkbox" value="${v.key}" ${checkedList.includes(v.key)?'checked':''}><span>${v.label}</span></label>`).join('');
+  [...el.querySelectorAll('input[type=checkbox]')].forEach(cb=>{
+    cb.onchange=()=>{
+      const k=cb.value;
+      if(cb.checked){ if(!checkedList.includes(k)) checkedList.push(k); }
+      else { const i=checkedList.indexOf(k); if(i>=0) checkedList.splice(i,1); }
+      onChange();
+    };
+  });
+}
+function growthChartRows(nickname){
+  return (DATA.anthropometrics||[]).filter(x=>x.nickname===nickname)
+    .map(x=>({ageLabel:(x.age!=null?fmt(x.age,1):'—')+' anos', date:x.date, height:x.height, predictedHeight:x.predictedHeight, weight:x.weight, aphv:x.aphv}))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+function renderGrowthChart(chartId, nickname, selectedVars){
+  const rows=growthChartRows(nickname);
+  if(!rows.length){ drawEmpty(chartId,'Sem avaliação antropométrica registrada para este atleta.'); return; }
+  if(!selectedVars.length){ drawEmpty(chartId,'Selecione ao menos uma variável para visualizar.'); return; }
+  const series=MATURACAO_VAR_DEFS.filter(v=>selectedVars.includes(v.key)).map(v=>({key:v.key,label:v.label,color:v.color}));
+  lineChart(chartId, rows, 'ageLabel', series, {});
+}
+function renderMaturacao(){
+  const sel=$('maturacaoAthlete');
+  if(sel && !sel.dataset.ready){
+    sel.innerHTML=DATA.meta.athletes.map(a=>`<option value="${a}">${a}</option>`).join('');
+    sel.value=filterState.athlete||DATA.meta.athletes[0]||'';
+    sel.onchange=()=>renderMaturacao();
+    sel.dataset.ready='1';
+  }
+  const rows=DATA.athletes.map(a=>{
+    const ageNow=ageNowFromDob(a.dob);
+    const last=latestAnthro(a.nickname);
+    if(!last) return [a.nickname, ageNow!=null?fmt(ageNow,1)+' anos':'—', '—','—','—','—','—','Sem avaliação'];
+    return [
+      a.nickname,
+      ageNow!=null?fmt(ageNow,1)+' anos':'—',
+      last.height!=null?fmt(last.height,1)+' cm':'—',
+      last.predictedHeight!=null?fmt(last.predictedHeight,1)+' cm':'—',
+      last.maturityOffset!=null?fmt(last.maturityOffset,2):'—',
+      last.aphv!=null?fmt(last.aphv,2)+' anos':'—',
+      last.status||'—',
+      last.date.split('-').reverse().join('/'),
+    ];
+  });
+  renderTable('tblMaturacao', ['Atleta','Idade atual','Estatura atual','Estatura predita','Maturity offset','Idade do PVC','Sua maturação será','Última avaliação'], rows);
+  if(sel){
+    renderVarPicker('maturacaoVarsPicker', maturacaoVars, ()=>renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars));
+    renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars);
+  }
+}
+function renderCardMaturacao(name){
+  const box=$('cardMaturacaoBox'); if(!box) return;
+  const last=latestAnthro(name);
+  const a=athleteObj(name);
+  const ageNow=ageNowFromDob(a&&a.dob);
+  if(!last){
+    $('cardMaturacaoChips').innerHTML='<span class="chip">Sem avaliação antropométrica registrada para este atleta ainda.</span>';
+    $('cardMaturacaoVars').innerHTML='';
+    drawEmpty('chCardMaturacaoCurve','Sem avaliação antropométrica registrada para este atleta.');
+    return;
+  }
+  const distPVC=(last.aphv!=null && ageNow!=null) ? (last.aphv-ageNow) : null;
+  $('cardMaturacaoChips').innerHTML=[
+    {label:'Estatura atual', value: last.height!=null?fmt(last.height,1)+' cm':'—'},
+    {label:'Massa corporal', value: last.weight!=null?fmt(last.weight,1)+' kg':'—'},
+    {label:'Estatura predita', value: last.predictedHeight!=null?fmt(last.predictedHeight,1)+' cm':'—'},
+    {label:'Distância ao PVC', value: distPVC!=null?(fmt(Math.abs(distPVC),1)+' anos '+(distPVC>=0?'(até o pico)':'(após o pico)')):'—'},
+    {label:'Idade do PVC', value: last.aphv!=null?fmt(last.aphv,2)+' anos':'—'},
+    {label:'Maturação', value: last.status||'—'},
+    {label:'Última avaliação', value: last.date.split('-').reverse().join('/')},
+  ].map(c=>`<span class="chip">${c.label}<b>${c.value}</b></span>`).join('');
+  renderVarPicker('cardMaturacaoVars', maturacaoVars, ()=>renderGrowthChart('chCardMaturacaoCurve', name, maturacaoVars));
+  renderGrowthChart('chCardMaturacaoCurve', name, maturacaoVars);
+}
 window.addEventListener('resize',()=>renderActive());
 window.addEventListener('beforeunload',(e)=>{ if(mcDirty){ e.preventDefault(); e.returnValue=''; } });
 init();
