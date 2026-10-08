@@ -1154,6 +1154,17 @@ async function fetchSheetCSV(sheetId, sheetName){
     return text;
   } finally { clearTimeout(timer); }
 }
+// A busca por aba do Sheets (gviz) exige o nome exato (mai\u00fascula/min\u00fascula e acento importam).
+// Pra abas cujo nome o treinador pode ter digitado com varia\u00e7\u00f5es, tenta cada nome candidato em
+// sequ\u00eancia e usa o primeiro que responder \u2014 evita quebrar silenciosamente por causa de um acento.
+async function fetchSheetCSVAny(sheetId, nameVariants){
+  let lastErr=null;
+  for(const name of nameVariants){
+    try{ return await fetchSheetCSV(sheetId, name); }
+    catch(e){ lastErr=e; }
+  }
+  throw lastErr;
+}
 
 async function loadFromGoogleSheets(sheetId){
   const [atletasCsv, treinosCsv, avaliacaoCsv, posjogoCsv, posjogoIndCsv] = await Promise.all([
@@ -1174,10 +1185,13 @@ async function loadFromGoogleSheets(sheetId){
   // inteiro pro data.json desatualizado.
   let anthropometrics=[];
   try{
-    const antropometriaCsv = await fetchSheetCSV(sheetId,'Avalia\u00e7\u00e3o antropom\u00e9trica');
+    const antropometriaCsv = await fetchSheetCSVAny(sheetId,[
+      'Avalia\u00e7\u00e3o antropom\u00e9trica','avalia\u00e7\u00e3o antropometrica','Avalia\u00e7\u00e3o antropometrica',
+      'avalia\u00e7\u00e3o antropom\u00e9trica','Avalia\u00e7\u00e3o Antropom\u00e9trica','Avalia\u00e7\u00e3o Antropometrica',
+    ]);
     anthropometrics = extractAnthropometricsFromCSV(antropometriaCsv, athletes);
   }catch(antroErr){
-    console.warn('[dashboard] Aba "Avalia\u00e7\u00e3o antropom\u00e9trica" indispon\u00edvel.', antroErr);
+    console.warn('[dashboard] Aba de avalia\u00e7\u00e3o antropom\u00e9trica indispon\u00edvel (conferir o nome exato da aba na planilha).', antroErr);
   }
   return {meta:buildSheetsMeta({athletes,trainings,blocks,contents,games}), athletes, trainings, blocks, contents, notes, games, gameInd, anthropometrics};
 }
