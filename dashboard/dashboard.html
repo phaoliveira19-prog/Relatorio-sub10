@@ -545,11 +545,16 @@ body.light .status{border:1px solid transparent}
             <div class="card span-6"><h3>Conteúdos de maior dificuldade</h3><div class="desc">Conteúdos com menor média do atleta nas datas relacionadas.</div><div class="chart" id="chCardWorstContents"></div></div>
             <div class="card span-4"><h3>Resumo competitivo</h3><div class="desc">Distribuição entre titular, reserva e não relacionado.</div><div class="chart" id="chCardStatusDonut"></div></div>
             <div class="card span-8"><h3>Gols + assistências por mês</h3><div class="desc">Barras empilhadas com gols e assistências no mês.</div><div class="chart" id="chCardGAMonth"></div></div>
-            <div class="card span-12" id="cardMaturacaoBox">
-              <div class="card-head"><div><h3>Desenvolvimento maturacional</h3><div class="desc">Mirwald et al. (2002) — baseado na avaliação antropométrica mais recente deste atleta.</div></div></div>
-              <div class="chips" id="cardMaturacaoChips" style="margin:10px 0"></div>
+            <div class="card span-4" id="cardMaturacaoBox">
+              <h3>Desenvolvimento maturacional</h3>
+              <div class="desc">Mirwald et al. (2002) — avaliação mais recente.</div>
+              <div class="chips" id="cardMaturacaoChips" style="margin-top:10px"></div>
+            </div>
+            <div class="card span-8">
+              <h3>Curva de crescimento</h3>
+              <div class="desc">Evolução do atleta nas avaliações registradas.</div>
               <div class="var-picker" id="cardMaturacaoVars"></div>
-              <div class="chart" id="chCardMaturacaoCurve"></div>
+              <div class="chart short" id="chCardMaturacaoCurve"></div>
             </div>
           </div>
         </div>
@@ -560,9 +565,15 @@ body.light .status{border:1px solid transparent}
       <div class="kpi-grid" id="kpisMaturacao" style="margin-bottom:18px"></div>
       <div class="grid" style="margin-bottom:18px">
         <div class="card span-12">
-          <h3>Maturação por atleta</h3>
-          <div class="desc">Baseado na avaliação antropométrica mais recente de cada atleta — estimativa de maturação biológica (Mirwald et al., 2002), não um diagnóstico médico.</div>
+          <div class="card-head">
+            <div><h3>Maturação por atleta</h3><div class="desc">Baseado na avaliação antropométrica mais recente de cada atleta — estimativa de maturação biológica (Mirwald et al., 2002), não um diagnóstico médico.</div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="maturacaoSortField" style="max-width:200px"></select>
+              <select id="maturacaoSortDir" style="max-width:140px"><option value="asc">Crescente</option><option value="desc">Decrescente</option></select>
+            </div>
+          </div>
           <div id="maturacaoDiag"></div>
+          <div class="var-picker" id="maturacaoColsPicker" style="margin-top:12px"></div>
           <div class="table-wrap" id="tblMaturacao" style="margin-top:14px"></div>
         </div>
         <div class="card span-12">
@@ -1385,6 +1396,9 @@ const FILTERS_BY_PAGE = {
 const filterState = {start:DATA.meta.minDate||'', end:DATA.meta.maxDate||'', month:'', athlete:'', position:'', quartile:'', tenure:'', competition:'', rank:'', format:'', result:'', task:'', complexity:'', part:'', content:'', contentType:''};
 let activePage = 'geral';
 let maturacaoVars = ['height'];
+let maturacaoTableCols = ['ageNow','height','predictedHeight','offset','aphv','status','lastDate'];
+let maturacaoSortField = 'nickname';
+let maturacaoSortDir = 'asc';
 let donutState = {tenureBand:null, quartile:null, position:null};
 let heatContentType = '';
 let heatRoleFilter = '';
@@ -1494,7 +1508,11 @@ function scatterChart(id,data,xKey,yKey,opts={}){if(!data.length){drawEmpty(id);
 function horizontalBarScroll(id,data,labelKey,valueKeys,opts={}){const outer=$(id); if(!outer)return; outer.innerHTML=''; if(!data.length){drawEmpty(id);return} outer.style.overflowY='auto'; outer.style.overflowX='hidden'; const inner=document.createElement('div'); inner.className='chart'; inner.id=id+'_inner'; inner.style.height=Math.max(260,data.length*30+52)+'px'; outer.appendChild(inner); horizontalBar(inner.id,data,labelKey,valueKeys,opts);}
 function lineChartSessionTicks(id,data,xKey,series,opts={}){if(!data.length){drawEmpty(id);return} const box=chartBox(id); if(!box)return; const {el,svg,w,h}=box; const m={l:48,r:22,t:18,b:42}; const yVals=[]; data.forEach(d=>series.forEach(s=>{if(d[s.key]!=null&&!isNaN(d[s.key])) yVals.push(Number(d[s.key]))})); const yMin=opts.yMin??0, yMax=opts.yMax??niceMax(Math.max(...yVals,1)); drawGrid(svg,w,h,m,yMin,yMax,opts.ticks||4); const x=(i)=>m.l+(w-m.l-m.r)*(data.length===1?.5:i/(data.length-1)); const y=(v)=>h-m.b-(h-m.t-m.b)*((v-yMin)/(yMax-yMin)); svg.appendChild(svgEl('line',{x1:m.l,y1:h-m.b,x2:w-m.r,y2:h-m.b,class:'axisline'})); let seen=new Set(); data.forEach((d,i)=>{const mo=d.month||d[xKey]; if(!seen.has(mo)){seen.add(mo); addText(svg,x(i),h-20,truncate(mo,11),'axis');}}); series.forEach((s,si)=>{let pts=data.map((d,i)=>d[s.key]!=null&&!isNaN(d[s.key])?[x(i),y(d[s.key]),d]:null).filter(Boolean); if(!pts.length)return; const path=pts.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' '); svg.appendChild(svgEl('path',{d:path,class:'line',stroke:s.color||COLORS[si]})); pts.forEach(p=>{const c=svgEl('circle',{cx:p[0],cy:p[1],r:4,fill:s.color||COLORS[si],class:'point'}); c.onmousemove=e=>tip(opts.tooltipFn?opts.tooltipFn(p[2],s):`<b>${p[2].date||p[2][xKey]}</b><br>${p[2].month||''}<br>${s.label||s.key}: ${fmt(p[2][s.key])}`,e); c.onmouseleave=hideTip; svg.appendChild(c);});}); if(series.length>1) legend(el,series.map(s=>s.key),series.map((s,i)=>s.color||COLORS[i]),series.map(s=>s.label||s.key));}
 function comparisonIndexBar(id,data){data=data.map(d=>({...d,display:(d.idx<70?'⚠️ ':d.idx>130?'✅ ':'')+d.metric})); horizontalBar(id,data,'display',['idx'],{xMax:500,left:150,dataLabel:true,tooltipFn:d=>`<b>${d.metric}</b><br>Índice: ${fmt(d.idx,0)}<br>Média do grupo = 100<br>${d.idx<70?'⚠️ abaixo de 70':d.idx>130?'✅ acima de 130':'faixa esperada'}`});}
-function donutChart(id,data,opts={}){if(!data.length){drawEmpty(id);return} const box=chartBox(id); if(!box)return; const {el,svg,w,h}=box; const cx=w/2, cy=h/2+4, r=Math.min(w,h)*.34, inner=r*.58; const total=sum(data.map(d=>d.value)); const pctOf=v=>total?fmt(v/total*100,0):'0'; let a0=-Math.PI/2; data.forEach((d,i)=>{const ang=total?d.value/total*Math.PI*2:0; const a1=a0+ang; const large=ang>Math.PI?1:0; const p=(a,rr)=>[cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]; const [x0,y0]=p(a0,r), [x1,y1]=p(a1,r), [ix1,iy1]=p(a1,inner), [ix0,iy0]=p(a0,inner); const path=`M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} L ${ix1} ${iy1} A ${inner} ${inner} 0 ${large} 0 ${ix0} ${iy0} Z`; const arc=svgEl('path',{d:path,fill:opts.colors?.[i]||COLORS[i%COLORS.length],class:'arc',opacity:(opts.activeKey && opts.activeKey!==d.key ? .55 : .95)}); arc.onmousemove=e=>{const unit=opts.unit||'atleta(s)'; let names=opts.showNames===false?[]:(d.items||[]).map(a=>a.nickname||a.name||a.athlete).filter(Boolean); tip(`<b>${d.key}</b><br>${fmtInt(d.value)} ${unit} · ${pctOf(d.value)}%${names.length?`<div class="tip-list">${names.slice(0,18).join(', ')}${names.length>18?'…':''}</div>`:''}`,e)}; arc.onmouseleave=hideTip; arc.onclick=()=>opts.onClick&&opts.onClick(d); svg.appendChild(arc); const mid=(a0+a1)/2; if(ang>.18){const [tx,ty]=p(mid,(r+inner)/2); const sliceColor=opts.colors?.[i]||COLORS[i%COLORS.length]; const lbl=addText(svg,tx,ty+4,pctOf(d.value)+'%','value-on-shape'); lbl.setAttribute('fill',contrastText(sliceColor));} a0=a1;}); addText(svg,cx,cy-2,fmtInt(total),'axis'); addText(svg,cx,cy+14,opts.unit||'atletas','axis'); legend(el,data.map(d=>d.key),data.map((d,i)=>opts.colors?.[i]||COLORS[i%COLORS.length]),data.map(d=>`${truncate(d.key,opts.legendTruncate||30)} · ${pctOf(d.value)}%`));}
+function donutChart(id,data,opts={}){if(!data.length){drawEmpty(id);return} const box=chartBox(id); if(!box)return; const {el,svg,w,h}=box; const cx=w/2, cy=h/2+4, r=Math.min(w,h)*.34, inner=r*.58; const total=sum(data.map(d=>d.value)); const pctOf=v=>total?fmt(v/total*100,0):'0'; let a0=-Math.PI/2; data.forEach((d,i)=>{
+  // Cap a pouco antes de 2π: quando uma única fatia cobre 100% dos dados, o ângulo final bate
+  // exatamente no ângulo inicial (círculo completo) e o comando de arco do SVG, com ponto inicial
+  // igual ao final, não desenha nada — fica em branco mesmo com os dados corretos.
+  const ang=total?Math.min(d.value/total*Math.PI*2, Math.PI*2-0.0001):0; const a1=a0+ang; const large=ang>Math.PI?1:0; const p=(a,rr)=>[cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]; const [x0,y0]=p(a0,r), [x1,y1]=p(a1,r), [ix1,iy1]=p(a1,inner), [ix0,iy0]=p(a0,inner); const path=`M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} L ${ix1} ${iy1} A ${inner} ${inner} 0 ${large} 0 ${ix0} ${iy0} Z`; const arc=svgEl('path',{d:path,fill:opts.colors?.[i]||COLORS[i%COLORS.length],class:'arc',opacity:(opts.activeKey && opts.activeKey!==d.key ? .55 : .95)}); arc.onmousemove=e=>{const unit=opts.unit||'atleta(s)'; let names=opts.showNames===false?[]:(d.items||[]).map(a=>a.nickname||a.name||a.athlete).filter(Boolean); tip(`<b>${d.key}</b><br>${fmtInt(d.value)} ${unit} · ${pctOf(d.value)}%${names.length?`<div class="tip-list">${names.slice(0,18).join(', ')}${names.length>18?'…':''}</div>`:''}`,e)}; arc.onmouseleave=hideTip; arc.onclick=()=>opts.onClick&&opts.onClick(d); svg.appendChild(arc); const mid=(a0+a1)/2; if(ang>.18){const [tx,ty]=p(mid,(r+inner)/2); const sliceColor=opts.colors?.[i]||COLORS[i%COLORS.length]; const lbl=addText(svg,tx,ty+4,pctOf(d.value)+'%','value-on-shape'); lbl.setAttribute('fill',contrastText(sliceColor));} a0=a1;}); addText(svg,cx,cy-2,fmtInt(total),'axis'); addText(svg,cx,cy+14,opts.unit||'atletas','axis'); legend(el,data.map(d=>d.key),data.map((d,i)=>opts.colors?.[i]||COLORS[i%COLORS.length]),data.map(d=>`${truncate(d.key,opts.legendTruncate||30)} · ${pctOf(d.value)}%`));}
 function heatmap(id, rows, cols, valFn, opts={}){const el=$(id); if(!rows.length||!cols.length){drawEmpty(id);return} el.innerHTML=''; const wrap=document.createElement('div'); wrap.className='table-wrap'; wrap.style.maxHeight=opts.maxHeight||'100%'; const extraCols=opts.extraCols||[]; const tbl=document.createElement('table'); tbl.innerHTML='<thead><tr><th>'+ (opts.rowLabel||'') +'</th>'+cols.map(c=>`<th>${c}</th>`).join('')+(opts.showTotal?'<th>Total</th>':'')+extraCols.map(ec=>`<th>${ec.label}</th>`).join('')+'</tr></thead>'; const tb=document.createElement('tbody'); let max=0; rows.forEach(r=>cols.forEach(c=>{const v=valFn(r,c); const n=typeof v==='object'?num(v.value):num(v); max=Math.max(max,n)})); rows.forEach(r=>{const tr=document.createElement('tr'); const first=document.createElement('td'); first.style.minWidth='190px'; first.innerHTML=opts.athleteRows?athleteCell(r):`<b>${truncate(r,32)}</b>`; tr.appendChild(first); let rowTotal=0; cols.forEach(c=>{const raw=valFn(r,c)||0; const v=typeof raw==='object'?num(raw.value):num(raw); rowTotal+=v||0; const label=typeof raw==='object'?raw.label:(v?fmt(v,opts.decimals??0):''); const o=max?Math.min(.92,v/max):0; const rgb=opts.color||'34,211,238'; const minA=opts.minAlpha??0.22, maxA=opts.maxAlpha??0.96; const bg=`rgba(${rgb},${minA+o*(maxA-minA)})`; const td=document.createElement('td'); td.style.textAlign='center'; td.style.background=v?bg:'rgba(255,255,255,.02)'; td.style.color=v?'#f8feff':'#516174'; td.innerHTML=label; td.onmousemove=e=>{if(opts.tooltipFn) tip(opts.tooltipFn(r,c,raw),e)}; td.onmouseleave=hideTip; tr.appendChild(td);}); if(opts.showTotal){const td=document.createElement('td'); td.style.textAlign='center'; td.style.fontWeight='900'; td.style.color='var(--text)'; td.style.borderLeft='1px solid var(--stroke2)'; td.style.background='rgba(255,255,255,.03)'; td.innerHTML=fmt(rowTotal,opts.decimals??0); tr.appendChild(td);} extraCols.forEach(ec=>{const td=document.createElement('td'); td.style.textAlign='center'; td.style.fontWeight='900'; td.style.color='var(--text)'; td.style.background='rgba(255,255,255,.03)'; td.innerHTML=ec.valFn(r); tr.appendChild(td);}); tb.appendChild(tr);}); tbl.appendChild(tb); wrap.appendChild(tbl); el.appendChild(wrap);}
 function renderTable(id, headers, rows){const el=$(id); if(!rows.length){el.innerHTML='<div class="empty">Sem registros no filtro atual</div>';return} el.innerHTML='<table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>`<td>${c??'—'}</td>`).join('')+'</tr>').join('')+'</tbody></table>';}
 function kpi(container, items){$(container).innerHTML=items.map(d=>`<div class="kpi"><div class="label">${d.label}</div><div class="value ${d.small?'small':''}">${d.value}</div><div class="sub">${d.sub||''}</div>${d.chips?'<div class="chips">'+d.chips.map(c=>`<span class="chip">${c.label}<b>${c.value}</b></span>`).join('')+'</div>':''}</div>`).join('')}
@@ -2324,9 +2342,54 @@ function maturacaoYDomain(selectedVars){
 }
 function latestAnthro(nickname){const rows=(DATA.anthropometrics||[]).filter(x=>x.nickname===nickname); return rows.length?rows[rows.length-1]:null;}
 function ageNowFromDob(dob){if(!dob) return null; return (new Date()-new Date(dob))/(1000*60*60*24*365);}
-function renderVarPicker(containerId, checkedList, onChange){
+// Campos da tabela "Maturação por atleta": `column:true` entra na lista de colunas opt-in (o
+// treinador escolhe quais aparecem); `value` é o valor bruto usado pra ordenar, `display` é o texto
+// formatado mostrado na célula. "Atleta" (nickname) é column:false porque fica sempre fixo, mas
+// continua disponível como critério de ordenação.
+const MATURACAO_FIELD_DEFS=[
+  {key:'nickname', label:'Atleta', column:false, value:(a)=>a.nickname},
+  {key:'ageNow', label:'Idade atual', column:true, value:(a,ageNow)=>ageNow, display:(a,ageNow)=>ageNow!=null?fmt(ageNow,1)+' anos':'—'},
+  {key:'height', label:'Estatura atual', column:true, value:(a,ageNow,last)=>last&&last.height, display:(a,ageNow,last)=>last&&last.height!=null?fmt(last.height,1)+' cm':'—'},
+  {key:'predictedHeight', label:'Estatura predita', column:true, value:(a,ageNow,last)=>last&&last.predictedHeight, display:(a,ageNow,last)=>last&&last.predictedHeight!=null?fmt(last.predictedHeight,1)+' cm':'—'},
+  {key:'offset', label:'Maturity offset', column:true, value:(a,ageNow,last)=>last&&last.maturityOffset, display:(a,ageNow,last)=>last&&last.maturityOffset!=null?fmt(last.maturityOffset,2):'—'},
+  {key:'aphv', label:'Idade do PVC', column:true, value:(a,ageNow,last)=>last&&last.aphv, display:(a,ageNow,last)=>last&&last.aphv!=null?fmt(last.aphv,2)+' anos':'—'},
+  {key:'status', label:'Sua maturação será', column:true, value:(a,ageNow,last)=>last&&last.status, display:(a,ageNow,last)=>last?(last.status||'—'):'Sem avaliação'},
+  {key:'lastDate', label:'Última avaliação', column:true, value:(a,ageNow,last)=>last&&last.date, display:(a,ageNow,last)=>last?last.date.split('-').reverse().join('/'):'—'},
+];
+const MATURACAO_TABLE_COL_DEFS=MATURACAO_FIELD_DEFS.filter(f=>f.column);
+function renderMaturacaoTable(){
+  renderVarPicker('maturacaoColsPicker', MATURACAO_TABLE_COL_DEFS, maturacaoTableCols, renderMaturacaoTable);
+  const sortFieldSel=$('maturacaoSortField');
+  if(sortFieldSel && !sortFieldSel.dataset.ready){
+    sortFieldSel.innerHTML=MATURACAO_FIELD_DEFS.map(f=>`<option value="${f.key}">${f.label}</option>`).join('');
+    sortFieldSel.value=maturacaoSortField;
+    sortFieldSel.onchange=()=>{maturacaoSortField=sortFieldSel.value; renderMaturacaoTable();};
+    sortFieldSel.dataset.ready='1';
+  }
+  const sortDirSel=$('maturacaoSortDir');
+  if(sortDirSel && !sortDirSel.dataset.ready){
+    sortDirSel.value=maturacaoSortDir;
+    sortDirSel.onchange=()=>{maturacaoSortDir=sortDirSel.value; renderMaturacaoTable();};
+    sortDirSel.dataset.ready='1';
+  }
+  const activeCols=MATURACAO_TABLE_COL_DEFS.filter(f=>maturacaoTableCols.includes(f.key));
+  const entries=DATA.athletes.map(a=>({a, ageNow:ageNowFromDob(a.dob), last:latestAnthro(a.nickname)}));
+  const sortDef=MATURACAO_FIELD_DEFS.find(f=>f.key===maturacaoSortField)||MATURACAO_FIELD_DEFS[0];
+  entries.sort((x,y)=>{
+    const xv=sortDef.value(x.a,x.ageNow,x.last), yv=sortDef.value(y.a,y.ageNow,y.last);
+    const xn=xv==null, yn=yv==null;
+    if(xn&&yn) return 0;
+    if(xn) return 1;
+    if(yn) return -1;
+    const cmp = typeof xv==='string' ? xv.localeCompare(yv) : xv-yv;
+    return maturacaoSortDir==='desc' ? -cmp : cmp;
+  });
+  const rows=entries.map(({a,ageNow,last})=>[athleteCell(a.nickname), ...activeCols.map(f=>f.display(a,ageNow,last))]);
+  renderTable('tblMaturacao', ['Atleta', ...activeCols.map(f=>f.label)], rows);
+}
+function renderVarPicker(containerId, defs, checkedList, onChange){
   const el=$(containerId); if(!el) return;
-  el.innerHTML=MATURACAO_VAR_DEFS.map(v=>`<label><input type="checkbox" value="${v.key}" ${checkedList.includes(v.key)?'checked':''}><span>${v.label}</span></label>`).join('');
+  el.innerHTML=defs.map(v=>`<label><input type="checkbox" value="${v.key}" ${checkedList.includes(v.key)?'checked':''}><span>${v.label}</span></label>`).join('');
   [...el.querySelectorAll('input[type=checkbox]')].forEach(cb=>{
     cb.onchange=()=>{
       const k=cb.value;
@@ -2412,25 +2475,10 @@ function renderMaturacao(){
     sel.onchange=()=>renderMaturacao();
     sel.dataset.ready='1';
   }
-  const rows=DATA.athletes.map(a=>{
-    const ageNow=ageNowFromDob(a.dob);
-    const last=latestAnthro(a.nickname);
-    if(!last) return [a.nickname, ageNow!=null?fmt(ageNow,1)+' anos':'—', '—','—','—','—','—','Sem avaliação'];
-    return [
-      a.nickname,
-      ageNow!=null?fmt(ageNow,1)+' anos':'—',
-      last.height!=null?fmt(last.height,1)+' cm':'—',
-      last.predictedHeight!=null?fmt(last.predictedHeight,1)+' cm':'—',
-      last.maturityOffset!=null?fmt(last.maturityOffset,2):'—',
-      last.aphv!=null?fmt(last.aphv,2)+' anos':'—',
-      last.status||'—',
-      last.date.split('-').reverse().join('/'),
-    ];
-  });
-  renderTable('tblMaturacao', ['Atleta','Idade atual','Estatura atual','Estatura predita','Maturity offset','Idade do PVC','Sua maturação será','Última avaliação'], rows);
+  renderMaturacaoTable();
   renderMaturacaoOverview();
   if(sel){
-    renderVarPicker('maturacaoVarsPicker', maturacaoVars, ()=>renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars));
+    renderVarPicker('maturacaoVarsPicker', MATURACAO_VAR_DEFS, maturacaoVars, ()=>renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars));
     renderGrowthChart('chMaturacaoCurve', sel.value, maturacaoVars);
   }
 }
@@ -2455,7 +2503,7 @@ function renderCardMaturacao(name){
     {label:'Maturação', value: last.status||'—'},
     {label:'Última avaliação', value: last.date.split('-').reverse().join('/')},
   ].map(c=>`<span class="chip">${c.label}<b>${c.value}</b></span>`).join('');
-  renderVarPicker('cardMaturacaoVars', maturacaoVars, ()=>renderGrowthChart('chCardMaturacaoCurve', name, maturacaoVars));
+  renderVarPicker('cardMaturacaoVars', MATURACAO_VAR_DEFS, maturacaoVars, ()=>renderGrowthChart('chCardMaturacaoCurve', name, maturacaoVars));
   renderGrowthChart('chCardMaturacaoCurve', name, maturacaoVars);
 }
 window.addEventListener('resize',()=>renderActive());
