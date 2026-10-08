@@ -1059,19 +1059,51 @@ function computeMaturation(ageDecimal, heightCm, sittingHeightRawCm, benchHeight
   const predictedHeight = remaining!=null ? heightCm+remaining : null;
   return {sittingHeight, legLength, maturityOffset, aphv, status, predictedHeight};
 }
+// Mais tolerante que parseSheetsDate (usado nas outras abas): aceita horário colado junto
+// ("15/02/2025 00:00:00", comum quando a data foi colada/importada de outra planilha), ISO
+// ("2025-02-15"), separador por ponto ou traço, e número de série do Sheets/Excel (caso a célula
+// não esteja formatada como data).
+function parseAntropoDate(v){
+  if(v==null) return null;
+  let s=String(v).trim();
+  if(!s) return null;
+  s=s.split(/[T ]/)[0];
+  let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m){ const [,yr,mo,da]=m; return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`; }
+  m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if(m){
+    let [,da,mo,yr]=m; da=Number(da); mo=Number(mo);
+    if(mo>12 && da<=12) [mo,da]=[da,mo];
+    if(mo<1||mo>12||da<1||da>31) return null;
+    return `${yr}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`;
+  }
+  if(/^\d{4,6}(\.\d+)?$/.test(s)){
+    const serial=Number(s);
+    if(serial>0){
+      const d=new Date(Date.UTC(1899,11,30)+Math.round(serial)*86400000);
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+    }
+  }
+  return null;
+}
 function extractAnthropometricsFromCSV(csvText, athletes){
   const rows=parseCSV(csvText); const col=headerMap(rows,0);
   const gv=(row,name)=>gGate(row,col,name,ANTRO_COL_FALLBACK[name]);
   const byNick={}; (athletes||[]).forEach(a=>{ byNick[normLowerText(a.nickname)]=a; });
-  const out=[];
+  const out=[]; const diag={skippedBlank:0, skippedNoNickname:0, skippedNoDate:0, skippedNoHeight:0, sampleRawDate:null};
   for(let r=1;r<rows.length;r++){
-    const row=rows[r]; const nickname=gv(row,'Apelido'); if(!nickname) continue;
-    const date=parseSheetsDate(gv(row,'Data avaliação')); if(!date) continue;
+    const row=rows[r];
+    if(!row.length || row.every(c=>!String(c||'').trim())){ diag.skippedBlank++; continue; }
+    const nickname=gv(row,'Apelido');
+    if(!nickname){ diag.skippedNoNickname++; continue; }
+    const rawDate=gv(row,'Data avaliação');
+    const date=parseAntropoDate(rawDate);
+    if(!date){ diag.skippedNoDate++; if(diag.sampleRawDate==null && rawDate!=null) diag.sampleRawDate=rawDate; continue; }
     const height=csvNum(gv(row,'Estatura (cm)'));
     const sittingRaw=csvNum(gv(row,'Estatura sentado (cm)'));
     const weight=csvNum(gv(row,'Massa Corporal (kg)'));
     const bench=csvNum(gv(row,'Altura do banco (cm)'));
-    if(height==null) continue;
+    if(height==null){ diag.skippedNoHeight++; continue; }
     const a=byNick[normLowerText(nickname)];
     const dob=a?a.dob:null;
     const age = dob ? ((new Date(date)-new Date(dob))/(1000*60*60*24*365)) : null;
@@ -1084,7 +1116,7 @@ function extractAnthropometricsFromCSV(csvText, athletes){
     });
   }
   out.sort((x,y)=>x.date.localeCompare(y.date));
-  return out;
+  return {rows:out, diag};
 }
 
 function buildSheetsMeta({athletes,trainings,blocks,contents,games}){
@@ -1184,7 +1216,7 @@ async function loadFromGoogleSheets(sheetId){
   // ela ainda n\u00e3o existir (ou falhar por qualquer motivo pontual) o resto do dashboard continua
   // funcionando normalmente \u2014 s\u00f3 a parte de matura\u00e7\u00e3o fica vazia, em vez de derrubar o carregamento
   // inteiro pro data.json desatualizado.
-  let anthropometrics=[], anthropometricsError=null, anthropometricsRawRows=null;
+  let anthropometrics=[], anthropometricsError=null, anthropometricsRawRows=null, anthropometricsDiag=null;
   try{
     const antropometriaCsv = await fetchSheetCSVAny(sheetId,[
       'Avalia\u00e7\u00e3o antropom\u00e9trica','avalia\u00e7\u00e3o antropometrica','Avalia\u00e7\u00e3o antropometrica',
@@ -1193,12 +1225,14 @@ async function loadFromGoogleSheets(sheetId){
       'avaliacao antropometrica','Avaliacao antropometrica','Avaliacao Antropometrica','AVALIA\u00c7\u00c3O ANTROPOM\u00c9TRICA',
     ]);
     anthropometricsRawRows = Math.max(0, antropometriaCsv.split('\n').filter(l=>l.trim()).length-1);
-    anthropometrics = extractAnthropometricsFromCSV(antropometriaCsv, athletes);
+    const extraction = extractAnthropometricsFromCSV(antropometriaCsv, athletes);
+    anthropometrics = extraction.rows;
+    anthropometricsDiag = extraction.diag;
   }catch(antroErr){
     anthropometricsError = (antroErr && antroErr.message) ? antroErr.message : String(antroErr);
     console.warn('[dashboard] Aba de avalia\u00e7\u00e3o antropom\u00e9trica indispon\u00edvel (conferir o nome exato da aba na planilha).', antroErr);
   }
-  return {meta:buildSheetsMeta({athletes,trainings,blocks,contents,games}), athletes, trainings, blocks, contents, notes, games, gameInd, anthropometrics, anthropometricsError, anthropometricsRawRows};
+  return {meta:buildSheetsMeta({athletes,trainings,blocks,contents,games}), athletes, trainings, blocks, contents, notes, games, gameInd, anthropometrics, anthropometricsError, anthropometricsRawRows, anthropometricsDiag};
 }
 
 // Globais: precisam existir fora de boot() porque atributos onerror inline
@@ -2247,7 +2281,14 @@ function renderMaturacao(){
     } else if(!DATA.anthropometrics.length && DATA.anthropometricsRawRows===0){
       diag.innerHTML=`<div class="insight">A aba de avaliação antropométrica foi encontrada, mas ainda não tem nenhuma linha preenchida.</div>`;
     } else if(!DATA.anthropometrics.length && DATA.anthropometricsRawRows>0){
-      diag.innerHTML=`<div class="insight" style="border-left-color:#fdb022;background:rgba(253,176,34,.08);color:#ffd58a">⚠️ A aba foi encontrada e tem ${DATA.anthropometricsRawRows} linha(s), mas nenhuma foi reconhecida. Confira se os nomes das colunas são exatamente: Apelido, Data avaliação, Estatura (cm), Estatura sentado (cm), Massa Corporal (kg), Altura do banco (cm) — e se o "Apelido" bate com o cadastrado no Banco de atletas.</div>`;
+      const d=DATA.anthropometricsDiag||{};
+      const parts=[];
+      if(d.skippedNoNickname) parts.push(`${d.skippedNoNickname} sem apelido reconhecido`);
+      if(d.skippedNoDate) parts.push(`${d.skippedNoDate} com data inválida${d.sampleRawDate!=null?` (exemplo do que veio na planilha: "${escHtml(d.sampleRawDate)}")`:''}`);
+      if(d.skippedNoHeight) parts.push(`${d.skippedNoHeight} sem estatura preenchida`);
+      if(d.skippedBlank) parts.push(`${d.skippedBlank} linha(s) em branco`);
+      const detail = parts.length ? parts.join('; ') : 'motivo não identificado';
+      diag.innerHTML=`<div class="insight" style="border-left-color:#fdb022;background:rgba(253,176,34,.08);color:#ffd58a">⚠️ A aba foi encontrada e tem ${DATA.anthropometricsRawRows} linha(s), mas nenhuma foi reconhecida: ${detail}.</div>`;
     } else {
       diag.innerHTML='';
     }
