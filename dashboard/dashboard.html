@@ -614,15 +614,17 @@ body.light .status{border:1px solid transparent}
         <div class="card-head">
           <div><h3>Microciclo <span id="mcNumber"></span></h3><div class="desc" id="mcWeekDesc"></div></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <span class="save-status" id="mcSaveStatus"></span>
-            <button class="btn primary small" id="mcSaveBtn" type="button">💾 Salvar microciclo</button>
-            <button class="btn small" id="mcRefresh" type="button" title="Buscar edições feitas em outro dispositivo">🔄 Sincronizar</button>
             <button class="btn small" id="mcPrevWeek" type="button">← Semana anterior</button>
             <button class="btn small" id="mcThisWeek" type="button">Semana atual</button>
             <button class="btn small" id="mcNextWeek" type="button">Próxima semana →</button>
           </div>
         </div>
         <div class="field" style="max-width:220px;margin-top:14px"><label>Número do microciclo (opcional)</label><input type="number" min="0" id="mcNumberInput"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px">
+          <span class="save-status" id="mcSaveStatus"></span>
+          <button class="btn primary small" id="mcSaveBtn" type="button">💾 Salvar microciclo</button>
+          <button class="btn small" id="mcRefresh" type="button" title="Buscar edições feitas em outro dispositivo">🔄 Sincronizar</button>
+        </div>
       </div>
       <div class="card">
         <div class="table-wrap" style="max-height:none">
@@ -1989,8 +1991,17 @@ function mcCellTd(week,d,key){
 function renderMicrociclo(){
   const all = getMcState();
   const weekKey = mcCurrentWeek;
-  if(!all[weekKey]) all[weekKey] = {number:null, days:{}};
+  const isNewWeek = !all[weekKey];
+  if(isNewWeek) all[weekKey] = {number:null, days:{}};
   const week = all[weekKey];
+  // Pré-preenche o número só na primeira vez que a semana é aberta (nunca sobrescreve uma edição
+  // manual depois): pega o número da semana numerada mais recente ANTES dessa e soma 1; se nenhuma
+  // semana anterior tiver número, começa do 1.
+  if(isNewWeek && week.number==null){
+    const priorNumbered=Object.keys(all).filter(k=>k!==weekKey && k<weekKey && all[k].number!=null).sort();
+    week.number = priorNumbered.length ? all[priorNumbered[priorNumbered.length-1]].number+1 : 1;
+    markMcDirty();
+  }
   const dayDates = [0,1,2,3,4,5,6].map(i=>addDaysIso(weekKey,i));
   dayDates.forEach(d=>{ if(!week.days[d]) week.days[d] = emptyMcDay(); });
 
@@ -2235,12 +2246,17 @@ function renderJogos(f){const g=filteredGames(f), gi=filteredGameInd(f), s=gameS
   const gaChart=[...s].filter(x=>x.ga>0).sort((a,b)=>b.ga-a.ga).slice(0,12); horizontalBar('chGoalsAssists',gaChart,'athlete',['goals','assists'],{stacked:true,colors:[COLORS[3],COLORS[2]],labels:['Gols','Assistências'],left:130,athleteTooltip:true});
   horizontalBar('chMinPerGA',[...s].filter(x=>x.ga>0).sort((a,b)=>a.minPerGA-b.minPerGA).slice(0,12),'athlete',['minPerGA'],{left:130,dataLabel:true,athleteTooltip:true});
   const gamesSorted=[...g].sort((a,b)=>a.date.localeCompare(b.date));
-  const giByDate={}; gi.forEach(x=>{giByDate[x.date]=giByDate[x.date]||{}; giByDate[x.date][x.athlete]=x;});
+  // Chave por Nº do jogo (com fallback pra data, caso falte): dias de torneio costumam ter mais de um
+  // jogo na mesma data (ex.: 4 jogos em 28/02), e indexar só por data fazia o registro individual do
+  // último jogo daquela data sobrescrever (e ser somado em dobro/triplo nas colunas de cada jogo) os
+  // outros jogos do mesmo dia — o "Total" da tabela ficava divergente do "%" (que vem de gameSummary,
+  // sem esse problema, somando certo por atleta independente da data).
+  const giByGame={}; gi.forEach(x=>{const k=x.gameNo!=null?x.gameNo:x.date; giByGame[k]=giByGame[k]||{}; giByGame[k][x.athlete]=x;});
   const gameHeatCols=gamesSorted.map((gm,i)=>String(i+1).padStart(2,'0'));
   const gameByCol=Object.fromEntries(gamesSorted.map((gm,i)=>[String(i+1).padStart(2,'0'),gm]));
   const sByAthlete=Object.fromEntries(s.map(x=>[x.athlete,x]));
   const heatAthletes=[...s].sort((a,b)=>b.pctMinutes-a.pctMinutes).map(x=>x.athlete);
-  heatmap('chGameMinutePctContext',heatAthletes,gameHeatCols,(ath,col)=>{const gm=gameByCol[col]; const rec=(giByDate[gm.date]||{})[ath]; return rec?rec.minutes:0;},{rowLabel:'Atleta',athleteRows:true,maxHeight:'420px',color:'96,165,250',decimals:0,showTotal:true,
+  heatmap('chGameMinutePctContext',heatAthletes,gameHeatCols,(ath,col)=>{const gm=gameByCol[col]; const key=gm.gameNo!=null?gm.gameNo:gm.date; const rec=(giByGame[key]||{})[ath]; return rec?rec.minutes:0;},{rowLabel:'Atleta',athleteRows:true,maxHeight:'420px',color:'96,165,250',decimals:0,showTotal:true,
     extraCols:[
       {label:'J',valFn:r=>fmtInt(sByAthlete[r]?.related||0)},
       {label:'Méd',valFn:r=>{const x=sByAthlete[r]; return x&&x.related?fmt(x.minutes/x.related,0):'—'}},

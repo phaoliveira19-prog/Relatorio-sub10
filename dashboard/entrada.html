@@ -504,7 +504,6 @@ function panelTreino(){
   return `<div class="card">
     <h2>Sessão de treino</h2>
     <div class="hint">Preenche uma linha em "Banco de treinos". ID da sessão, TAA, % de minutagem etc. são preenchidos automaticamente.</div>
-    <div id="msgTreino"></div>
     <div class="grid3">
       <div class="field"><label>Data</label><input type="date" id="t_data" value="${todayIso()}"></div>
       <div class="field"><label>Categoria</label><input id="t_categoria" value="${myCategoria()}" readonly></div>
@@ -517,7 +516,7 @@ function panelTreino(){
     ${partSection('preparatoria','preparatória')}
     ${partSection('conceitual','conceitual')}
     ${partSection('conexao','de conexão com o jogo')}
-    <div class="foot-actions"><button class="btn primary" id="btnTreino">Salvar treino</button></div>
+    <div class="foot-actions"><button class="btn primary" id="btnTreino">Salvar treino</button><div id="msgTreino"></div></div>
   </div>`;
 }
 function wireTreino(){
@@ -557,7 +556,6 @@ function panelAvaliacao(){
   return `<div class="card">
     <h2>Avaliação individual do treino</h2>
     <div class="hint">Escolha a data do treino e preencha a nota (0 a 10) de quem participou. Deixe em branco quem não treinou — é assim que o sistema identifica ausência.</div>
-    <div id="msgAvaliacao"></div>
     <div class="field" style="max-width:220px"><label>Data do treino</label><input type="date" id="av_data" value="${todayIso()}"></div>
     <div class="bulk-actions">
       <button class="btn" id="avClear">Limpar todas as notas</button>
@@ -567,7 +565,7 @@ function panelAvaliacao(){
       <thead><tr><th>Atleta</th><th>Posição</th><th>Nota</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`}
-    <div class="foot-actions"><button class="btn primary" id="btnAvaliacao">Salvar avaliações</button></div>
+    <div class="foot-actions"><button class="btn primary" id="btnAvaliacao">Salvar avaliações</button><div id="msgAvaliacao"></div></div>
   </div>`;
 }
 function wireAvaliacao(){
@@ -593,7 +591,6 @@ function panelPosJogo(){
   return `<div class="card">
     <h2>Pós-jogo</h2>
     <div class="hint">Preenche uma linha em "Pós-jogo". Nº do jogo, saldo e resultado são calculados automaticamente.</div>
-    <div id="msgPosJogo"></div>
     <div class="grid3">
       <div class="field"><label>Data</label><input type="date" id="g_data" value="${todayIso()}"></div>
       <div class="field"><label>Categoria</label><input id="g_categoria" value="${myCategoria()}" readonly></div>
@@ -620,7 +617,7 @@ function panelPosJogo(){
       <div class="field"><label>Pontos positivos</label><textarea id="g_positivos"></textarea></div>
       <div class="field"><label>Pontos negativos</label><textarea id="g_negativos"></textarea></div>
     </div>
-    <div class="foot-actions"><button class="btn primary" id="btnPosJogo">Salvar jogo</button></div>
+    <div class="foot-actions"><button class="btn primary" id="btnPosJogo">Salvar jogo</button><div id="msgPosJogo"></div></div>
   </div>`;
 }
 function wirePosJogo(){
@@ -663,7 +660,6 @@ function panelPosJogoInd(){
   return `<div class="card">
     <h2>Pós-jogo individual</h2>
     <div class="hint">Todos começam como "Não-relacionado". Mude a titularidade só de quem jogou e preencha os números dele.</div>
-    <div id="msgPosJogoInd"></div>
     <div class="grid3">
       <div class="field"><label>Nº do jogo</label><input type="number" min="1" id="pi_numero" placeholder="deixe em branco pra numerar automático"></div>
       <div class="field"><label>Data</label><input type="date" id="pi_data" value="${todayIso()}"></div>
@@ -674,7 +670,7 @@ function panelPosJogoInd(){
       <thead><tr><th>Atleta</th><th>Titularidade</th><th>Posição</th><th>Min.</th><th>Desemp.</th><th>Gols</th><th>Sofridos</th><th>Assist.</th><th>CA</th><th>CV</th><th>Comentários</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`}
-    <div class="foot-actions"><button class="btn primary" id="btnPosJogoInd">Salvar pós-jogo individual</button></div>
+    <div class="foot-actions"><button class="btn primary" id="btnPosJogoInd">Salvar pós-jogo individual</button><div id="msgPosJogoInd"></div></div>
   </div>`;
 }
 function wirePosJogoInd(){
