@@ -2228,7 +2228,22 @@ function renderAvaliacao(f){const n=filteredNotes(f), s=noteSummary(f); const to
   }
   renderTable('tblTrend',['Atleta','Média geral','Últimos 5','Diferença','Status'],[...s].sort((a,b)=>b.diff-a.diff).map(x=>{const cls=x.diff>=.5?'good':x.diff<=-.5?'bad':'neutral'; const st=x.diff>=.5?'Em evolução':x.diff<=-.5?'Em queda':'Estável'; return [athleteCell(x.athlete),fmt(x.avg),fmt(x.recent),fmt(x.diff),`<span class="status ${cls}">${st}</span>`]}));}
 function setupHeatAthFilters(){[['heatPos','position','Todas posições',DATA.meta.positions],['heatQuartile','quartile','Todos quartis',QUARTILE_ORDER],['heatTenure','tenure','Todos tempos',TENURE_ORDER]].forEach(([id,key,label,opts])=>{const sel=$(id); if(sel&&!sel.dataset.ready){sel.innerHTML=`<option value="">${label}</option>`+opts.map(x=>`<option value="${x}">${x}</option>`).join(''); sel.onchange=()=>{heatAthFilters[key]=sel.value; renderAvaliacao(activeFilters());}; sel.dataset.ready='1';} if(sel) sel.value=heatAthFilters[key]||'';});}
-function gameSummary(gi,games){const possible=sum(games.map(x=>x.minutes||0)); return Object.entries(by(gi,'athlete')).map(([ath,rows])=>{const min=sum(rows.map(x=>x.minutes)), goals=sum(rows.map(x=>x.goals)), assists=sum(rows.map(x=>x.assists)), ga=goals+assists; return {athlete:ath,minutes:min,pctMinutes:pct(min,possible),related:rows.filter(x=>x.titularity!=='Não-relacionado').length,titular:rows.filter(x=>x.titularity==='Titular').length,reserva:rows.filter(x=>x.titularity==='Reserva').length,nao:rows.filter(x=>x.titularity==='Não-relacionado').length,goals,assists,ga,minPerGA:ga?min/ga:null,avgPerf:avg(rows.map(x=>x.performance))};});}
+// Se o mesmo atleta tiver mais de um registro em "Pós-jogo individual" pro MESMO jogo (duplicidade de
+// preenchimento — ex.: um envio em branco por engano antes ou depois do real), mantém a linha com
+// titularidade preenchida em vez de somar as duas (reenvio em branco sempre vem sem titularidade);
+// se as duas tiverem titularidade, fica com a mais recente. Usado tanto no cálculo agregado
+// (gameSummary) quanto na tabela de minutagem por jogo, pra "Total" e "%" nunca divergirem por
+// causa de uma duplicata — os dois usam esta mesma função como única fonte da verdade.
+function dedupeGameIndByGame(gi){
+  const seen={};
+  gi.forEach(x=>{
+    const key=(x.gameNo!=null?x.gameNo:x.date)+'|'+x.athlete;
+    const prev=seen[key];
+    if(!prev || x.titularity || !prev.titularity) seen[key]=x;
+  });
+  return Object.values(seen);
+}
+function gameSummary(gi,games){const possible=sum(games.map(x=>x.minutes||0)); gi=dedupeGameIndByGame(gi); return Object.entries(by(gi,'athlete')).map(([ath,rows])=>{const min=sum(rows.map(x=>x.minutes)), goals=sum(rows.map(x=>x.goals)), assists=sum(rows.map(x=>x.assists)), ga=goals+assists; return {athlete:ath,minutes:min,pctMinutes:pct(min,possible),related:rows.filter(x=>x.titularity!=='Não-relacionado').length,titular:rows.filter(x=>x.titularity==='Titular').length,reserva:rows.filter(x=>x.titularity==='Reserva').length,nao:rows.filter(x=>x.titularity==='Não-relacionado').length,goals,assists,ga,minPerGA:ga?min/ga:null,avgPerf:avg(rows.map(x=>x.performance))};});}
 function renderJogos(f){const g=filteredGames(f), gi=filteredGameInd(f), s=gameSummary(gi,g); const wins=g.filter(x=>x.result==='Vitória').length, draws=g.filter(x=>x.result==='Empate').length, losses=g.filter(x=>x.result==='Derrota').length; const leader=(arr,fn)=>[...arr].sort((a,b)=>fn(b)-fn(a))[0]; const scorer=leader(s,x=>x.goals)||{}; const assister=leader(s,x=>x.assists)||{}; const minPerGoal=sum(g.map(x=>x.goalsFor))?sum(g.map(x=>x.minutes))/sum(g.map(x=>x.goalsFor)):null; const efficient=[...s].filter(x=>x.ga>0).sort((a,b)=>a.minPerGA-b.minPerGA)[0]||{}; const minLeader=leader(s,x=>x.minutes)||{}; const cards=[{label:'Jogos',value:fmtInt(g.length),sub:`${wins}V · ${draws}E · ${losses}D`},{label:'% vitórias',value:fmt(pct(wins,g.length),0)+'%',sub:'eficiência competitiva'},{label:'Gols pró',value:fmtInt(sum(g.map(x=>x.goalsFor))),sub:`${fmt(sum(g.map(x=>x.goalsFor))/Math.max(g.length,1))}/jogo`},{label:'Gols sofridos',value:fmtInt(sum(g.map(x=>x.goalsAgainst))),sub:`${fmt(sum(g.map(x=>x.goalsAgainst))/Math.max(g.length,1))}/jogo`},{label:'Minutos por gol',value:fmt(minPerGoal,1),sub:'tempo da equipe / gols feitos'},{label:'Artilheiro',value:scorer.athlete||'—',sub:`${fmtInt(scorer.goals||0)} gols`,photo:safePhoto(athleteObj(scorer.athlete))},{label:'Mais assistências',value:assister.athlete||'—',sub:`${fmtInt(assister.assists||0)} assist.`,photo:safePhoto(athleteObj(assister.athlete))},{label:'Melhor min/G+A',value:efficient.athlete||'—',sub:efficient.minPerGA?`${fmt(efficient.minPerGA,1)} min/G+A`:'—',photo:safePhoto(athleteObj(efficient.athlete))},{label:'Maior minutagem',value:minLeader.athlete||'—',sub:`${fmtInt(minLeader.minutes||0)} min`,photo:safePhoto(athleteObj(minLeader.athlete))}]; metricCards('kpisJogos',cards,true);
   const goals=MONTHS.map(m=>{const arr=g.filter(x=>x.month===m); return {month:m,for:sum(arr.map(x=>x.goalsFor)),against:sum(arr.map(x=>x.goalsAgainst)),items:arr};}).filter(x=>x.items.length); verticalBar('chGoalsMonth',goals,'month',['for','against'],{colors:[COLORS[3],COLORS[5]],labels:['Gols feitos','Gols sofridos'],tooltipFn:(d,k,ki)=>`<b>${d.month}</b><br>${ki===0?'Gols feitos':'Gols sofridos'}: ${fmtInt(d[k])}<br><br>${d.items.map(j=>`${j.date} · ${j.opponent}: ${fmtInt(j.goalsFor)} x ${fmtInt(j.goalsAgainst)} (${j.result})`).join('<br>')}`});
   const rank=['A','B','C'].map(r=>{const arr=g.filter(x=>x.rank===r); return {rank:r,performance:avg(arr.map(x=>x.performance)),count:arr.length};}).filter(x=>x.count); verticalBar('chPerfRank',rank,'rank',['performance'],{yMin:3,yMax:10,dataLabel:true});
@@ -2246,12 +2261,10 @@ function renderJogos(f){const g=filteredGames(f), gi=filteredGameInd(f), s=gameS
   const gaChart=[...s].filter(x=>x.ga>0).sort((a,b)=>b.ga-a.ga).slice(0,12); horizontalBar('chGoalsAssists',gaChart,'athlete',['goals','assists'],{stacked:true,colors:[COLORS[3],COLORS[2]],labels:['Gols','Assistências'],left:130,athleteTooltip:true});
   horizontalBar('chMinPerGA',[...s].filter(x=>x.ga>0).sort((a,b)=>a.minPerGA-b.minPerGA).slice(0,12),'athlete',['minPerGA'],{left:130,dataLabel:true,athleteTooltip:true});
   const gamesSorted=[...g].sort((a,b)=>a.date.localeCompare(b.date));
-  // Chave por Nº do jogo (com fallback pra data, caso falte): dias de torneio costumam ter mais de um
-  // jogo na mesma data (ex.: 4 jogos em 28/02), e indexar só por data fazia o registro individual do
-  // último jogo daquela data sobrescrever (e ser somado em dobro/triplo nas colunas de cada jogo) os
-  // outros jogos do mesmo dia — o "Total" da tabela ficava divergente do "%" (que vem de gameSummary,
-  // sem esse problema, somando certo por atleta independente da data).
-  const giByGame={}; gi.forEach(x=>{const k=x.gameNo!=null?x.gameNo:x.date; giByGame[k]=giByGame[k]||{}; giByGame[k][x.athlete]=x;});
+  // Mesma deduplicação de dedupeGameIndByGame (gameNo, com fallback pra data) usada em gameSummary,
+  // pra "Total"/"Méd"/"%" nunca divergirem entre si por causa de jogo repetido no mesmo dia ou de
+  // registro duplicado do mesmo atleta no mesmo jogo.
+  const giByGame={}; dedupeGameIndByGame(gi).forEach(x=>{const k=x.gameNo!=null?x.gameNo:x.date; giByGame[k]=giByGame[k]||{}; giByGame[k][x.athlete]=x;});
   const gameHeatCols=gamesSorted.map((gm,i)=>String(i+1).padStart(2,'0'));
   const gameByCol=Object.fromEntries(gamesSorted.map((gm,i)=>[String(i+1).padStart(2,'0'),gm]));
   const sByAthlete=Object.fromEntries(s.map(x=>[x.athlete,x]));
