@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <title>QG do Treinador — marca (Fusão total)</title>
+  <defs>
+    <linearGradient id="gFT" x1="60" y1="18" x2="60" y2="106" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#32d583"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="26" fill="#0b1220"/>
+  <path d="M60,20 L86,31 L86,64 C86,86 74,98 60,104 C46,98 34,86 34,64 L34,31 Z" fill="url(#gFT)"/>
+  <circle cx="60" cy="66" r="19" fill="none" stroke="#0b1220" stroke-width="3" opacity=".85"/>
+  <circle cx="60" cy="66" r="10" fill="none" stroke="#0b1220" stroke-width="3"/>
+  <circle cx="60" cy="66" r="3" fill="#0b1220"/>
+  <line x1="60" y1="66" x2="77" y2="49" stroke="#0b1220" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="77,49 68,52 71,58" fill="#0b1220"/>
+  <line x1="60" y1="66" x2="47" y2="77" stroke="#0b1220" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+</svg>
