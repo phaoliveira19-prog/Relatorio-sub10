@@ -970,8 +970,9 @@ function extractGamesFromCSV(csvText){
   const gv=(row,name)=>gGate(row,col,name,JOGOS_COL_FALLBACK[name]);
   const games=[];
   for(let r=2;r<rows.length;r++){
-    const row=rows[r]; const gameNo=gv(row,'N\u00ba Jogo'); if(gameNo===null) continue;
+    const row=rows[r]; const gameNo=gv(row,'N\u00ba Jogo');
     const dt=parseSheetsDate(gv(row,'Data'));
+    if(gameNo===null && !dt) continue;
     const gf=csvNum(gv(row,'Gols feitos')), ga=csvNum(gv(row,'Gols sofridos'));
     const result=gv(row,'Resultado');
     games.push({
